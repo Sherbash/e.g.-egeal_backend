@@ -109,11 +109,11 @@ SENDER_EMAIL="<your_email>"
 SENDER_APP_PASS="<your_app_password>"
 
 #Stripe Configuration
-STRIPE_SECRET_KEY=sk_test_51OffGAIRUCEbGACxkfjFRB04GIEjIpRjE3PD4p0kSnFvI9vgCJEegnexMEEIv08VquFOWeiXFoIJrOvT2rOqin6U003qYloLHo
-STRIPE_WEBHOOK_SECRET=whsec_CHkgLNIOk3OBATmUIrDNj0w97UOwZB0B
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 
-GMAIL_USER=smhasanjamil2025@gmail.com
-GMAIL_PASS=oyfo bhdo axaj sxpk
+GMAIL_USER=
+GMAIL_PASS=
 
    # URL Configuration
 
