@@ -72,7 +72,7 @@ const updateGiveaway = catchAsync(async (req: Request, res: Response) => {
 const cancelGiveaway = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
 
-  const result = await GiveawayServices.cancelGiveaway(giveawayId, req.user.id);
+  const result = await GiveawayServices.cancelGiveaway(giveawayId, req.user as IUser);
 
   res.status(status.OK).json({
     success: true,
