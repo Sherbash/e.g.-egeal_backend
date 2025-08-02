@@ -6,6 +6,8 @@ import { Founder } from "../founder/founder.model";
 import { Types } from "mongoose";
 import { findProfileByRole } from "../../utils/findUser";
 import { IUser } from "../user/user.interface";
+import { IPaginationOptions } from "../../interface/pagination";
+import { paginationHelper } from "../../utils/paginationHelpers";
 
 const createGiveaway = async (payload: IGiveaway, user: IUser) => {
   const profile = await findProfileByRole(user);
@@ -31,21 +33,21 @@ const getAllGiveaways = async () => {
 const getCurrentGiveaways = async () => {
   const giveaways = await Giveaway.aggregate([
     { $sort: { createdAt: -1 } }, // Sort first for better performance
-    
+
     // Calculate participantsCount
     {
       $addFields: {
-        participantsCount: { $size: "$participants" } // Count participants
-      }
+        participantsCount: { $size: "$participants" }, // Count participants
+      },
     },
-    
+
     // Only include giveaways with at least 1 participant
     {
       $match: {
-        participantsCount: { $gt: 0 } // Filter: participantsCount > 0
-      }
+        participantsCount: { $gt: 0 }, // Filter: participantsCount > 0
+      },
     },
-    
+
     // Rest of the pipeline (lookups, projections, etc.)
     {
       $lookup: {
@@ -93,11 +95,28 @@ const getCurrentGiveaways = async () => {
   return giveaways;
 };
 
-const getAllOngoingGiveaways = async () => {
-  const giveaways = await Giveaway.find({ status: "ongoing" });
-  // console.log("giveaways", giveaways);
-  return giveaways;
+const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
+  // Mongoose query
+  const giveaways = await Giveaway.find({ status: "ongoing" })
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Giveaway.countDocuments({ status: "ongoing" });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: giveaways,
+  };
 };
+
 
 const getGiveawayById = async (giveawayId: string) => {
   const giveaway = await Giveaway.findById(giveawayId)
@@ -228,5 +247,5 @@ export const GiveawayServices = {
   getGiveawayById,
   getGiveawayStats,
   getCurrentGiveaways,
-  getAllOngoingGiveaways
+  getAllOngoingGiveaways,
 };
