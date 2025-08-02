@@ -63,6 +63,17 @@ sendResponse(res,{
     message: "reviews successfully deleted !"
   })
 })
+const GetToolReviews=catchAsync(async(req,res)=>{
+    const {id}=req.params
+const result=await reviewServices.getToolReviewForDb(id)
+
+sendResponse(res,{
+    statusCode: status.OK,
+    success: true,
+    message: "Tool reviews successfully get !",
+    data:result
+  })
+})
 
 export const ReviewContllors={
     CreateReview,
@@ -70,4 +81,6 @@ export const ReviewContllors={
     getSingleReview,
     UpdateReview,
     DeleteReview
+    ,
+    GetToolReviews
 }

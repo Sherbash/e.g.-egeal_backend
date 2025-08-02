@@ -46,6 +46,14 @@ return{
     result
 }
 }
+const getToolReviewForDb=async(id:string)=>{
+
+    const result=await ReviewModel.find({toolId:id}).populate("userId","-password")
+
+return{
+    result
+}
+}
 
 
 export const reviewServices={
@@ -53,5 +61,6 @@ export const reviewServices={
     getAllReviewForDb,
     getSingleReviewForDb,
     updateSingleReviewForDb,
-    deleteReviewForDb
+    deleteReviewForDb,
+    getToolReviewForDb
 }
