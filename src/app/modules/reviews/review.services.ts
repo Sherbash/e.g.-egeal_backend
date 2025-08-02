@@ -19,7 +19,7 @@ return{
 }
 const getSingleReviewForDb=async(id:string)=>{
 
-    const result=await ReviewModel.findOne({_id:id})
+    const result=await ReviewModel.findOne({_id:id}).populate("userId","-password")
 
 return{
     result
