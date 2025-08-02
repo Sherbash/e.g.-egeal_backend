@@ -31,6 +31,16 @@ const getAllGiveaways = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllGiveawaysByRole = catchAsync(async (req: Request, res: Response) => {
+  const giveaways = await GiveawayServices.getAllGiveawaysByRole(req.user as IUser);
+
+  res.status(status.OK).json({
+    success: true,
+    message: "All giveaways retrieved successfully",
+    data: giveaways,
+  });
+});
+
 const getGiveawayById = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
   const giveaway = await GiveawayServices.getGiveawayById(giveawayId);
@@ -62,7 +72,7 @@ const updateGiveaway = catchAsync(async (req: Request, res: Response) => {
 const cancelGiveaway = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
 
-  const result = await GiveawayServices.cancelGiveaway(giveawayId, req.user.id);
+  const result = await GiveawayServices.cancelGiveaway(giveawayId, req.user as IUser);
 
   res.status(status.OK).json({
     success: true,
@@ -120,4 +130,6 @@ export const GiveawayController = {
   getGiveawayStats,
   getCurrentGiveaways,
   getAllOngoingGiveaways,
+  getAllGiveawaysByRole,
+
 };
