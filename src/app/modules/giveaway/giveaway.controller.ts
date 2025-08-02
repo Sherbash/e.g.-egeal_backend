@@ -31,6 +31,16 @@ const getAllGiveaways = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllGiveawaysByRole = catchAsync(async (req: Request, res: Response) => {
+  const giveaways = await GiveawayServices.getAllGiveawaysByRole(req.user as IUser);
+
+  res.status(status.OK).json({
+    success: true,
+    message: "All giveaways retrieved successfully",
+    data: giveaways,
+  });
+});
+
 const getGiveawayById = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
   const giveaway = await GiveawayServices.getGiveawayById(giveawayId);
@@ -120,4 +130,6 @@ export const GiveawayController = {
   getGiveawayStats,
   getCurrentGiveaways,
   getAllOngoingGiveaways,
+  getAllGiveawaysByRole,
+
 };
