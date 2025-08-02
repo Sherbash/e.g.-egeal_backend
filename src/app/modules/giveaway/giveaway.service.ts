@@ -30,6 +30,21 @@ const getAllGiveaways = async () => {
   return giveaways;
 };
 
+const getAllGiveawaysByRole = async (user: IUser) => {
+  const profile = await findProfileByRole(user);
+
+  const giveaways = await Giveaway.find({ authorId: profile?._id }).populate({
+    path: "authorId",
+    select: "-tools",
+    populate: {
+      path: "userId",
+      model: "User",
+      select: "firstName lastName email",
+    },
+  });
+  return giveaways;
+};
+
 const getCurrentGiveaways = async () => {
   const giveaways = await Giveaway.aggregate([
     { $sort: { createdAt: -1 } }, // Sort first for better performance
@@ -99,6 +114,7 @@ const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
+  console.log(options, "options");
   // Mongoose query
   const giveaways = await Giveaway.find({ status: "ongoing" })
     .sort({ [sortBy]: sortOrder })
@@ -116,7 +132,6 @@ const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
     data: giveaways,
   };
 };
-
 
 const getGiveawayById = async (giveawayId: string) => {
   const giveaway = await Giveaway.findById(giveawayId)
@@ -248,4 +263,5 @@ export const GiveawayServices = {
   getGiveawayStats,
   getCurrentGiveaways,
   getAllOngoingGiveaways,
+  getAllGiveawaysByRole,
 };

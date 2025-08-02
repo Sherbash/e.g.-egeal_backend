@@ -14,7 +14,6 @@ const reviewData={...req.body,userName:userName,userId:user.id}
 console.log('check review data',reviewData)
 const result=await reviewServices.createReviewForDb(reviewData)
 
-//dfsafsdafsdf
 sendResponse(res,{
     statusCode: status.OK,
     success: true,
