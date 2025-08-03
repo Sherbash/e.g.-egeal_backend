@@ -4,7 +4,7 @@ const giveawaySchema = new mongoose.Schema(
   {
     authorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Founder",
+      ref: "User",
       required: true,
     },
     title: {

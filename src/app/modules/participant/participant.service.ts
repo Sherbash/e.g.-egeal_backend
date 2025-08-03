@@ -6,14 +6,12 @@ import { Participant } from "./participant.model";
 import { IUser } from "../user/user.interface";
 import mongoose from "mongoose";
 import { IParticipant } from "./participant.interface";
-import { findProfileByRole } from "../../utils/findUser";
 
 const createParticipant = async (payload: IParticipant, user: IUser) => {
   // console.log("payload", payload);
   // const profile = await findProfileByRole(user);
   // payload.userId = profile?._id;
   // console.log("payload", payload)
-console.log(user)
   // Check if giveaway exists and is ongoing
   const giveaway = await Giveaway.findById(payload.giveawayId);
   if (!giveaway) {
@@ -38,17 +36,13 @@ console.log(user)
     );
   }
 
-
-
   const result = await Participant.create({
     ...payload,
     userId: user?.id,
   });
-
-  console.log("result", result)
   // Add participant to giveaway
   await Giveaway.findByIdAndUpdate(payload.giveawayId, {
-    $push: { participants: user?.id },
+    $push: { participants: result?._id },
   });
 
   return result;
@@ -66,12 +60,11 @@ const getAllParticipants = async (giveawayId: string, userId: string) => {
 
   return await Participant.find({ giveawayId }).populate(
     "userId",
-    "name email image"
+    "firstName lastName email role isActive"
   );
 };
 
-const getParticipant = async (participantId: string, user: IUser) => {
-  const profile = await findProfileByRole(user);
+const getParticipant = async (participantId: string) => {
 
   const participant = await Participant.findById(participantId);
   if (!participant) {
@@ -107,8 +100,6 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
   try {
     session.startTransaction();
 
-
-
     // Step 1: Find giveaway
     const giveaway = await Giveaway.findById(giveawayId).session(session);
     if (!giveaway) {
@@ -139,11 +130,21 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
       {
         $match: {
           giveawayId: new Types.ObjectId(giveawayId),
-          "proofs.verified": { $not: { $elemMatch: { verified: false } } },
+        },
+      },
+      {
+        $match: {
+          proofs: {
+            $not: {
+              $elemMatch: {
+                verified: false,
+              },
+            },
+          },
         },
       },
     ]);
-
+// console.log("participants", participants)
     if (participants.length === 0) {
       throw new AppError(status.BAD_REQUEST, "No verified participants found");
     }
@@ -152,6 +153,7 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
     const winner =
       participants[Math.floor(Math.random() * participants.length)];
 
+    // console.log("winner", winner);
     const updatedWinner = await Participant.findByIdAndUpdate(
       winner._id,
       { isWinner: true },

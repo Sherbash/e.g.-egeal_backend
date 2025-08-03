@@ -10,7 +10,6 @@ import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 
 const createGiveaway = async (payload: IGiveaway, user: IUser) => {
-
   const result = await Giveaway.create({
     ...payload,
     authorId: user.id,
@@ -19,38 +18,28 @@ const createGiveaway = async (payload: IGiveaway, user: IUser) => {
 };
 
 const getAllGiveaways = async () => {
-  const giveaways = await Giveaway.find().populate({
-    path: "authorId",
-    select: "-tools",
-    populate: {
-      path: "userId",
-      model: "User",
-      select: "firstName lastName email",
-    },
-  })
-  .populate("winnerId" , "-password")
+  const giveaways = await Giveaway.find()
+    .populate("authorId", "-password")
+    .populate("winnerId", "-password");
   return giveaways;
 };
-
 
 const getAllGiveawaysByRole = async (user: IUser) => {
-  const profile = await findProfileByRole(user);
-
-  const giveaways = await Giveaway.find({ authorId: profile?._id })
-  .populate({
-    path: "authorId",
-    select: "-tools",
-    populate: {
-      path: "userId",
-      model: "User",
-      select: "firstName lastName email",
-    },
-  })
-  .populate("winnerId" , "-password")
-  return giveaways;
+  let AllGiveaways;
+  if (user?.role === "admin") {
+    AllGiveaways = await Giveaway.find()
+    .populate("authorId", "-password")
+    .populate("winnerId", "-password");
+  } else if (user?.role === "founder") {
+    AllGiveaways = await Giveaway.find({ authorId: user?.id })
+    .populate("authorId", "-password")
+    .populate("winnerId", "-password");
+  }
+  // .populate("winnerId", "-password");
+  return AllGiveaways;
 };
 
-const getCurrentGiveaways = async () => {
+const getGiveawaysWithAtLeastOneParticipant = async () => {
   const giveaways = await Giveaway.aggregate([
     { $sort: { createdAt: -1 } }, // Sort first for better performance
 
@@ -121,7 +110,7 @@ const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
 
   // Mongoose query
   const giveaways = await Giveaway.find({ status: "ongoing" })
-  
+
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
@@ -140,16 +129,9 @@ const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
 
 const getGiveawayById = async (giveawayId: string) => {
   const giveaway = await Giveaway.findById(giveawayId)
-    .populate({
-      path: "authorId",
-      populate: {
-        path: "userId",
-        model: "User",
-        select: "firstName lastName email",
-      },
-    })
-    .populate("winnerId" , "-password")
-    .populate("participants", "firstName lastName email");
+    .populate("authorId", "-password")
+    .populate("winnerId", "-password")
+    .populate("participants", "_id userId giveawayId socialUsername, videoLink proofs isWinner submittedAt");
 
   if (!giveaway) {
     throw new AppError(status.NOT_FOUND, "Giveaway not found");
@@ -157,23 +139,30 @@ const getGiveawayById = async (giveawayId: string) => {
 
   return giveaway;
 };
-
-
 const updateGiveaway = async (
   giveawayId: string,
   payload: Partial<IGiveaway>,
   user: IUser
 ) => {
-  const profile = await findProfileByRole(user);
-  payload.authorId = profile._id;
-
   const giveaway = await Giveaway.findById(giveawayId);
 
   if (!giveaway) {
     throw new AppError(status.NOT_FOUND, "Giveaway not found");
   }
 
-  if (giveaway.authorId.toString() !== payload.authorId.toString()) {
+  // Only admin can update any giveaway
+  if (user?.role === "admin") {
+    // allow
+  }
+  // Founder can update only their own giveaway
+  else if (user?.role === "founder") {
+    if (giveaway.authorId.toString() !== user?.id.toString()) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "You are not authorized to update this giveaway"
+      );
+    }
+  } else {
     throw new AppError(
       status.FORBIDDEN,
       "You are not authorized to update this giveaway"
@@ -187,9 +176,8 @@ const updateGiveaway = async (
   return result;
 };
 
-const cancelGiveaway = async (giveawayId: string, user: IUser) => {
-  const profile = await findProfileByRole(user);
 
+const cancelGiveaway = async (giveawayId: string, user: IUser) => {
   const giveaway = await Giveaway.findById(giveawayId);
 
   if (!giveaway) {
@@ -203,7 +191,19 @@ const cancelGiveaway = async (giveawayId: string, user: IUser) => {
     );
   }
 
-  if (giveaway.authorId.toString() !== profile?._id.toString()) {
+  // Admin can cancel any giveaway
+  if (user?.role === "admin") {
+    // allow
+  }
+  // Founder can cancel only their own
+  else if (user?.role === "founder") {
+    if (giveaway.authorId.toString() !== user?.id.toString()) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "You are not authorized to cancel this giveaway"
+      );
+    }
+  } else {
     throw new AppError(
       status.FORBIDDEN,
       "You are not authorized to cancel this giveaway"
@@ -267,7 +267,7 @@ export const GiveawayServices = {
   getAllGiveaways,
   getGiveawayById,
   getGiveawayStats,
-  getCurrentGiveaways,
+  getGiveawaysWithAtLeastOneParticipant,
   getAllOngoingGiveaways,
   getAllGiveawaysByRole,
 };
