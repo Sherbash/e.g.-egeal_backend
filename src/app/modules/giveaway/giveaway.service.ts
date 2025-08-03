@@ -10,10 +10,11 @@ import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 
 const createGiveaway = async (payload: IGiveaway, user: IUser) => {
-  const profile = await findProfileByRole(user);
-  payload.authorId = profile._id;
 
-  const result = await Giveaway.create(payload);
+  const result = await Giveaway.create({
+    ...payload,
+    authorId: user.id,
+  });
   return result;
 };
 
@@ -26,14 +27,17 @@ const getAllGiveaways = async () => {
       model: "User",
       select: "firstName lastName email",
     },
-  });
+  })
+  .populate("winnerId" , "-password")
   return giveaways;
 };
+
 
 const getAllGiveawaysByRole = async (user: IUser) => {
   const profile = await findProfileByRole(user);
 
-  const giveaways = await Giveaway.find({ authorId: profile?._id }).populate({
+  const giveaways = await Giveaway.find({ authorId: profile?._id })
+  .populate({
     path: "authorId",
     select: "-tools",
     populate: {
@@ -41,7 +45,8 @@ const getAllGiveawaysByRole = async (user: IUser) => {
       model: "User",
       select: "firstName lastName email",
     },
-  });
+  })
+  .populate("winnerId" , "-password")
   return giveaways;
 };
 
@@ -114,9 +119,9 @@ const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
-  console.log(options, "options");
   // Mongoose query
   const giveaways = await Giveaway.find({ status: "ongoing" })
+  
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
@@ -143,8 +148,8 @@ const getGiveawayById = async (giveawayId: string) => {
         select: "firstName lastName email",
       },
     })
-    .populate("winnerId", "name email")
-    .populate("participants", "name email");
+    .populate("winnerId" , "-password")
+    .populate("participants", "firstName lastName email");
 
   if (!giveaway) {
     throw new AppError(status.NOT_FOUND, "Giveaway not found");
@@ -152,6 +157,7 @@ const getGiveawayById = async (giveawayId: string) => {
 
   return giveaway;
 };
+
 
 const updateGiveaway = async (
   giveawayId: string,
