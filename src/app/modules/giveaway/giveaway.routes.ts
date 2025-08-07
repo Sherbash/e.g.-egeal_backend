@@ -28,7 +28,7 @@ router.get(
 router.get("/my-giveaways",auth(UserRole.ADMIN, UserRole.FOUNDER), GiveawayController.getAllGiveawaysByRole);
 
 //get giveaways with at least one participant
-router.get("/get-giveaways/pick-winner", GiveawayController.getCurrentGiveaways);
+router.get("/get-giveaways/pick-winner", GiveawayController.getGiveawaysWithAtLeastOneParticipant);
 
 router.get(
   "/:giveawayId",

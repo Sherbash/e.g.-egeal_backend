@@ -91,8 +91,8 @@ const getGiveawayStats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getCurrentGiveaways = catchAsync(async (req: Request, res: Response) => {
-  const giveaways = await GiveawayServices.getCurrentGiveaways();
+const getGiveawaysWithAtLeastOneParticipant = catchAsync(async (req: Request, res: Response) => {
+  const giveaways = await GiveawayServices.getGiveawaysWithAtLeastOneParticipant();
 
   res.status(status.OK).json({
     success: true,
@@ -128,7 +128,7 @@ export const GiveawayController = {
   getAllGiveaways,
   getGiveawayById,
   getGiveawayStats,
-  getCurrentGiveaways,
+  getGiveawaysWithAtLeastOneParticipant,
   getAllOngoingGiveaways,
   getAllGiveawaysByRole,
 

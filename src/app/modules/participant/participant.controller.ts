@@ -37,8 +37,7 @@ const getParticipant = catchAsync(async (req: Request, res: Response) => {
   const { participantId } = req.params;
 
   const result = await ParticipantServices.getParticipant(
-    participantId,
-    req.user as IUser
+    participantId
   );
 
   res.status(status.OK).json({
