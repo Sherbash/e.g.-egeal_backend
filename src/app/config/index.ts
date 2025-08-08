@@ -26,7 +26,7 @@ export default {
   cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,
   sender_email: process.env.SENDER_EMAIL,
   sender_app_password: process.env.SENDER_APP_PASS,
-  stripe_secret_key: process.env.STRIPE_SECRET_KEY,
+  stripe_secret_key: process.env.STRIPE_SECRET_KEY!,
   stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
   gmail: process.env.GMAIL_USER,
   gmail_pass: process.env.GMAIL_PASS,
