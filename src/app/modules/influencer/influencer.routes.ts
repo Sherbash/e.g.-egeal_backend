@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { InfluencerController } from "./founder.controller";
+import { InfluencerController } from "./influencer.controller";
 
 const router = Router();
 

@@ -2,7 +2,7 @@ import status from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import pickOptions from "../../utils/pick";
-import { InfluencerService } from "./founder.service";
+import { InfluencerService } from "./influencer.service";
 
 const getAllInfluencer = catchAsync(async (req, res) => {
   const options = pickOptions(req.query, [
