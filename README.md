@@ -109,8 +109,8 @@ SENDER_EMAIL="<your_email>"
 SENDER_APP_PASS="<your_app_password>"
 
 #Stripe Configuration
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
+STRIPE_SECRET_KEY=<your_stript_secret_key>
+STRIPE_WEBHOOK_SECRET=<your_webhook_secret_key>
 
 GMAIL_USER=
 GMAIL_PASS=
