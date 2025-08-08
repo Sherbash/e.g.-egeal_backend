@@ -21,7 +21,13 @@ router.get(
 
 router.get(
   "/get-roleBase-info/:id",
-  auth(UserRole.ADMIN, UserRole.USER, UserRole.FOUNDER, UserRole.INFLUENCER, UserRole.INVESTOR),
+  auth(
+    UserRole.ADMIN,
+    UserRole.USER,
+    UserRole.FOUNDER,
+    UserRole.INFLUENCER,
+    UserRole.INVESTOR
+  ),
   UserController.getSingleUser
 );
 
@@ -40,6 +46,12 @@ router.get(
   "/",
   // auth(),
   UserController.getAllUsers
+);
+
+router.patch(
+  "/banned-user/:id",
+  auth(UserRole.ADMIN),
+  UserController.toggleUserStatus
 );
 
 router.get(

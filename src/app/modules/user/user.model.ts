@@ -6,6 +6,7 @@ import config from "../../config";
 // Create the User schema based on the interface
 const userSchema = new Schema<IUser>(
   {
+    
     firstName:{
       type: String,
       required: true

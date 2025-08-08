@@ -88,6 +88,18 @@ const getMeRoleBasedInfo = catchAsync(async (req, res) => {
   });
 });
 
+const toggleUserStatus = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await UserServices.toggleUserStatus(id);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Banned user successfully",
+    data: result,
+  });
+});
+
+
 export const UserController = {
   registerUser,
   getAllUsers,
@@ -95,5 +107,6 @@ export const UserController = {
   updateUser,
   deleteUser,
   myProfile,
-  getMeRoleBasedInfo
+  getMeRoleBasedInfo,
+  toggleUserStatus
 };
