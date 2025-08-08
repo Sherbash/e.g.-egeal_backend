@@ -19,12 +19,16 @@ router.get(
   GiveawayController.getAllGiveaways
 );
 router.get("/stats", GiveawayController.getGiveawayStats);
-router.get("/current-giveaways", GiveawayController.getCurrentGiveaways);
 router.get(
   "/ongoing-giveaways",
   // auth(UserRole.ADMIN, UserRole.FOUNDER),
   GiveawayController.getAllOngoingGiveaways
 );
+
+router.get("/my-giveaways",auth(UserRole.ADMIN, UserRole.FOUNDER), GiveawayController.getAllGiveawaysByRole);
+
+//get giveaways with at least one participant
+router.get("/get-giveaways/pick-winner", GiveawayController.getGiveawaysWithAtLeastOneParticipant);
 
 router.get(
   "/:giveawayId",

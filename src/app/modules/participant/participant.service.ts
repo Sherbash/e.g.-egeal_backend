@@ -6,14 +6,12 @@ import { Participant } from "./participant.model";
 import { IUser } from "../user/user.interface";
 import mongoose from "mongoose";
 import { IParticipant } from "./participant.interface";
-import { findProfileByRole } from "../../utils/findUser";
 
 const createParticipant = async (payload: IParticipant, user: IUser) => {
-
   // console.log("payload", payload);
-  const profile = await findProfileByRole(user);
-  payload.userId = profile?._id;
-
+  // const profile = await findProfileByRole(user);
+  // payload.userId = profile?._id;
+  // console.log("payload", payload)
   // Check if giveaway exists and is ongoing
   const giveaway = await Giveaway.findById(payload.giveawayId);
   if (!giveaway) {
@@ -29,7 +27,7 @@ const createParticipant = async (payload: IParticipant, user: IUser) => {
   // Check if user already participated
   const existingParticipant = await Participant.findOne({
     giveawayId: payload.giveawayId,
-    userId: payload.userId,
+    userId: user?.id,
   });
   if (existingParticipant) {
     throw new AppError(
@@ -38,11 +36,13 @@ const createParticipant = async (payload: IParticipant, user: IUser) => {
     );
   }
 
-  const result = await Participant.create(payload);
-
+  const result = await Participant.create({
+    ...payload,
+    userId: user?.id,
+  });
   // Add participant to giveaway
   await Giveaway.findByIdAndUpdate(payload.giveawayId, {
-    $push: { participants: result._id },
+    $push: { participants: result?._id },
   });
 
   return result;
@@ -60,18 +60,16 @@ const getAllParticipants = async (giveawayId: string, userId: string) => {
 
   return await Participant.find({ giveawayId }).populate(
     "userId",
-    "name email image"
+    "firstName lastName email role isActive"
   );
 };
 
-const getParticipant = async (participantId: string, user: IUser) => {
-  const profile = await findProfileByRole(user);
-  
-  const participant = await Participant.findById(participantId)
+const getParticipant = async (participantId: string) => {
+
+  const participant = await Participant.findById(participantId);
   if (!participant) {
     throw new AppError(status.NOT_FOUND, "Participant not found");
   }
-
 
   // Verify the requesting user is either the participant or giveaway author
   const giveaway = await Giveaway.findById(participant.giveawayId);
@@ -102,9 +100,6 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
   try {
     session.startTransaction();
 
-    const profile = await findProfileByRole(user);
-    // payload.userId = profile?._id;
-
     // Step 1: Find giveaway
     const giveaway = await Giveaway.findById(giveawayId).session(session);
     if (!giveaway) {
@@ -114,7 +109,7 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
     // Step 2: Authorization check
     if (
       user.role !== "admin" &&
-      giveaway.authorId.toString() !== profile?._id.toString()
+      giveaway.authorId.toString() !== user?.id.toString()
     ) {
       throw new AppError(
         status.FORBIDDEN,
@@ -135,11 +130,21 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
       {
         $match: {
           giveawayId: new Types.ObjectId(giveawayId),
-          "proofs.verified": { $not: { $elemMatch: { verified: false } } },
+        },
+      },
+      {
+        $match: {
+          proofs: {
+            $not: {
+              $elemMatch: {
+                verified: false,
+              },
+            },
+          },
         },
       },
     ]);
-
+// console.log("participants", participants)
     if (participants.length === 0) {
       throw new AppError(status.BAD_REQUEST, "No verified participants found");
     }
@@ -148,19 +153,28 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
     const winner =
       participants[Math.floor(Math.random() * participants.length)];
 
-    // Step 6: Update winner participant
-    await Participant.findByIdAndUpdate(
+    // console.log("winner", winner);
+    const updatedWinner = await Participant.findByIdAndUpdate(
       winner._id,
       { isWinner: true },
-      { session }
+      { new: true, session }
     );
+
+    if (!updatedWinner) {
+      throw new AppError(
+        status.INTERNAL_SERVER_ERROR,
+        "Failed to update winner"
+      );
+    }
 
     // Step 7: Update giveaway
     const updatedGiveaway = await Giveaway.findByIdAndUpdate(
       giveawayId,
-      { winnerId: winner.userId, status: "winner_selected" },
+      { winnerId: updatedWinner?.userId, status: "winner_selected" },
       { new: true, session }
     );
+
+    // console.log(updatedGiveaway);
 
     // Step 8: Commit & end session
     await session.commitTransaction();
