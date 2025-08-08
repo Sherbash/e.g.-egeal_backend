@@ -10,6 +10,8 @@ import { PaymentRoutes } from "../modules/payment/payment.route";
 import { GiveawayRoutes } from "../modules/giveaway/giveaway.routes";
 import { ParticipantRoutes } from "../modules/participant/participant.routes";
 import { reviewRouter } from "../modules/reviews/review.router";
+import { FounderRoutes } from "../modules/founder/founder.routes";
+import { InfluencerRoutes } from "../modules/influencer/founder.routes";
 const router = Router();
 
 const moduleRoutes = [
@@ -55,6 +57,14 @@ const moduleRoutes = [
   {
     path: "/reviews",
     route: reviewRouter,
+  },
+  {
+    path: "/founders",
+    route: FounderRoutes,
+  },
+  {
+    path: "/influencers",
+    route: InfluencerRoutes,
   }
   
 ];
