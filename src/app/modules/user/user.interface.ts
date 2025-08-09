@@ -9,17 +9,19 @@ export enum UserRole {
   ADMIN = "admin",
 }
 
-
 // User Schema Definition
 export interface IUser extends Document {
   _id: Types.ObjectId;
-  firstName: string
-  lastName: string
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   role: UserRole;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  additionalNotes?: string; 
+  additionalNotes?: string;
+  referralCode: string; // Added to match schema
+  referredBy?: Types.ObjectId; // Made optional as it's not required
+  points: number; // Added to match schema
 }
