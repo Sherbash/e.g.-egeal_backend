@@ -149,8 +149,8 @@ import generateNumericNanoid from "../../utils/createNanoId";
 
 // Add to user.service.ts
 
-const registerUser = async (payload: IUser, referralCodeFromQuery?: string) => {
-  const { email, role, password, firstName, lastName, additionalNotes,referredBy } =
+const registerUser = async (payload: IUser) => {
+  const { email, role, password, firstName, lastName, additionalNotes,referredBy ,referralCode} =
     payload;
 
   const session = await mongoose.startSession();
@@ -186,9 +186,9 @@ const registerUser = async (payload: IUser, referralCodeFromQuery?: string) => {
 
     // If referral link used → find referrer
     let referrerUser = null;
-    if (referralCodeFromQuery) {
+    if (referralCode) {
       referrerUser = await User.findOne({
-        referralCode: referralCodeFromQuery,
+        referralCode: referralCode,
       }).session(session);
       if (referrerUser) {
         userData.referredBy = referrerUser._id;
