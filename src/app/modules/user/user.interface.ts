@@ -23,5 +23,6 @@ export interface IUser extends Document {
   additionalNotes?: string;
   referralCode: string; // Added to match schema
   referredBy?: Types.ObjectId; // Made optional as it's not required
+  referralLink?: string;
   points: number; // Added to match schema
 }

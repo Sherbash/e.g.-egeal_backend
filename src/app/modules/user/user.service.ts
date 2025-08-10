@@ -188,9 +188,10 @@ const registerUser = async (payload: IUser) => {
       password,
       role,
       isActive: true,
-      referredBy: referrerUser?._id || undefined,
       additionalNotes,
-      referralCode: generateNumericNanoid(10) // Generate new code for this user
+      referredBy: referrerUser?._id || undefined,
+      referralCode: generateNumericNanoid(10), // Generate new code for this user
+      referralLink: `${process.env.CLIENT_URL}/register?referralCode=${referralCode}&referredBy=${referrerUser?._id}`,
     };
 
     const [newUser] = await User.create([userData], { session });
@@ -245,7 +246,6 @@ const registerUser = async (payload: IUser) => {
         email: newUser.email,
         role: newUser.role,
         referralCode: newUser.referralCode,
-        referralLink: `${process.env.CLIENT_URL}/signup?ref=${newUser.referralCode}`,
         referredBy: newUser.referredBy
       },
       profile: roleProfile?.[0]
