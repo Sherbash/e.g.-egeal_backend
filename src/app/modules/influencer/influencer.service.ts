@@ -5,7 +5,7 @@ import { paginationHelper } from "../../utils/paginationHelpers";
 import UserModel from "../user/user.model";
 import { Influencer } from "./influencer.model"; // Assuming you have an Influencer model
 import mongoose from "mongoose";
-import { GigPage } from "./influencer-gigPage.model";
+import { GigPage, IGigPage } from "./influencer-gigPage.model";
 
 interface IInfluencerFilters {
   searchTerm?: string;
@@ -22,42 +22,42 @@ const getAllInfluencer = async (
   const aggregationPipeline: mongoose.PipelineStage[] = [
     {
       $match: {
-        role: "influencer", 
+        role: "influencer",
         isActive: true,
         ...(filters.searchTerm && {
           $or: [
             { firstName: { $regex: filters.searchTerm, $options: "i" } },
             { lastName: { $regex: filters.searchTerm, $options: "i" } },
-            { email: { $regex: filters.searchTerm, $options: "i" } }
-          ]
-        })
-      }
+            { email: { $regex: filters.searchTerm, $options: "i" } },
+          ],
+        }),
+      },
     },
     {
       $lookup: {
-        from: "influencers", 
+        from: "influencers",
         localField: "_id",
         foreignField: "userId",
-        as: "influencerDetails"
-      }
+        as: "influencerDetails",
+      },
     },
     {
       $unwind: {
         path: "$influencerDetails",
-        preserveNullAndEmptyArrays: false
-      }
+        preserveNullAndEmptyArrays: false,
+      },
     },
     {
       $project: {
         password: 0,
         influencerDetails: {
-          userId: 0
-        }
-      }
+          userId: 0,
+        },
+      },
     },
     { $skip: skip },
     { $limit: limit },
-    { $sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 } }
+    { $sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 } },
   ];
 
   // Count pipeline for pagination
@@ -70,31 +70,31 @@ const getAllInfluencer = async (
           $or: [
             { firstName: { $regex: filters.searchTerm, $options: "i" } },
             { lastName: { $regex: filters.searchTerm, $options: "i" } },
-            { email: { $regex: filters.searchTerm, $options: "i" } }
-          ]
-        })
-      }
+            { email: { $regex: filters.searchTerm, $options: "i" } },
+          ],
+        }),
+      },
     },
     {
       $lookup: {
         from: "influencers",
         localField: "_id",
         foreignField: "userId",
-        as: "influencerDetails"
-      }
+        as: "influencerDetails",
+      },
     },
     {
       $unwind: {
         path: "$influencerDetails",
-        preserveNullAndEmptyArrays: false
-      }
+        preserveNullAndEmptyArrays: false,
+      },
     },
-    { $count: "total" }
+    { $count: "total" },
   ];
 
   const [influencers, countResult] = await Promise.all([
     UserModel.aggregate(aggregationPipeline),
-    UserModel.aggregate(countPipeline)
+    UserModel.aggregate(countPipeline),
   ]);
 
   const total = countResult[0]?.total || 0;
@@ -104,41 +104,114 @@ const getAllInfluencer = async (
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     },
-    data: influencers
+    data: influencers,
   };
 };
 
-const createGigPage = async (userId: string, payload: any) => {
-  // Find the influencer first
+const createGigPage = async (userId: string, payload: IGigPage) => {
+  // console.log("check payload", payload);
+  // Validate username format (alphanumeric + hyphen/underscore)
+  if (!/^[a-zA-Z0-9_-]+$/.test(payload.username)) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Username can only contain letters, numbers, hyphens and underscores"
+    );
+  }
+
   const influencer = await Influencer.findOne({ userId });
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
-  // Check if gig page already exists
-  const existingGigPage = await GigPage.findOne({ influencerId: influencer._id });
-  if (existingGigPage) {
-    throw new AppError(status.BAD_REQUEST, "Gig page already exists for this influencer");
-  }
-
-  // Create new gig page
-  const gigPage = await GigPage.create({
-    ...payload,
-    influencerId: influencer._id
+  // Check for existing gig page or duplicate username
+  const existingGigPage = await GigPage.findOne({
+    $or: [
+      { influencerId: influencer._id },
+      { username: payload.username.toLowerCase() },
+    ],
   });
 
-  // // Update influencer with gig page reference
-  // influencer.gigPage = gigPage._id;
-  await influencer.save();
+  if (existingGigPage) {
+    if (existingGigPage.influencerId.equals(influencer._id)) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        "Gig page already exists for this influencer"
+      );
+    } else {
+      throw new AppError(status.BAD_REQUEST, "Username already taken");
+    }
+  }
 
-  return gigPage;
+  // Create with normalized username
+  const gigPage = await GigPage.create({
+    ...payload,
+    username: payload.username.toLowerCase(), // Store lowercase for case-insensitive matching
+    influencerId: influencer._id,
+    isPublished: false, // Default to unpublished
+    customLink: `${process.env.CLIENT_URL}/${payload.username}`,
+  });
+
+  // Generate the custom link
+
+  return {
+    ...gigPage.toObject(),
+  };
 };
 
 const getGigPage = async (username: string) => {
-  const gigPage = await GigPage.findOne({ username })
-    .populate('influencerId', 'userId') // Populate influencer if needed
+  const gigPage = await GigPage.findOne({ username: username.toLowerCase() })
+    .populate({
+      path: "influencerId",
+      select: "userId influencerId",
+      populate: {
+        path: "userId",
+        select: "firstName lastName email",
+      },
+    })
+    .lean();
+
+  if (!gigPage) {
+    throw new AppError(status.NOT_FOUND, "Gig page not found");
+  }
+
+  // Add custom link to response
+  return {
+    ...gigPage,
+    influencer: gigPage.influencerId, // Flatten the populated data
+  };
+};
+
+const getGigPageByUserId = async (userId: string) => {
+  const influencer = await Influencer.findOne({ userId });
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+  const gigPage = await GigPage.findOne({
+    influencerId: influencer._id,
+  }).lean();
+
+  if (!gigPage) {
+    throw new AppError(status.NOT_FOUND, "Gig page not found");
+  }
+
+  return {
+    ...gigPage,
+  };
+};
+
+const getGigPageById = async (gigId: string) => {
+  const gigPage = await GigPage.findOne({ _id: gigId })
+    .populate({
+      path: "influencerId",
+      select: "userId influencerId",
+      populate: {
+        path: "userId",
+        select: "firstName lastName email",
+      },
+    })
     .lean();
 
   if (!gigPage) {
@@ -148,30 +221,26 @@ const getGigPage = async (username: string) => {
   return gigPage;
 };
 
-const getGigPageByUserId = async (userId: string) => {
-  // Find influencer first
+const updateGigPage = async (userId: string, payload: Partial<IGigPage>) => {
   const influencer = await Influencer.findOne({ userId });
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
-  // Get gig page
-  const gigPage = await GigPage.findOne({ influencerId: influencer._id });
-  if (!gigPage) {
-    throw new AppError(status.NOT_FOUND, "Gig page not found");
+  // Handle username change separately
+  if (payload.username) {
+    const existing = await GigPage.findOne({
+      username: payload.username.toLowerCase(),
+      influencerId: { $ne: influencer._id }, // Exclude current user
+    });
+
+    if (existing) {
+      throw new AppError(status.BAD_REQUEST, "Username already taken");
+    }
+
+    payload.username = payload.username.toLowerCase();
   }
 
-  return gigPage;
-};
-
-const updateGigPage = async (userId: string, payload: Partial<any>) => {
-  // Find influencer first
-  const influencer = await Influencer.findOne({ userId });
-  if (!influencer) {
-    throw new AppError(status.NOT_FOUND, "Influencer not found");
-  }
-
-  // Update gig page
   const gigPage = await GigPage.findOneAndUpdate(
     { influencerId: influencer._id },
     payload,
@@ -182,31 +251,27 @@ const updateGigPage = async (userId: string, payload: Partial<any>) => {
     throw new AppError(status.NOT_FOUND, "Gig page not found");
   }
 
-  return gigPage;
+  return {
+    ...gigPage.toObject(),
+  };
 };
 
 const deleteGigPage = async (userId: string) => {
-  // Find influencer first
   const influencer = await Influencer.findOne({ userId });
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
-  // Delete gig page
-  await GigPage.deleteOne({ influencerId: influencer._id });
-
-  // Remove reference from influencer
-  influencer.gigPage = undefined;
-  await influencer.save();
-
-  return { message: "Gig page deleted successfully" };
+  const result = await GigPage.deleteOne({ influencerId: influencer._id });
+  return result;
 };
-
 
 export const InfluencerService = {
   getAllInfluencer,
+  getGigPageByUserId,
   createGigPage,
   getGigPage,
   updateGigPage,
-  deleteGigPage
+  deleteGigPage,
+  getGigPageById
 };

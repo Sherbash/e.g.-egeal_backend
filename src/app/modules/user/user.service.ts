@@ -150,143 +150,110 @@ import generateNumericNanoid from "../../utils/createNanoId";
 // Add to user.service.ts
 
 const registerUser = async (payload: IUser) => {
-  const { email, role, password, firstName, lastName, additionalNotes,referredBy ,referralCode} =
-    payload;
+  const { email, role, password, firstName, lastName, additionalNotes, referredBy, referralCode } = payload;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     // 1. Check if user already exists
-    const checkExistingUser = await User.findOne({ email }).session(session);
-    if (checkExistingUser) {
-      throw new AppError(status.BAD_REQUEST, "This email is already in use!");
+    const existingUser = await User.findOne({ email }).session(session);
+    if (existingUser) {
+      throw new AppError(status.BAD_REQUEST, "Email already registered");
     }
+
+    // 2. Validate referral relationships
+    let referrerUser = null;
     
-    // Check if referredBy exists
+    // Case 1: Direct referredBy ID provided
     if (referredBy) {
-      const referredByUser = await User.findById(referredBy).session(session);
-      if (!referredByUser) {
-        throw new AppError(status.BAD_REQUEST, "Referred by user not found!");
+      referrerUser = await User.findById(referredBy).session(session);
+      if (!referrerUser) {
+        throw new AppError(status.BAD_REQUEST, "Referrer user not found");
+      }
+    }
+    // Case 2: Referral code provided
+    else if (referralCode) {
+      referrerUser = await User.findOne({ referralCode }).session(session);
+      if (!referrerUser) {
+        throw new AppError(status.BAD_REQUEST, "Invalid referral code");
       }
     }
 
-    // 2. Prepare base user data
-    const userData: Partial<IUser> = {
+    // 3. Create new user
+    const userData = {
       firstName,
       lastName,
       email,
       password,
       role,
       isActive: true,
-      referredBy,
-      additionalNotes: additionalNotes || undefined,
-      referralCode:  generateNumericNanoid(10) // generate unique code
+      referredBy: referrerUser?._id || undefined,
+      additionalNotes,
+      referralCode: generateNumericNanoid(10) // Generate new code for this user
     };
 
-    // If referral link used → find referrer
-    let referrerUser = null;
-    if (referralCode) {
-      referrerUser = await User.findOne({
-        referralCode: referralCode,
-      }).session(session);
-      if (referrerUser) {
-        userData.referredBy = referrerUser._id;
-      }
-    }
+    const [newUser] = await User.create([userData], { session });
 
-    // 3. Create the new user
-    const [createdUser] = await User.create([userData], { session });
-
-    // 4. If referrer exists → create referral entry
+    // 4. Create referral record if applicable
     if (referrerUser) {
-      await Referral.create(
-        [
-          {
-            referrer: referrerUser._id,
-            referredUser: createdUser._id,
-            status: "pending",
-          },
-        ],
-        { session }
-      );
+      await Referral.create([{
+        referrer: referrerUser._id,
+        referredUser: newUser._id,
+        status: "pending",
+        rewardAmount: null, // Will be set when verified
+        campaignId: undefined // Can be added later
+      }], { session });
     }
 
-    // 5. Prepare base response
-    const response: any = {
-      firstName: createdUser.firstName,
-      lastName: createdUser.lastName,
-      email: createdUser.email,
-      role: createdUser.role,
-      _id: createdUser._id,
-      isActive: createdUser.isActive,
-      referralCode: createdUser.referralCode,
-      referredBy: createdUser.referredBy || null,
-      createdAt: createdUser.createdAt,
-      updatedAt: createdUser.updatedAt,
-      additionalNotes: createdUser.additionalNotes,
+    // 5. Create role-specific profile
+    let roleProfile;
+    const roleData = {
+      userId: newUser._id,
+      additionalNotes: additionalNotes || "empty"
     };
-
-    // 6. Role-specific creation
-    const fullName = `${payload.firstName}${payload.lastName}`;
 
     switch (role) {
-      case UserRole.INFLUENCER: {
+      case UserRole.INFLUENCER:
         const influencerId = await generateUniqueId(
-          fullName,
-          Influencer,
+          `${firstName}${lastName}`, 
+          Influencer, 
           "influencerId"
         );
-        const influencerData = {
-          userId: createdUser._id,
-          influencerId,
-          affiliations: [],
-          additionalNotes: additionalNotes || "empty",
-        };
-        const [createdInfluencer] = await Influencer.create([influencerData], {
-          session,
-        });
-        response.influencerData = createdInfluencer;
+        roleProfile = await Influencer.create([{ ...roleData, influencerId }], { session });
         break;
-      }
-
-      case UserRole.FOUNDER: {
-        const founderData = {
-          userId: createdUser._id,
-          tools: [],
-          additionalNotes: additionalNotes || "empty",
-        };
-        const [createdFounder] = await Founder.create([founderData], {
-          session,
-        });
-        response.founderData = createdFounder;
+        
+      case UserRole.FOUNDER:
+        roleProfile = await Founder.create([roleData], { session });
         break;
-      }
-
-      case UserRole.INVESTOR: {
-        const investorData = {
-          userId: createdUser._id,
-          investIn: [],
-          additionalNotes: additionalNotes || "empty",
-        };
-        const [createdInvestor] = await Investor.create([investorData], {
-          session,
-        });
-        response.investorData = createdInvestor;
+        
+      case UserRole.INVESTOR:
+        roleProfile = await Investor.create([roleData], { session });
         break;
-      }
-
+        
       case UserRole.USER:
-        // No extra table for USER
         break;
-
+        
       default:
-        throw new AppError(status.BAD_REQUEST, "Invalid user role");
+        throw new AppError(status.BAD_REQUEST, "Invalid role");
     }
 
-    // 7. Commit
+    // 6. Prepare response
+    const response = {
+      user: {
+        _id: newUser._id,
+        email: newUser.email,
+        role: newUser.role,
+        referralCode: newUser.referralCode,
+        referralLink: `${process.env.CLIENT_URL}/signup?ref=${newUser.referralCode}`,
+        referredBy: newUser.referredBy
+      },
+      profile: roleProfile?.[0]
+    };
+
     await session.commitTransaction();
     return response;
+
   } catch (error) {
     await session.abortTransaction();
     throw error;

@@ -43,6 +43,17 @@ const getGigPage = catchAsync(async (req, res) => {
   });
 });
 
+const getGigPageById = catchAsync(async (req, res) => {
+  
+  const result = await InfluencerService.getGigPageById(req.params.id);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Gig page retrieved successfully",
+    data: result,
+  });
+})
+
 const updateGigPage = catchAsync(async (req, res) => {
   const result = await InfluencerService.updateGigPage(req.user.id, req.body);
   sendResponse(res, {
@@ -54,12 +65,12 @@ const updateGigPage = catchAsync(async (req, res) => {
 });
 
 const deleteGigPage = catchAsync(async (req, res) => {
-  const result = await InfluencerService.deleteGigPage(req.user.id);
+   await InfluencerService.deleteGigPage(req.user.id);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Gig page deleted successfully",
-    data: result,
+    data: null,
   });
 });
 
@@ -68,5 +79,6 @@ export const InfluencerController = {
   createGigPage,
   getGigPage,
   updateGigPage,
-  deleteGigPage
+  deleteGigPage,
+  getGigPageById
 };
