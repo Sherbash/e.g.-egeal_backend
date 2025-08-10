@@ -12,6 +12,7 @@ import { ParticipantRoutes } from "../modules/participant/participant.routes";
 import { reviewRouter } from "../modules/reviews/review.router";
 import { FounderRoutes } from "../modules/founder/founder.routes";
 import { InfluencerRoutes } from "../modules/influencer/influencer.routes";
+import { StoryRoutes } from "../modules/storyPoll/storyPoll.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -65,6 +66,10 @@ const moduleRoutes = [
   {
     path: "/influencers",
     route: InfluencerRoutes,
+  },
+  {
+    path: "/story",
+    route: StoryRoutes,
   }
   
 ];
