@@ -25,11 +25,6 @@ const participantSchema = new mongoose.Schema(
     socialUsername: String, // Instagram/TikTok username
     videoLink: String, // their promo video
     proofs: [proofSchema], // multiple rule/image pair
-    // status: {
-    //   type: String,
-    //   enum: ['pending', 'approved', 'rejected'],
-    //   default: 'pending',
-    // },
     isWinner: {
       type: Boolean,
       default: false,
@@ -41,5 +36,5 @@ const participantSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
+participantSchema.index({ giveawayId: 1, userId: 1 });
 export const Participant = mongoose.model('Participant', participantSchema);
