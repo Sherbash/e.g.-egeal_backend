@@ -11,140 +11,256 @@ import bcrypt from "bcrypt";
 import config from "../../config";
 import { IJwtPayload } from "../auth/auth.interface";
 import { findProfileByRole } from "../../utils/findUser";
+import { Referral } from "../referral/referral.model";
+import { nanoid } from "nanoid";
+import generateNumericNanoid from "../../utils/createNanoId";
+
+// const registerUser = async (payload: IUser) => {
+//   const { email, role, password, firstName, lastName, additionalNotes } =
+//     payload;
+
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     // Check if user already exists
+//     const checkExistingUser = await User.findOne({ email }).session(session);
+//     if (checkExistingUser) {
+//       throw new AppError(status.BAD_REQUEST, "This email is already in use!");
+//     }
+
+//     // Prepare user data
+//     const userData: Partial<IUser> = {
+//       firstName,
+//       lastName,
+//       email,
+//       password,
+//       role,
+//       isActive: true,
+//       additionalNotes: additionalNotes || undefined,
+//     };
+
+//     // Create user
+//     const [createdUser] = await User.create([userData], { session });
+
+//     // Prepare response object
+//     const response: any = {
+//       firstName: createdUser.firstName,
+//       lastName: createdUser.lastName,
+//       email: createdUser.email,
+//       role: createdUser.role,
+//       _id: createdUser._id,
+//       isActive: createdUser.isActive,
+//       createdAt: createdUser.createdAt,
+//       updatedAt: createdUser.updatedAt,
+//       additionalNotes: createdUser.additionalNotes,
+//     };
+
+//     const fullName = `${payload.firstName}${payload.lastName}`;
+//     const influencerId = await generateUniqueId(
+//       fullName,
+//       Influencer,
+//       "influencerId"
+//     );
+
+//     // Create role-specific data based on user role and include in response
+//     switch (role) {
+//       case UserRole.INFLUENCER:
+//         const influencerData = {
+//           userId: createdUser._id,
+//           influencerId, // Use User's _id as userId
+//           affiliations: [],
+//           additionalNotes: additionalNotes || "empty",
+//         };
+//         const [createdInfluencer] = await Influencer.create([influencerData], {
+//           session,
+//         });
+//         response.influencerData = {
+//           _id: createdInfluencer._id,
+//           userId: createdInfluencer.userId,
+//           influencerId,
+//           affiliations: createdInfluencer.affiliations,
+//           additionalNotes: createdInfluencer.additionalNotes,
+//           createdAt: createdInfluencer.createdAt,
+//           updatedAt: createdInfluencer.updatedAt,
+//         };
+//         break;
+
+//       case UserRole.FOUNDER:
+//         const founderData = {
+//           userId: createdUser._id, // Use User's _id as userId
+//           tools: [],
+//           additionalNotes: additionalNotes || "empty",
+//         };
+//         const [createdFounder] = await Founder.create([founderData], {
+//           session,
+//         });
+//         response.founderData = {
+//           _id: createdFounder._id,
+//           userId: createdFounder.userId,
+//           tools: createdFounder.tools,
+//           additionalNotes: createdFounder.additionalNotes,
+//           createdAt: createdFounder.createdAt,
+//           updatedAt: createdFounder.updatedAt,
+//         };
+//         break;
+
+//       case UserRole.INVESTOR:
+//         const investorData = {
+//           userId: createdUser._id, // Use User's _id as userId
+//           investIn: [],
+//           additionalNotes: additionalNotes || "empty",
+//         };
+//         const [createdInvestor] = await Investor.create([investorData], {
+//           session,
+//         });
+//         response.investorData = {
+//           _id: createdInvestor._id,
+//           userId: createdInvestor.userId,
+//           investIn: createdInvestor.investIn,
+//           projectPreference: createdInvestor.projectPreference,
+//           investmentRange: createdInvestor.investmentRange,
+//           additionalNotes: createdInvestor.additionalNotes,
+//           createdAt: createdInvestor.createdAt,
+//           updatedAt: createdInvestor.updatedAt,
+//         };
+//         break;
+
+//       case UserRole.USER:
+//         // No role-specific data for 'user' role
+//         break;
+
+//       default:
+//         throw new AppError(status.BAD_REQUEST, "Invalid user role");
+//     }
+
+//     // Commit the transaction
+//     await session.commitTransaction();
+
+//     return response;
+//   } catch (error) {
+//     // Abort transaction on error
+//     await session.abortTransaction();
+//     throw error;
+//   } finally {
+//     session.endSession();
+//   }
+// };
+
+// Add to user.service.ts
 
 const registerUser = async (payload: IUser) => {
-  const { email, role, password, firstName, lastName, additionalNotes } =
-    payload;
+  const { email, role, password, firstName, lastName, additionalNotes, referredBy, referralCode } = payload;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Check if user already exists
-    const checkExistingUser = await User.findOne({ email }).session(session);
-    if (checkExistingUser) {
-      throw new AppError(status.BAD_REQUEST, "This email is already in use!");
+    // 1. Check if user already exists
+    const existingUser = await User.findOne({ email }).session(session);
+    if (existingUser) {
+      throw new AppError(status.BAD_REQUEST, "Email already registered");
     }
 
-    // Prepare user data
-    const userData: Partial<IUser> = {
+    // 2. Validate referral relationships
+    let referrerUser = null;
+    
+    // Case 1: Direct referredBy ID provided
+    if (referredBy) {
+      referrerUser = await User.findById(referredBy).session(session);
+      if (!referrerUser) {
+        throw new AppError(status.BAD_REQUEST, "Referrer user not found");
+      }
+    }
+    // Case 2: Referral code provided
+    else if (referralCode) {
+      referrerUser = await User.findOne({ referralCode }).session(session);
+      if (!referrerUser) {
+        throw new AppError(status.BAD_REQUEST, "Invalid referral code");
+      }
+    }
+
+    // 3. Create new user
+    const userData = {
       firstName,
       lastName,
       email,
       password,
       role,
       isActive: true,
-      additionalNotes: additionalNotes || undefined,
+      additionalNotes,
+      referredBy: referrerUser?._id || undefined,
+      referralCode: generateNumericNanoid(10), // Generate new code for this user
+      referralLink: `${process.env.CLIENT_URL}/register?referralCode=${referralCode}&referredBy=${referrerUser?._id}`,
     };
 
-    // Create user
-    const [createdUser] = await User.create([userData], { session });
+    const [newUser] = await User.create([userData], { session });
 
-    // Prepare response object
-    const response: any = {
-      firstName: createdUser.firstName,
-      lastName: createdUser.lastName,
-      email: createdUser.email,
-      role: createdUser.role,
-      _id: createdUser._id,
-      isActive: createdUser.isActive,
-      createdAt: createdUser.createdAt,
-      updatedAt: createdUser.updatedAt,
-      additionalNotes: createdUser.additionalNotes,
-    };
-
-    const fullName = `${payload.firstName}${payload.lastName}`;
-    const influencerId = await generateUniqueId(
-      fullName,
-      Influencer,
-      "influencerId"
-    );
-
-    // Create role-specific data based on user role and include in response
-    switch (role) {
-      case UserRole.INFLUENCER:
-        const influencerData = {
-          userId: createdUser._id,
-          influencerId, // Use User's _id as userId
-          affiliations: [],
-          additionalNotes: additionalNotes || "empty",
-        };
-        const [createdInfluencer] = await Influencer.create([influencerData], {
-          session,
-        });
-        response.influencerData = {
-          _id: createdInfluencer._id,
-          userId: createdInfluencer.userId,
-          influencerId,
-          affiliations: createdInfluencer.affiliations,
-          additionalNotes: createdInfluencer.additionalNotes,
-          createdAt: createdInfluencer.createdAt,
-          updatedAt: createdInfluencer.updatedAt,
-        };
-        break;
-
-      case UserRole.FOUNDER:
-        const founderData = {
-          userId: createdUser._id, // Use User's _id as userId
-          tools: [],
-          additionalNotes: additionalNotes || "empty",
-        };
-        const [createdFounder] = await Founder.create([founderData], {
-          session,
-        });
-        response.founderData = {
-          _id: createdFounder._id,
-          userId: createdFounder.userId,
-          tools: createdFounder.tools,
-          additionalNotes: createdFounder.additionalNotes,
-          createdAt: createdFounder.createdAt,
-          updatedAt: createdFounder.updatedAt,
-        };
-        break;
-
-      case UserRole.INVESTOR:
-        const investorData = {
-          userId: createdUser._id, // Use User's _id as userId
-          investIn: [],
-          additionalNotes: additionalNotes || "empty",
-        };
-        const [createdInvestor] = await Investor.create([investorData], {
-          session,
-        });
-        response.investorData = {
-          _id: createdInvestor._id,
-          userId: createdInvestor.userId,
-          investIn: createdInvestor.investIn,
-          projectPreference: createdInvestor.projectPreference,
-          investmentRange: createdInvestor.investmentRange,
-          additionalNotes: createdInvestor.additionalNotes,
-          createdAt: createdInvestor.createdAt,
-          updatedAt: createdInvestor.updatedAt,
-        };
-        break;
-
-      case UserRole.USER:
-        // No role-specific data for 'user' role
-        break;
-
-      default:
-        throw new AppError(status.BAD_REQUEST, "Invalid user role");
+    // 4. Create referral record if applicable
+    if (referrerUser) {
+      await Referral.create([{
+        referrer: referrerUser._id,
+        referredUser: newUser._id,
+        status: "pending",
+        rewardAmount: null, // Will be set when verified
+        campaignId: undefined // Can be added later
+      }], { session });
     }
 
-    // Commit the transaction
-    await session.commitTransaction();
+    // 5. Create role-specific profile
+    let roleProfile;
+    const roleData = {
+      userId: newUser._id,
+      additionalNotes: additionalNotes || "empty"
+    };
 
+    switch (role) {
+      case UserRole.INFLUENCER:
+        const influencerId = await generateUniqueId(
+          `${firstName}${lastName}`, 
+          Influencer, 
+          "influencerId"
+        );
+        roleProfile = await Influencer.create([{ ...roleData, influencerId }], { session });
+        break;
+        
+      case UserRole.FOUNDER:
+        roleProfile = await Founder.create([roleData], { session });
+        break;
+        
+      case UserRole.INVESTOR:
+        roleProfile = await Investor.create([roleData], { session });
+        break;
+        
+      case UserRole.USER:
+        break;
+        
+      default:
+        throw new AppError(status.BAD_REQUEST, "Invalid role");
+    }
+
+    // 6. Prepare response
+    const response = {
+      user: {
+        _id: newUser._id,
+        email: newUser.email,
+        role: newUser.role,
+        referralCode: newUser.referralCode,
+        referredBy: newUser.referredBy
+      },
+      profile: roleProfile?.[0]
+    };
+
+    await session.commitTransaction();
     return response;
+
   } catch (error) {
-    // Abort transaction on error
     await session.abortTransaction();
     throw error;
   } finally {
     session.endSession();
   }
 };
-
-// Add to user.service.ts
 const getAllUsers = async (filters: any) => {
   const {
     searchTerm,
@@ -461,7 +577,6 @@ const toggleUserStatus = async (userId: string) => {
   }
 };
 
-
 export const UserServices = {
   registerUser,
   getAllUsers,
@@ -470,5 +585,5 @@ export const UserServices = {
   deleteUser,
   myProfile,
   getMeRoleBasedInfo,
-  toggleUserStatus
+  toggleUserStatus,
 };
