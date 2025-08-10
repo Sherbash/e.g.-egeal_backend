@@ -286,6 +286,7 @@ const getAllParticipants = async (giveawayId: string, userId: string) => {
 };
 
 const getParticipant = async (participantId: string, user: IUser) => {
+
   const participant = await Participant.findById(participantId);
   if (!participant) {
     throw new AppError(status.NOT_FOUND, "Participant not found");
@@ -296,13 +297,13 @@ const getParticipant = async (participantId: string, user: IUser) => {
     throw new AppError(status.NOT_FOUND, "Associated giveaway not found");
   }
 
-  const isParticipant = participant.userId.equals(new Types.ObjectId(user.id));
-  const isAuthor = giveaway.authorId.equals(new Types.ObjectId(user.id));
-  const isAdmin = user.role === "admin";
+  // const isParticipant = participant.userId.equals(new Types.ObjectId(user.id));
+  // const isAuthor = giveaway.authorId.equals(new Types.ObjectId(user.id));
+  // const isAdmin = user.role === "admin";
 
-  if (!isParticipant && !isAuthor && !isAdmin) {
-    throw new AppError(status.FORBIDDEN, "You are not authorized to view this participant");
-  }
+  // if (!isParticipant && !isAuthor && !isAdmin) {
+  //   throw new AppError(status.FORBIDDEN, "You are not authorized to view this participant");
+  // }
 
   return participant;
 };

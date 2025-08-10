@@ -25,7 +25,7 @@ router.get(
 // Both participant and author can view single participation
 router.get(
   "/:participantId",
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER),
+  auth(UserRole.INFLUENCER, UserRole.ADMIN, UserRole.FOUNDER),
   ParticipantController.getParticipant
 );
 
