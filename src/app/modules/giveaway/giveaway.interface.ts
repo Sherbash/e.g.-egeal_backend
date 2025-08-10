@@ -13,7 +13,6 @@ export interface IGiveaway {
   status?: "ongoing" | "closed" | "winner_selected";
   isPrivate: boolean;
   inviteCode: string;
-  allowedUsers: Types.ObjectId[];
   maxParticipants: number;
   createdAt?: Date;
   updatedAt?: Date;
