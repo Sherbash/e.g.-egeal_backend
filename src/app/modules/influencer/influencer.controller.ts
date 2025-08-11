@@ -3,6 +3,7 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import pickOptions from "../../utils/pick";
 import { InfluencerService } from "./influencer.service";
+import { IUser } from "../user/user.interface";
 
 const getAllInfluencer = catchAsync(async (req, res) => {
   const options = pickOptions(req.query, [
@@ -22,7 +23,7 @@ const getAllInfluencer = catchAsync(async (req, res) => {
 });
 
 const createGigPage = catchAsync(async (req, res) => {
-  const result = await InfluencerService.createGigPage(req.user.id, req.body);
+  const result = await InfluencerService.createGigPage(req.user as IUser, req.body);
   sendResponse(res, {
     statusCode: status.CREATED,
     success: true,

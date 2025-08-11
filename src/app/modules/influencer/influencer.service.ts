@@ -6,6 +6,9 @@ import UserModel from "../user/user.model";
 import { Influencer } from "./influencer.model"; // Assuming you have an Influencer model
 import mongoose from "mongoose";
 import { GigPage, IGigPage } from "./influencer-gigPage.model";
+import { IUser } from "../user/user.interface";
+import { generateUniqueId } from "../../utils/generateUniqueSlug";
+import { Affiliate } from "../affiliate/affiliate.model";
 
 interface IInfluencerFilters {
   searchTerm?: string;
@@ -110,65 +113,49 @@ const getAllInfluencer = async (
   };
 };
 
-const createGigPage = async (userId: string, payload: IGigPage) => {
-  // console.log("check payload", payload);
-  // Validate username format (alphanumeric + hyphen/underscore)
-  if (!/^[a-zA-Z0-9_-]+$/.test(payload.username)) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "Username can only contain letters, numbers, hyphens and underscores"
-    );
-  }
+const createGigPage = async (user: IUser, payload: IGigPage) => {
+  const userId = user?.id;
 
+  const fullName = `${user.firstName}${user.lastName}`;
+  const username = await generateUniqueId(fullName, GigPage, "username");
+
+  payload.username = username;
   const influencer = await Influencer.findOne({ userId });
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
-  // Check for existing gig page or duplicate username
-  const existingGigPage = await GigPage.findOne({
-    $or: [
-      { influencerId: influencer._id },
-      { username: payload.username.toLowerCase() },
-    ],
-  });
-
-  if (existingGigPage) {
-    if (existingGigPage.influencerId.equals(influencer._id)) {
-      throw new AppError(
-        status.BAD_REQUEST,
-        "Gig page already exists for this influencer"
-      );
-    } else {
-      throw new AppError(status.BAD_REQUEST, "Username already taken");
-    }
-  }
+  // Get all affiliates for this influencer and extract their IDs
+  const affiliates = await Affiliate.find({
+    influencerId: influencer?.influencerId,
+  }).lean();
+  const affiliateIds = affiliates.map((affiliate) => affiliate._id);
 
   // Create with normalized username
   const gigPage = await GigPage.create({
     ...payload,
-    username: payload.username.toLowerCase(), // Store lowercase for case-insensitive matching
+    username: payload.username.toLowerCase(),
+    affiliates: affiliateIds, // Assign array of affiliate IDs
     influencerId: influencer._id,
-    isPublished: false, // Default to unpublished
+    isPublished: false,
     customLink: `${process.env.CLIENT_URL}/${payload.username}`,
   });
-
-  // Generate the custom link
-
-  return {
-    ...gigPage.toObject(),
-  };
+  return gigPage;
 };
 
 const getGigPage = async (username: string) => {
   const gigPage = await GigPage.findOne({ username: username.toLowerCase() })
     .populate({
       path: "influencerId",
-      select: "userId influencerId",
+      select: "userId",
       populate: {
         path: "userId",
         select: "firstName lastName email",
       },
+    })
+    .populate({
+      path: "affiliates",
+      select: "affiliateUrl toolId",
     })
     .lean();
 
@@ -177,10 +164,7 @@ const getGigPage = async (username: string) => {
   }
 
   // Add custom link to response
-  return {
-    ...gigPage,
-    influencer: gigPage.influencerId, // Flatten the populated data
-  };
+  return gigPage;
 };
 
 const getGigPageByUserId = async (userId: string) => {
@@ -191,7 +175,20 @@ const getGigPageByUserId = async (userId: string) => {
 
   const gigPage = await GigPage.findOne({
     influencerId: influencer._id,
-  }).lean();
+  })
+    .populate({
+      path: "influencerId",
+      select: "userId",
+      populate: {
+        path: "userId",
+        select: "firstName lastName email",
+      },
+    })
+    .populate({
+      path: "affiliates",
+      select: "affiliateUrl toolId",
+    })
+    .lean();
 
   if (!gigPage) {
     throw new AppError(status.NOT_FOUND, "Gig page not found");

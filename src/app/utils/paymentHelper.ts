@@ -5,8 +5,9 @@ const getStripeInstance = () => {
     throw new Error("STRIPE_SECRET_KEY is not set in environment variables");
   }
   return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-07-30.basil", 
-    // apiVersion: "2023-10-16", 
+    apiVersion: "2025-07-30.basil" as any,
+
+    // apiVersion: "2023-10-16",
   });
 };
 
@@ -21,7 +22,12 @@ const getStripeInstance = () => {
  * @returns {Promise<Stripe.Checkout.Session>}
  */
 export const createCheckoutSession = async (
-  { toolName, price, toolId, influencerId }: { toolName: string; price: number; toolId: string; influencerId?: string },
+  {
+    toolName,
+    price,
+    toolId,
+    influencerId,
+  }: { toolName: string; price: number; toolId: string; influencerId?: string },
   clientUrl: string
 ) => {
   const stripe = getStripeInstance();
