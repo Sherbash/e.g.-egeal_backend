@@ -25,4 +25,18 @@ router.delete(
   InfluencerController.deleteGigPage
 );
 
+
+// Upsert (Create or Update) bank details for an influencer
+router.put(
+  "/:influencerId/bank-details",
+  // validateRequest(bankDetailsValidation), // optional validation middleware
+  InfluencerController.upsertBankDetails
+);
+
+// Get bank details for an influencer
+router.get("/:influencerId/bank-details", InfluencerController.getBankDetails);
+
+// Delete bank details for an influencer
+router.delete("/:influencerId/bank-details", InfluencerController.deleteBankDetails);
+
 export const InfluencerRoutes = router;
