@@ -11,13 +11,6 @@ const createReview = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const userId = req.user?.id;
 
-  if (!payload.entityId || !payload.entityType || !payload.rating || !payload.comment) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "entityId, entityType, rating, and comment are required"
-    );
-  }
-
   const result = await ReviewService.createReview(payload, userId);
 
   sendResponse(res, {

@@ -1,37 +1,40 @@
-import status from "http-status";
+import { ReviewModel } from "../global-review/global-review.model";
+import { CommentModel } from "./comment.model";
 import AppError from "../../errors/appError";
-import { IPaginationOptions } from "../../interface/pagination";
+import { IComment } from "./comment.interface";
 import { paginationHelper } from "../../utils/paginationHelpers";
-import { IReview } from "./comment.interface";
-import { ReviewModel } from "./comment.model";
+import { IPaginationOptions } from "../../interface/pagination";
+import status from "http-status";
 
-const createReviewForDb = async (paylood: IReview) => {
-  const result = await ReviewModel.create(paylood);
+const createCommentForDb = async (payload: IComment, userId: string) => {
+  // console.log("payload", payload)
+  const result = await CommentModel.create({
+    ...payload,
+    userId,
+  });
 
-  return {
-    result,
-  };
+  // Update the review's comments array
+  await ReviewModel.findByIdAndUpdate(
+    payload.reviewId,
+    { $push: { comments: result._id } },
+    { new: true }
+  );
+
+  return result;
 };
-const getAllReviewForDb = async (
-  options: IPaginationOptions,
-  filters: any = {}
-) => {
+
+const getAllCommentsForDb = async (options: IPaginationOptions) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
-  const queryConditions: any = {};
-
-  if (filters.rating) {
-    queryConditions.rating = filters.rating;
-  }
-
-  const [reviews, total] = await Promise.all([
-    ReviewModel.find(queryConditions)
+  const [comments, total] = await Promise.all([
+    CommentModel.find({})
+      .populate("userId", "firstName lastName email role isActive")
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit)
       .lean(),
-    ReviewModel.countDocuments(queryConditions),
+    CommentModel.countDocuments({}),
   ]);
 
   return {
@@ -41,65 +44,72 @@ const getAllReviewForDb = async (
       total,
       totalPages: Math.ceil(total / limit),
     },
-    data: reviews,
+    data: comments,
   };
 };
-const getSingleReviewForDb = async (id: string) => {
-  const result = await ReviewModel.findOne({ _id: id }).populate(
+
+const getSingleCommentForDb = async (id: string) => {
+  const result = await CommentModel.findOne({ _id: id }).populate(
     "userId",
     "-password"
   );
 
-  return {
-    result,
-  };
+  if (!result) {
+    throw new AppError(status.NOT_FOUND, "Comment not found");
+  }
+
+  return { result };
 };
-const updateSingleReviewForDb = async (
+
+const updateSingleCommentForDb = async (
   id: string,
-  paylood: Partial<IReview>
+  payload: Partial<IComment>
 ) => {
-  const result = await ReviewModel.findOneAndUpdate(
-    { _id: id },
-    {
-      $set: paylood,
-    },
-    { new: true, runValidators: true }
-  );
+  const findReview = await ReviewModel.findById(payload.reviewId);
 
-  return {
-    result,
-  };
-};
-
-const deleteReviewForDb = async (id: string) => {
-
-  const isExistingReview = await ReviewModel.findById({ _id: id });
-
-  if (!isExistingReview) {
+  if (!findReview) {
     throw new AppError(status.NOT_FOUND, "Review not found");
   }
-  const result = await ReviewModel.deleteOne({ _id: id });
+  const result = await CommentModel.findOneAndUpdate(
+    { _id: id },
+    {
+      $set: {
+        ...payload,
+      },
+    },
+    { new: true, runValidators: true }
+  ).populate("userId", "-password");
 
-  return {
-    result,
-  };
+  if (!result) {
+    throw new AppError(status.NOT_FOUND, "Comment not found");
+  }
+
+  return { result };
 };
-const getToolReviewForDb = async (id: string) => {
-  const result = await ReviewModel.find({ toolId: id }).populate(
-    "userId",
-    "-password"
+
+const deleteCommentForDb = async (id: string) => {
+  const isExistingComment = await CommentModel.findById(id);
+
+  if (!isExistingComment) {
+    throw new AppError(status.NOT_FOUND, "Comment not found");
+  }
+
+  const result = await CommentModel.deleteOne({ _id: id });
+
+  // Remove comment from review's comments array
+  await ReviewModel.findByIdAndUpdate(
+    isExistingComment.reviewId,
+    { $pull: { comments: id } },
+    { new: true }
   );
 
-  return {
-    result,
-  };
+  return { result };
 };
 
-export const reviewServices = {
-  createReviewForDb,
-  getAllReviewForDb,
-  getSingleReviewForDb,
-  updateSingleReviewForDb,
-  deleteReviewForDb,
-  getToolReviewForDb,
+export const commentServices = {
+  createCommentForDb,
+  getAllCommentsForDb,
+  getSingleCommentForDb,
+  updateSingleCommentForDb,
+  deleteCommentForDb,
 };

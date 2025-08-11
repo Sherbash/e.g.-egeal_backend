@@ -1,27 +1,33 @@
+import { z } from "zod";
 import { model, Schema, Types } from "mongoose";
+import { IGlobalReview } from "./global-review.interface";
 
-const reviewSchema = new Schema(
+
+// Mongoose schema for Review
+const reviewSchema = new Schema<IGlobalReview>(
   {
-    entityId: { type: Types.ObjectId, required: true }, // Story, Tool, Product etc.
+    entityId: { type: Schema.Types.ObjectId, required: true }, // Story, Tool, Product, etc.
     entityType: {
       type: String,
-      enum: ["story", "tool", "product", "influencer"],
+      enum: ["story", "tool", "product", "influencer"] as const, // Explicitly cast as const for TypeScript
       required: true,
     },
-    userId: { type: Types.ObjectId, ref: "User", required: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, required: true },
-
-    reviewVideoUrl: { type: String },
-    proofUrl: { type: String },
+    reviewText: { type: String, required: true },
+    reviewVideoUrl: { type: String, required: false },
+    proofUrl: { type: String, required: false },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected"] as const, // Explicitly cast as const for TypeScript
       default: "pending",
     },
     rewardGiven: { type: Boolean, default: false },
+    comments: [{ type: Schema.Types.ObjectId, ref: "Comment", default: [] }], // Default to empty array
   },
   { timestamps: true }
 );
 
 export const ReviewModel = model("AllReview", reviewSchema);
+
+// Index for performance
