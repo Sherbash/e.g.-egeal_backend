@@ -1,93 +1,82 @@
 import status from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { reviewServices } from "./comment.services";
+import { commentServices } from "./comment.services";
 import pickOptions from "../../utils/pick";
 
-const CreateReview = catchAsync(async (req, res) => {
-  const user = req.user;
 
-  const userName = `${user?.firstName} ${user.lastName}`;
-
-  const reviewData = { ...req.body, userName: userName, userId: user.id };
-  console.log("check review data", reviewData);
-  const result = await reviewServices.createReviewForDb(reviewData);
+// Comment Controllers
+const CreateComment = catchAsync(async (req, res) => {
+  const payload = req.body;
+  console.log("comment payload", payload)
+  const result = await commentServices.createCommentForDb(payload, req.user.id as string);
 
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
-    message: "reviews successfully created !",
+    message: "Comment successfully created!",
     data: result,
   });
 });
-const getAllReview = catchAsync(async (req, res) => {
+
+const GetAllComments = catchAsync(async (req, res) => {
   const options = pickOptions(req.query, [
     "limit",
     "page",
     "sortBy",
     "sortOrder",
   ]);
-  const filters = pickOptions(req.query, [
-    "rating",
-  ]);
-  const result = await reviewServices.getAllReviewForDb(options, filters);
+
+  const result = await commentServices.getAllCommentsForDb(options);
 
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
-    message: "All reviews successfully get !",
-    data: result,
-  });
-});
-const getSingleReview = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const result = await reviewServices.getSingleReviewForDb(id);
-
-  sendResponse(res, {
-    statusCode: status.OK,
-    success: true,
-    message: "single review successfully get !",
-    data: result,
-  });
-});
-const UpdateReview = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const result = await reviewServices.updateSingleReviewForDb(id, req.body);
-
-  sendResponse(res, {
-    statusCode: status.OK,
-    success: true,
-    message: "reviews successfully updated !",
-    data: result,
-  });
-});
-const DeleteReview = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  await reviewServices.deleteReviewForDb(id);
-
-  sendResponse(res, {
-    statusCode: status.OK,
-    success: true,
-    message: "reviews successfully deleted !",
-  });
-});
-const GetToolReviews = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const result = await reviewServices.getToolReviewForDb(id);
-
-  sendResponse(res, {
-    statusCode: status.OK,
-    success: true,
-    message: "Tool reviews successfully get !",
+    message: "Comments successfully retrieved!",
     data: result,
   });
 });
 
-export const ReviewContllors = {
-  CreateReview,
-  getAllReview,
-  getSingleReview,
-  UpdateReview,
-  DeleteReview,
-  GetToolReviews,
+const GetSingleComment = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await commentServices.getSingleCommentForDb(id);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Comment successfully retrieved!",
+    data: result,
+  });
+});
+
+const UpdateComment = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const payload = req.body;
+  const result = await commentServices.updateSingleCommentForDb(id, payload);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Comment successfully updated!",
+    data: result,
+  });
+});
+
+const DeleteComment = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  await commentServices.deleteCommentForDb(id);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Comment successfully deleted!",
+  });
+});
+
+export const CommentControllers = {
+  CreateComment,
+  GetAllComments,
+  GetSingleComment,
+  UpdateComment,
+  DeleteComment,
 };

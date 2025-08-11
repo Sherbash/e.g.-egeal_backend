@@ -1,17 +1,17 @@
 import status from "http-status";
 import UserModel from "../user/user.model";
-import { IReview } from "./global-review.interface";
 import AppError from "../../errors/appError";
-import { ReviewModel } from "./global-review.model";
 import { validateEntity } from "../../utils/validateEntity";
-import { Types } from "mongoose";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { IPaginationOptions } from "../../interface/pagination";
+import { ReviewModel } from "./global-review.model";
+import { IGlobalReview } from "./global-review.interface";
 
 /**
  * Create Review (Dynamic for any entity)
  */
 const createReview = async (payload: any, userId: string) => {
+  // console.log("payload", payload)
   // 1. Validate Entity (Story, Tool, etc.)
   await validateEntity("_id", payload.entityId, payload.entityType);
 
@@ -40,7 +40,7 @@ const createReview = async (payload: any, userId: string) => {
 const updateReview = async (
   reviewId: string,
   userId: string,
-  updateData: Partial<IReview>
+  updateData: Partial<IGlobalReview>
 ) => {
   const review = await ReviewModel.findById(reviewId);
   if (!review) {
@@ -129,21 +129,37 @@ const deleteReview = async (
  * Get Single Review by ID
  */
 const getReviewById = async (reviewId: string) => {
-  const review = await ReviewModel.findById(reviewId).populate(
-    "userId",
-    "firstName lastName email"
-  );
+  const review = await ReviewModel.findById(reviewId)
+    .populate("userId", "firstName lastName email")
+    .populate("entityId", "title")
+    .populate("comments");
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
   }
   return review;
 };
 
+const ToggleReviewEditorPick = async (reviewId: string) => {
+  const review = await ReviewModel.findById(reviewId);
+  if (!review) {
+    throw new AppError(status.NOT_FOUND, "Review not found");
+  }
+  const updatedReview = await ReviewModel.findOneAndUpdate(
+    { _id: reviewId },
+    { $set: { isEditorPicked: !review.isEditorPicked } },
+    { new: true }
+  );
+  return updatedReview;
+};
+
 /**
  * Get Reviews by User ID
  */
 const getReviewsByUser = async (userId: string) => {
-  const reviews = await ReviewModel.find({ userId });
+  const reviews = await ReviewModel.find({ userId })
+    .populate("userId", "-password")
+    .populate("entityId", "title")
+    .populate("comments");
   return reviews;
 };
 
@@ -168,4 +184,5 @@ export const ReviewService = {
   getReviewsByUser,
   getReviewsByEntity,
   getAllReviewForDb,
+  ToggleReviewEditorPick,
 };

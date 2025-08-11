@@ -1,30 +1,30 @@
 import express from "express";
-import { ReviewContllors } from "./comment.contllors";
-import auth from "../../middleware/auth";
+import { CommentControllers } from "./comment.contllors";
 import { UserRole } from "../user/user.interface";
+import auth from "../../middleware/auth";
 
 const router = express.Router();
 
 router.post(
   "/",
-  auth(
-    UserRole.USER,
-    UserRole.ADMIN,
-    UserRole.FOUNDER,
-    UserRole.INFLUENCER,
-    UserRole.INVESTOR
-  ),
-  ReviewContllors.CreateReview
-);
-router.get("/", ReviewContllors.getAllReview);
-router.get("/:id", ReviewContllors.getSingleReview);
-router.get("/getTool-reviews/:id", ReviewContllors.GetToolReviews);
-router.patch("/:id", ReviewContllors.UpdateReview);
-router.delete(
-  "/:id",
-  auth(UserRole.ADMIN),
-  ReviewContllors.DeleteReview
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  CommentControllers.CreateComment
 );
 
-export const reviewRouter = router;
-//fdsfdsfdsafds
+router.get("/", CommentControllers.GetAllComments);
+
+router.get("/:id", CommentControllers.GetSingleComment);
+
+router.patch(
+  "/:id",
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  CommentControllers.UpdateComment
+);
+
+router.delete(
+  "/:id",
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  CommentControllers.DeleteComment
+);
+
+export const CommentRoutes = router;
