@@ -1,0 +1,72 @@
+// affiliate.service.ts (or create payout.service.ts if you want separate module)
+import axios from "axios";
+import status from "http-status";
+import AppError from "../../errors/appError";
+import { Influencer } from "../influencer/influencer.model";
+import { IUser } from "../user/user.interface";
+import { IPayoutRequest } from "./payout.interface";
+
+
+const STEINHQ_URL = "https://api.steinhq.com/v1/storages/6899386bc088333365ca37f4";
+const SHEET_NAME = "PayoutRequests";
+
+// const createPayoutRequest = async (payload: IPayoutRequest) => {
+//   if (!payload.influencerId || !payload.amount) {
+//     throw new AppError(status.BAD_REQUEST, "Influencer ID and amount are required");
+//   }
+
+//   // Confirm influencer + user exists (optional but good check)
+//   const influencer = await Influencer.findOne({ influencerId: payload.influencerId })
+//     .populate<{ userId: IUser }>("userId", "firstName lastName email")
+//     .lean();
+
+//   if (!influencer) {
+//     throw new AppError(status.NOT_FOUND, "Influencer not found");
+//   }
+  
+
+//   // Send entire payload as single-element array to SteinHQ
+//   const res = await axios.post(`${STEINHQ_URL}/${SHEET_NAME}`, [payload]);
+
+//   if (res.status !== 200) {
+//     throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to store payout request");
+//   }
+
+//   return { success: true, message: "Payout request stored successfully" };
+// };
+
+
+const createPayoutRequest = async (payload: IPayoutRequest) => {
+  if (!payload.influencerId || !payload.amount) {
+    throw new AppError(status.BAD_REQUEST, "Influencer ID and amount are required");
+  }
+
+  // Confirm influencer exists
+  const influencer = await Influencer.findOne({ influencerId: payload.influencerId })
+    .populate<{ userId: IUser }>("userId", "firstName lastName email")
+    .lean();
+
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+  // Flatten the accountDetails into the main object
+  const flattenedPayload = {
+    ...payload,
+    ...payload.accountDetails,
+    accountDetails: undefined // Remove the nested object
+  };
+
+  // Send flattened payload
+  const res = await axios.post(`${STEINHQ_URL}/${SHEET_NAME}`, [flattenedPayload]);
+
+  if (res.status !== 200) {
+    throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to store payout request");
+  }
+
+  return { success: true, message: "Payout request stored successfully" };
+};
+
+export const PayoutServices = {
+  createPayoutRequest,
+};
