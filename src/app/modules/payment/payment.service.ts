@@ -11,7 +11,7 @@ import { Influencer } from "../influencer/influencer.model";
 import { sendEmail } from "../../utils/emailHelper";
 
 const stripe = new Stripe(config.stripe_secret_key as string, {
-  apiVersion: "025-07-30.basil" as Stripe.LatestApiVersion,
+  apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion,
 });
 
 interface IPaymentPayload {

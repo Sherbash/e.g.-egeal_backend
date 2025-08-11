@@ -46,6 +46,9 @@ const influencerSchema = new Schema<IInfluencer>(
         ref: "Tool",
       },
     ],
+    influencerId: {
+      type: String,
+    },
     additionalNotes: {
       type: String,
       default: "empty",

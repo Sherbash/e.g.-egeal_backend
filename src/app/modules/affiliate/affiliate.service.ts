@@ -6,6 +6,7 @@ import config from "../../config";
 import { Affiliate } from "./affiliate.model";
 import { Influencer } from "../influencer/influencer.model";
 import mongoose from "mongoose";
+import { IUser } from "../user/user.interface";
 
 // const createAffiliateIntoDB = async (payload: IAffiliate) => {
 //   const tool = await ToolModel.findOne({ toolId: payload.toolId });
@@ -161,50 +162,118 @@ const incrementClickCount = async (
 };
 
 
+// const getAffiliatesByInfluencerId = async (influencerId: string) => {
+//   if (!influencerId) {
+//     throw new AppError(status.BAD_REQUEST, "Influencer ID is required");
+//   }
+
+//   // 1. Get all affiliates for this influencer
+//   const affiliates = await Affiliate.find({ influencerId }).lean();
+
+//   if (affiliates.length === 0) {
+//     return {
+//       affiliates: [],
+//       totals: {
+//         totalClicks: 0,
+//         totalConversions: 0,
+//         totalEarnings: 0
+//       }
+//     };
+//   }
+
+//   // 2. Get all unique toolIds from affiliates
+//   const toolIds = [...new Set(affiliates.map(a => a.toolId))];
+
+//   // 3. Get tool details in one query
+//   const tools = await ToolModel.find({ toolId: { $in: toolIds } })
+//     .select('toolId name description price isActive')
+//     .lean();
+
+//   // 4. Create a tool map for quick lookup
+//   const toolMap = new Map(tools.map(tool => [tool.toolId, tool]));
+
+//   // 5. Enrich affiliates with tool data
+//   const enrichedAffiliates = affiliates.map(affiliate => ({
+//     ...affiliate,
+//     tool: toolMap.get(affiliate.toolId) || null
+//   }));
+
+//   // 6. Calculate totals
+//   const totals = enrichedAffiliates.reduce((acc, affiliate) => ({
+//     totalClicks: acc.totalClicks + (affiliate.clicks || 0),
+//     totalConversions: acc.totalConversions + (affiliate.conversions || 0),
+//     totalEarnings: acc.totalEarnings + (affiliate.earning || 0)
+//   }), { totalClicks: 0, totalConversions: 0, totalEarnings: 0 });
+
+//   return {
+//     affiliates: enrichedAffiliates,
+//     totals
+//   };
+// };
+
+
 const getAffiliatesByInfluencerId = async (influencerId: string) => {
   if (!influencerId) {
     throw new AppError(status.BAD_REQUEST, "Influencer ID is required");
   }
 
-  // 1. Get all affiliates for this influencer
+  // 1. Get influencer & populate user details
+  const influencer = await Influencer.findOne({ influencerId })
+    .populate<{ userId: IUser }>("userId", "firstName lastName email")
+    .lean();
+
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+  const userData = influencer.userId as IUser;
+
+  // 2. Get all affiliates for this influencer
   const affiliates = await Affiliate.find({ influencerId }).lean();
 
   if (affiliates.length === 0) {
     return {
+      influencer: {
+        name: `${userData.firstName} ${userData.lastName}`,
+        email: userData.email
+      },
       affiliates: [],
-      totals: {
-        totalClicks: 0,
-        totalConversions: 0,
-        totalEarnings: 0
-      }
+      totals: { totalClicks: 0, totalConversions: 0, totalEarnings: 0 }
     };
   }
 
-  // 2. Get all unique toolIds from affiliates
+  // 3. Get unique tool IDs
   const toolIds = [...new Set(affiliates.map(a => a.toolId))];
 
-  // 3. Get tool details in one query
+  // 4. Fetch tool details
   const tools = await ToolModel.find({ toolId: { $in: toolIds } })
-    .select('toolId name description price isActive')
+    .select("toolId name description price isActive")
     .lean();
 
-  // 4. Create a tool map for quick lookup
   const toolMap = new Map(tools.map(tool => [tool.toolId, tool]));
 
   // 5. Enrich affiliates with tool data
-  const enrichedAffiliates = affiliates.map(affiliate => ({
-    ...affiliate,
-    tool: toolMap.get(affiliate.toolId) || null
+  const enrichedAffiliates = affiliates.map(a => ({
+    ...a,
+    tool: toolMap.get(a.toolId) || null
   }));
 
   // 6. Calculate totals
-  const totals = enrichedAffiliates.reduce((acc, affiliate) => ({
-    totalClicks: acc.totalClicks + (affiliate.clicks || 0),
-    totalConversions: acc.totalConversions + (affiliate.conversions || 0),
-    totalEarnings: acc.totalEarnings + (affiliate.earning || 0)
-  }), { totalClicks: 0, totalConversions: 0, totalEarnings: 0 });
+  const totals = enrichedAffiliates.reduce(
+    (acc, a) => ({
+      totalClicks: acc.totalClicks + (a.clicks || 0),
+      totalConversions: acc.totalConversions + (a.conversions || 0),
+      totalEarnings: acc.totalEarnings + (a.earning || 0)
+    }),
+    { totalClicks: 0, totalConversions: 0, totalEarnings: 0 }
+  );
 
+  // 7. Return result
   return {
+    influencer: {
+      name: `${userData.firstName} ${userData.lastName}`,
+      email: userData.email
+    },
     affiliates: enrichedAffiliates,
     totals
   };
