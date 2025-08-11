@@ -8,6 +8,7 @@ import auth from "../../middleware/auth";
 const router = express.Router();
 
 // Public routes
+router.get("/", StoryController.getAllStories);
 router.get("/:id", StoryController.getStory);
 
 // Protected routes (require authentication)

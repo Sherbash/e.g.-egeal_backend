@@ -75,7 +75,11 @@ const voteOnPoll = catchAsync(async (req: Request, res: Response) => {
   const { pollChoiceIndex } = req.body;
   const userId = req.user?.id;
 
-  const result = await StoryService.voteOnPoll(storyId, pollChoiceIndex, userId);
+  const result = await StoryService.voteOnPoll(
+    storyId,
+    pollChoiceIndex,
+    userId
+  );
 
   sendResponse(res, {
     success: true,
@@ -85,10 +89,21 @@ const voteOnPoll = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllStories = catchAsync(async (req: Request, res: Response) => {
+  const result = await StoryService.getAllStories();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "All stories fetched successfully",
+    data: result,
+  });
+});
 export const StoryController = {
   createStory,
   getStory,
   updateStory,
   deleteStory,
   voteOnPoll,
+  getAllStories,
 };

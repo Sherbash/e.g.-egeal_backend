@@ -11,6 +11,12 @@ router.post(
   ReviewController.createReview
 );
 
+
+router.get(
+  "/",
+  ReviewController.getAllReview
+);
+
 // Update Review
 router.patch(
   "/:id",
@@ -37,4 +43,4 @@ router.get(
   ReviewController.getReviewsByEntity
 );
 
-export const ReviewRoutes = router;
+export const GlobalReviewRoutes = router;

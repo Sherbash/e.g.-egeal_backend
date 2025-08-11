@@ -5,22 +5,17 @@ import AppError from "../../errors/appError";
 import { ReviewModel } from "./global-review.model";
 import { validateEntity } from "../../utils/validateEntity";
 import { Types } from "mongoose";
+import { paginationHelper } from "../../utils/paginationHelpers";
+import { IPaginationOptions } from "../../interface/pagination";
 
 /**
  * Create Review (Dynamic for any entity)
  */
 const createReview = async (payload: any, userId: string) => {
-
-  // 1. Validate User
-  const user = await UserModel.findById(userId);
-  if (!user) {
-    throw new AppError(status.NOT_FOUND, "User not found");
-  }
-
-  // 2. Validate Entity (Story, Tool, etc.)
+  // 1. Validate Entity (Story, Tool, etc.)
   await validateEntity("_id", payload.entityId, payload.entityType);
 
-  // 3. Prevent duplicate review by same user for same entity
+  // 2. Prevent duplicate review by same user for same entity
   const alreadyReviewed = await ReviewModel.findOne({
     userId,
     entityId: payload.entityId,
@@ -30,7 +25,7 @@ const createReview = async (payload: any, userId: string) => {
     throw new AppError(status.CONFLICT, "You already reviewed this entity");
   }
 
-  // 4. Create Review
+  // 3. Create Review
   const review = await ReviewModel.create({
     ...payload,
     userId,
@@ -54,7 +49,10 @@ const updateReview = async (
 
   // Only owner or admin can update
   if (review.userId.toString() !== userId) {
-    throw new AppError(status.FORBIDDEN, "Not authorized to update this review");
+    throw new AppError(
+      status.FORBIDDEN,
+      "Not authorized to update this review"
+    );
   }
 
   // Validate rating range
@@ -62,15 +60,54 @@ const updateReview = async (
     throw new AppError(status.BAD_REQUEST, "Rating must be between 1 and 5");
   }
 
-  Object.assign(review, updateData);
-  await review.save();
-  return review;
+  const result = await ReviewModel.findOneAndUpdate(
+    { _id: reviewId },
+    { $set: updateData },
+    { new: true }
+  );
+  return result;
 };
 
+const getAllReviewForDb = async (
+  options: IPaginationOptions,
+  filters: any = {}
+) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
+  const queryConditions: any = {};
+
+  if (filters.rating) {
+    queryConditions.rating = filters.rating;
+  }
+
+  const [reviews, total] = await Promise.all([
+    ReviewModel.find(queryConditions)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    ReviewModel.countDocuments(queryConditions),
+  ]);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: reviews,
+  };
+};
 /**
  * Delete Review
  */
-const deleteReview = async (reviewId: string, userId: string, userRole: string) => {
+const deleteReview = async (
+  reviewId: string,
+  userId: string,
+  userRole: string
+) => {
   const review = await ReviewModel.findById(reviewId);
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
@@ -78,7 +115,10 @@ const deleteReview = async (reviewId: string, userId: string, userRole: string) 
 
   // Only owner or admin can delete
   if (review.userId.toString() !== userId && userRole !== "admin") {
-    throw new AppError(status.FORBIDDEN, "Not authorized to delete this review");
+    throw new AppError(
+      status.FORBIDDEN,
+      "Not authorized to delete this review"
+    );
   }
 
   await review.deleteOne();
@@ -127,4 +167,5 @@ export const ReviewService = {
   getReviewById,
   getReviewsByUser,
   getReviewsByEntity,
+  getAllReviewForDb,
 };

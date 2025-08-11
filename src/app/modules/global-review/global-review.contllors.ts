@@ -4,11 +4,12 @@ import catchAsync from "../../utils/catchAsync";
 import AppError from "../../errors/appError";
 import sendResponse from "../../utils/sendResponse";
 import { ReviewService } from "./global-review.services";
+import pickOptions from "../../utils/pick";
 
 // Create Review
 const createReview = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
-  const userId = req.user?._id;
+  const userId = req.user?.id;
 
   if (!payload.entityId || !payload.entityType || !payload.rating || !payload.comment) {
     throw new AppError(
@@ -27,10 +28,30 @@ const createReview = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllReview = catchAsync(async (req, res) => {
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
+  const filters = pickOptions(req.query, [
+    "rating",
+  ]);
+  const result = await ReviewService.getAllReviewForDb(options, filters);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "All reviews successfully get !",
+    data: result,
+  });
+});
+
 // Update Review
 const updateReview = catchAsync(async (req: Request, res: Response) => {
   const reviewId = req.params.id;
-  const userId = req.user?._id;
+  const userId = req.user?.id;
   const updateData = req.body;
 
   const result = await ReviewService.updateReview(reviewId, userId, updateData);
@@ -46,7 +67,7 @@ const updateReview = catchAsync(async (req: Request, res: Response) => {
 // Delete Review
 const deleteReview = catchAsync(async (req: Request, res: Response) => {
   const reviewId = req.params.id;
-  const userId = req.user?._id;
+  const userId = req.user?.id;
   const userRole = req.user?.role;
 
   const result = await ReviewService.deleteReview(reviewId, userId, userRole);
@@ -100,6 +121,7 @@ const getReviewsByEntity = catchAsync(async (req: Request, res: Response) => {
 
 export const ReviewController = {
   createReview,
+  getAllReview,
   updateReview,
   deleteReview,
   getReviewById,

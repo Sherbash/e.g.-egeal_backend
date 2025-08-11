@@ -32,6 +32,14 @@ const getStoryById = async (storyId: string) => {
   return story;
 };
 
+const getAllStories = async () => {
+  const stories = await StoryModel.find().populate(
+    "authorId",
+    "firstName lastName email"
+  );
+  return stories;
+};
+
 /**
  * Update a story (only by author or admin)
  */
@@ -131,4 +139,5 @@ export const StoryService = {
   updateStory,
   deleteStory,
   voteOnPoll,
+  getAllStories,
 };

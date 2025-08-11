@@ -13,6 +13,7 @@ import { reviewRouter } from "../modules/reviews/review.router";
 import { FounderRoutes } from "../modules/founder/founder.routes";
 import { InfluencerRoutes } from "../modules/influencer/influencer.routes";
 import { StoryRoutes } from "../modules/storyPoll/storyPoll.route";
+import { GlobalReviewRoutes } from "../modules/global-review/global-review.router";
 const router = Router();
 
 const moduleRoutes = [
@@ -58,6 +59,10 @@ const moduleRoutes = [
   {
     path: "/reviews",
     route: reviewRouter,
+  },
+  {
+    path: "/review",
+    route: GlobalReviewRoutes,
   },
   {
     path: "/founders",
