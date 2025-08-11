@@ -12,7 +12,6 @@ import config from "../../config";
 import { IJwtPayload } from "../auth/auth.interface";
 import { findProfileByRole } from "../../utils/findUser";
 import { Referral } from "../referral/referral.model";
-import { nanoid } from "nanoid";
 import generateNumericNanoid from "../../utils/createNanoId";
 
 // const registerUser = async (payload: IUser) => {

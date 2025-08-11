@@ -8,12 +8,23 @@ interface ISocialLink {
   clickCount?: number;
 }
 
+//  affiliateLinks: [
+//       {
+//         toolName: { type: String, required: true },
+//         affiliateUrl: { type: String, required: true },
+//         clickCount: { type: Number, default: 0 },
+//       },
+//     ],
+
+
+
 // Interface for Gig Page
 export interface IGigPage {
   username: string;
   title?: string;
   bio?: string;
   socialLinks: ISocialLink[];
+  affiliates: Types.ObjectId[];
   promoInfo?: string;
   layoutTemplate?: number;
   profileImage?: string;
@@ -40,6 +51,7 @@ const gigPageSchema = new Schema<IGigPage>(
         clickCount: { type: Number, default: 0 },
       },
     ],
+    affiliates: [{ type: Schema.Types.ObjectId, ref: "Affiliate" }],
     promoInfo: String,
     layoutTemplate: { type: Number, default: 1 },
     profileImage: String,
