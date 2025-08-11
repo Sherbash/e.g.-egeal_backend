@@ -35,6 +35,7 @@ const influencerSchema = new Schema<IInfluencer>(
       ref: "User",
       required: true,
     },
+    influencerId: { type: String, unique: true, required: true },
     // Embedded Gig Page
     gigPage: {
       type: Schema.Types.ObjectId,

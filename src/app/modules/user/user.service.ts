@@ -221,6 +221,7 @@ const registerUser = async (payload: IUser) => {
           Influencer, 
           "influencerId"
         );
+        console.log("influencerId", influencerId)
         roleProfile = await Influencer.create([{ ...roleData, influencerId }], { session });
         break;
         
@@ -239,6 +240,7 @@ const registerUser = async (payload: IUser) => {
         throw new AppError(status.BAD_REQUEST, "Invalid role");
     }
 
+    console.log("roleProfile", roleProfile)
     // 6. Prepare response
     const response = {
       user: {

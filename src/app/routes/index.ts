@@ -13,6 +13,9 @@ import { reviewRouter } from "../modules/reviews/review.router";
 import { FounderRoutes } from "../modules/founder/founder.routes";
 import { InfluencerRoutes } from "../modules/influencer/influencer.routes";
 import { PayoutRoutes } from "../modules/payout/payout.routes";
+import { StoryRoutes } from "../modules/storyPoll/storyPoll.route";
+import { GlobalReviewRoutes } from "../modules/global-review/global-review.router";
+import { CommentRoutes } from "../modules/global-comment/comment.router";
 const router = Router();
 
 const moduleRoutes = [
@@ -36,12 +39,8 @@ const moduleRoutes = [
     path: "/affiliates",
     route: AffiliateRoutes,
   },
-  {  path: "/chat",
-    route: ChatRoutes,
-  },
-  {  path: "/promotion",
-    route: PromotionRoutes,
-  },
+  { path: "/chat", route: ChatRoutes },
+  { path: "/promotion", route: PromotionRoutes },
   {
     path: "/payment",
     route: PaymentRoutes,
@@ -54,10 +53,14 @@ const moduleRoutes = [
     path: "/participant",
     route: ParticipantRoutes,
   },
-  
+
   {
     path: "/reviews",
     route: reviewRouter,
+  },
+  {
+    path: "/review",
+    route: GlobalReviewRoutes,
   },
   {
     path: "/founders",
@@ -70,8 +73,15 @@ const moduleRoutes = [
   {
     path: "/payouts",
     route: PayoutRoutes,
-  }
-  
+  },
+  {
+    path: "/story",
+    route: StoryRoutes,
+  },
+  {
+    path: "/comments",
+    route: CommentRoutes,
+  },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
