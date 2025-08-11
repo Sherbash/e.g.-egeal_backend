@@ -75,10 +75,16 @@ const getAllReviewForDb = async (
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
-  const queryConditions: any = {};
+  const queryConditions: any = {
+    
+  };
 
   if (filters.rating) {
     queryConditions.rating = filters.rating;
+  }
+
+  if(filters.isApproved){
+    queryConditions.isApproved = filters.isApproved
   }
 
   const [reviews, total] = await Promise.all([
@@ -108,7 +114,7 @@ const deleteReview = async (
   userId: string,
   userRole: string
 ) => {
-  const review = await ReviewModel.findById(reviewId);
+  const review = await ReviewModel.findOne({reviewId, isApproved: true})
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
   }
@@ -129,7 +135,7 @@ const deleteReview = async (
  * Get Single Review by ID
  */
 const getReviewById = async (reviewId: string) => {
-  const review = await ReviewModel.findById(reviewId)
+  const review = await ReviewModel.findOne({reviewId, isApproved: true})
     .populate("userId", "firstName lastName email")
     .populate("entityId", "title")
     .populate("comments");
@@ -156,7 +162,7 @@ const ToggleReviewEditorPick = async (reviewId: string) => {
  * Get Reviews by User ID
  */
 const getReviewsByUser = async (userId: string) => {
-  const reviews = await ReviewModel.find({ userId })
+  const reviews = await ReviewModel.find({ userId , isApproved: true})
     .populate("userId", "-password")
     .populate("entityId", "title")
     .populate("comments");

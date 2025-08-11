@@ -29,6 +29,7 @@ const getAllReview = catchAsync(async (req, res) => {
   ]);
   const filters = pickOptions(req.query, [
     "rating",
+    "isApproved"
   ]);
   const result = await ReviewService.getAllReviewForDb(options, filters);
 
