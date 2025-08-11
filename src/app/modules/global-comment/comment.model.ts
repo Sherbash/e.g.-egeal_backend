@@ -7,7 +7,7 @@ const commentSchema = new Schema(
     userId: { type: Types.ObjectId, ref: "User", required: true },
     userName: { type: String, required: true },
     text: { type: String, required: true },
-    parentId: { type: Types.ObjectId, ref: "Comment", default: null }, // reply হলে parent comment
+    parentId: { type: Types.ObjectId, ref: "Comment", default: null }, 
   },
   { timestamps: true }
 );
