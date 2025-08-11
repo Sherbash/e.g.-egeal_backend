@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import status from "http-status";
 import catchAsync from "../../utils/catchAsync";
-import AppError from "../../errors/appError";
 import sendResponse from "../../utils/sendResponse";
 import { ReviewService } from "./global-review.services";
 import pickOptions from "../../utils/pick";
@@ -53,6 +52,20 @@ const updateReview = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: status.OK,
     message: "Review updated successfully",
+    data: result,
+  });
+});
+
+// Toggle Review Editor Pick
+const toggleReviewEditorPick = catchAsync(async (req: Request, res: Response) => {
+  const reviewId = req.params.id;
+
+  const result = await ReviewService.ToggleReviewEditorPick(reviewId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Review editor pick toggled successfully",
     data: result,
   });
 });
@@ -120,4 +133,5 @@ export const ReviewController = {
   getReviewById,
   getReviewsByUser,
   getReviewsByEntity,
+  toggleReviewEditorPick,
 };

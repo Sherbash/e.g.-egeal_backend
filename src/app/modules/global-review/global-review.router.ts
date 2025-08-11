@@ -24,6 +24,14 @@ router.patch(
   ReviewController.updateReview
 );
 
+
+// Update Review
+router.patch(
+  "/toggle-editor-pick/:id",
+  auth(UserRole.ADMIN),
+  ReviewController.toggleReviewEditorPick
+);
+
 // Delete Review
 router.delete(
   "/:id",

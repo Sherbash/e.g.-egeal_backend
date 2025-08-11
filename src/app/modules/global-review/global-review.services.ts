@@ -139,11 +139,25 @@ const getReviewById = async (reviewId: string) => {
   return review;
 };
 
+const ToggleReviewEditorPick = async (reviewId: string) => {
+  const review = await ReviewModel.findById(reviewId);
+  if (!review) {
+    throw new AppError(status.NOT_FOUND, "Review not found");
+  }
+  const updatedReview = await ReviewModel.findOneAndUpdate(
+    { _id: reviewId },
+    { $set: { isEditorPicked: !review.isEditorPicked } },
+    { new: true }
+  );
+  return updatedReview;
+};
+
 /**
  * Get Reviews by User ID
  */
 const getReviewsByUser = async (userId: string) => {
-  const reviews = await ReviewModel.find({ userId }) .populate("userId", "-password")
+  const reviews = await ReviewModel.find({ userId })
+    .populate("userId", "-password")
     .populate("entityId", "title")
     .populate("comments");
   return reviews;
@@ -170,4 +184,5 @@ export const ReviewService = {
   getReviewsByUser,
   getReviewsByEntity,
   getAllReviewForDb,
+  ToggleReviewEditorPick,
 };

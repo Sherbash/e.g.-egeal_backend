@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { model, Schema, Types } from "mongoose";
+
+import { model, Schema } from "mongoose";
 import { IGlobalReview } from "./global-review.interface";
 
 
@@ -22,6 +22,7 @@ const reviewSchema = new Schema<IGlobalReview>(
       enum: ["pending", "approved", "rejected"] as const, // Explicitly cast as const for TypeScript
       default: "pending",
     },
+    isEditorPicked: { type: Boolean, default: false },
     rewardGiven: { type: Boolean, default: false },
     comments: [{ type: Schema.Types.ObjectId, ref: "Comment", default: [] }], // Default to empty array
   },
