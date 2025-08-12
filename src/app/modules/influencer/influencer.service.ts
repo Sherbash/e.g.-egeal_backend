@@ -263,6 +263,45 @@ const deleteGigPage = async (userId: string) => {
   return result;
 };
 
+
+
+
+const upsertBankDetails = async (influencerId: string, bankDetails: any) => {
+  const updated = await Influencer.findOneAndUpdate(
+    { influencerId },
+    { $set: { bankDetails } },
+    { new: true }
+  );
+
+  if (!updated) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+  return updated;
+};
+
+const getBankDetails = async (influencerId: string) => {
+  const influencer = await Influencer.findOne({ influencerId }).select("bankDetails");
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+  return influencer.bankDetails;
+};
+
+const deleteBankDetails = async (influencerId: string) => {
+  const updated = await Influencer.findOneAndUpdate(
+    { influencerId },
+    { $unset: { bankDetails: "" } },
+    { new: true }
+  );
+
+  if (!updated) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+  return updated;
+};
+
 export const InfluencerService = {
   getAllInfluencer,
   getGigPageByUserId,
@@ -271,4 +310,7 @@ export const InfluencerService = {
   updateGigPage,
   deleteGigPage,
   getGigPageById,
+  upsertBankDetails,
+  getBankDetails,
+  deleteBankDetails,
 };

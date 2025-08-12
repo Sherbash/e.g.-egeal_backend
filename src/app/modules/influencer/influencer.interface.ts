@@ -18,6 +18,17 @@ interface IGigPage {
   isPublished?: boolean;
 }
 
+// Interface for Bank Details
+interface IBankDetails {
+  bankName?: string;
+  accountNumber?: string;
+  accountHolderName?: string;
+  routingNumber?: string;
+  paypalEmail?: string;
+  cryptoAddress?: string;
+  cryptoNetwork?: string;
+}
+
 // Main Influencer Interface extending Mongoose Document
 export interface IInfluencer extends Document {
   userId: Types.ObjectId;
@@ -28,6 +39,9 @@ export interface IInfluencer extends Document {
   updatedAt: string;
 
   gigPage?: IGigPage;
+
+  // Optional bankDetails object
+  bankDetails?: IBankDetails;
 }
 
 // If you need a separate type for creating new influencers (without Mongoose props)

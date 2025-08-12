@@ -47,9 +47,20 @@ const influencerSchema = new Schema<IInfluencer>(
         ref: "Tool",
       },
     ],
+
     additionalNotes: {
       type: String,
       default: "empty",
+    },
+     // ✅ Optional Bank Details
+    bankDetails: {
+      bankName: { type: String },
+      accountNumber: { type: String },
+      accountHolderName: { type: String },
+      routingNumber: { type: String },
+      paypalEmail: { type: String },
+      cryptoAddress: { type: String },
+      cryptoNetwork: { type: String },
     },
   },
   { timestamps: true }
