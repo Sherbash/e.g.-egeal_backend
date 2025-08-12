@@ -1,25 +1,25 @@
 import { Types } from "mongoose";
 
 export interface ICoupon {
-  code: string; // e.g. SAVE10
+  code: string; // uppercase, unique
   description?: string;
   discountType: "PERCENTAGE" | "FIXED";
-  discountValue: number; // e.g. 10 (for 10% or $10)
-  toolId?: Types.ObjectId; // optional: coupon for a specific tool only
-  createdBy: Types.ObjectId; // Admin or Founder
-  maxUsage?: number; // optional
-  usageCount: number;
-  usedBy: Types.ObjectId[]; // array of user IDs who used this coupon
-  expiresAt?: Date; // optional expiry date
-  isActive: boolean;
+  discountValue: number; // e.g. 10 (10% or 10 units)
+  toolId: string; // <-- string, not ObjectId
+  createdBy: Types.ObjectId; // admin/founder who created
+  maxUsage?: number | null; // optional cap (total uses)
+  usageCount: number; // total times used
+  usedBy: Types.ObjectId[]; // unique user ids who have used the coupon
+  expiresAt: Date | null;
+  isActive?: boolean;
 }
 
 export interface ICouponUpdate {
   description?: string;
   discountType?: "PERCENTAGE" | "FIXED";
   discountValue?: number;
-  toolId?: Types.ObjectId;
-  maxUsage?: number;
-  expiresAt?: Date;
+  toolId: string;
+  maxUsage?: number | null;
+  expiresAt?: Date | null;
   isActive?: boolean;
 }

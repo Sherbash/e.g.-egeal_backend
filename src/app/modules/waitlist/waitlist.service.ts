@@ -6,7 +6,7 @@ const STEINHQ_URL =
   "https://api.steinhq.com/v1/storages/6899386bc088333365ca37f4";
 const SHEET_NAME = "Waitlist";
 
-const addToWaitlist = async (email: string, name?: string) => {
+const addToWaitlist = async (email: string, name?: string, toolId:string) => {
   if (!email) {
     throw new AppError(status.BAD_REQUEST, "Email is required");
   }
@@ -19,6 +19,7 @@ const addToWaitlist = async (email: string, name?: string) => {
 
   const payload = {
     email,
+    toolId,
     name: name || "",
     joinedAt,
   };
