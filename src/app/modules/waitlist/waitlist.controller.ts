@@ -4,9 +4,9 @@ import { WaitlistService } from "./waitlist.service";
 import catchAsync from "../../utils/catchAsync";
 
 const joinWaitlist = catchAsync(async (req: Request, res: Response) => {
-  const { email, name } = req.body;
+  const { email, name, toolId } = req.body;
 
-  const result = await WaitlistService.addToWaitlist(email, name);
+  const result = await WaitlistService.addToWaitlist(email, name, toolId);
 
   sendResponse(res, {
     success: true,

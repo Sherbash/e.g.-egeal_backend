@@ -1,18 +1,18 @@
 import { Router } from "express";
 import auth from "../../middleware/auth";
-import { UserRole } from "../user/user.interface";
 import { CouponControllers } from "./coupon.controller";
+import { UserRole } from "../user/user.interface";
 
 const router = Router();
 
 // Create coupon (Admin & Founder)
 router.post(
   "/",
-  auth(UserRole.ADMIN, UserRole.FOUNDER),
+//   auth(UserRole.ADMIN, UserRole.FOUNDER),
   CouponControllers.createCoupon
 );
 
-// Get all coupons
+// Get all coupons (Admin)
 router.get("/", auth(UserRole.ADMIN), CouponControllers.getAllCoupons);
 
 // Apply coupon (User applies at checkout)
