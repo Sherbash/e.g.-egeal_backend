@@ -9,7 +9,12 @@ import { ToolModel } from "./tool.model";
 const createTool = catchAsync(async (req: Request, res: Response) => {
   const body = req.body;
 
-  if (!body.name || !body.description || !body.founderId || body.price == null) {
+  if (
+    !body.name ||
+    !body.description ||
+    !body.founderId ||
+    body.price == null
+  ) {
     throw new AppError(
       status.BAD_REQUEST,
       "Name, description, founder id, and price are required"
@@ -53,18 +58,20 @@ const getSingleTool = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getSingleToolByToolId = catchAsync(async (req: Request, res: Response) => {
-  const { toolId } = req.params; 
+const getSingleToolByToolId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { toolId } = req.params;
 
-  const result = await ToolServices.getSingleToolByToolIdFromDB(toolId);
+    const result = await ToolServices.getSingleToolByToolIdFromDB(toolId);
 
-  sendResponse(res, {
-    success: true,
-    statusCode: status.OK,
-    message: "Tool fetched successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Tool fetched successfully",
+      data: result,
+    });
+  }
+);
 
 const updateTool = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -117,5 +124,5 @@ export const ToolControllers = {
   getSingleTool,
   updateTool,
   deleteTool,
-  getSingleToolByToolId
+  getSingleToolByToolId,
 };

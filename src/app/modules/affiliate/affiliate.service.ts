@@ -179,10 +179,6 @@ const getAffiliatesByInfluencerId = async (influencerId: string) => {
   };
 };
 
-
-
-
-
 export const AffiliateServices = {
   createAffiliateIntoDB,
   incrementClickCount,

@@ -17,6 +17,8 @@ import { StoryRoutes } from "../modules/storyPoll/storyPoll.route";
 import { GlobalReviewRoutes } from "../modules/global-review/global-review.router";
 import { CommentRoutes } from "../modules/global-comment/comment.router";
 import { EmailSubscriptionRoutes } from "../modules/subscription/subscription.route";
+import { WaitlistRoutes } from "../modules/waitlist/waitlist.route";
+import { CouponRoutes } from "../modules/coupon/coupon.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -86,6 +88,14 @@ const moduleRoutes = [
   {
     path: "/email",
     route: EmailSubscriptionRoutes,
+  },
+  {
+    path: "/waitlist",
+    route: WaitlistRoutes,
+  },
+  {
+    path: "/coupon",
+    route: CouponRoutes,
   },
 ];
 

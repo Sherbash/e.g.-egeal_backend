@@ -6,34 +6,6 @@ import { generateUniqueId } from "../../utils/generateUniqueSlug";
 import { Founder } from "../founder/founder.model";
 import mongoose from "mongoose";
 
-// const createToolIntoDB = async (payload: ITool) => {
-//   const toolId = await generateUniqueId(payload.name, ToolModel, "toolId");
-
-//   const toolData = {
-//     toolId,
-//     name: payload.name,
-//     description: payload.description,
-//     price: payload.price,
-//     commissionRate: payload.commissionRate,
-//     isActive: payload.isActive ?? true,
-//     founderId: payload.founderId,
-//   };
-
-//   const existingTool = await ToolModel.findOne({
-//     name: toolData.name,
-//     isActive: true,
-//   });
-//   if (existingTool) {
-//     throw new AppError(
-//       status.BAD_REQUEST,
-//       "A tool with this name already exists"
-//     );
-//   }
-
-//   const createdTool = await ToolModel.create(toolData);
-//   return createdTool;
-// };
-
 const createToolIntoDB = async (payload: ITool) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -70,12 +42,12 @@ const createToolIntoDB = async (payload: ITool) => {
       payload.founderId,
       {
         $addToSet: { tools: createdTool[0].toolId }, // Add toolId string
-        $setOnInsert: { additionalNotes: "empty" } // Set default if creating new
+        $setOnInsert: { additionalNotes: "empty" }, // Set default if creating new
       },
-      { 
+      {
         session,
         upsert: true, // Create founder if doesn't exist
-        new: true 
+        new: true,
       }
     );
 
@@ -104,11 +76,11 @@ const getSingleToolFromDB = async (id: string) => {
 
 const getSingleToolByToolIdFromDB = async (toolId: string) => {
   const tool = await ToolModel.findOne({ toolId }).lean();
-  
+
   if (!tool || !tool.isActive) {
     throw new AppError(status.NOT_FOUND, "Tool not found or inactive");
   }
-  
+
   return tool;
 };
 
@@ -154,5 +126,5 @@ export const ToolServices = {
   getSingleToolFromDB,
   updateToolIntoDB,
   deleteToolIntoDB,
-  getSingleToolByToolIdFromDB
+  getSingleToolByToolIdFromDB,
 };

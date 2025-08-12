@@ -4,9 +4,9 @@ import { EmailSubscriptionService } from "./subscription.service";
 import sendResponse from "../../utils/sendResponse";
 
 const subscribe = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.body;
+  const { email, name } = req.body;
 
-  const result = await EmailSubscriptionService.subscribeEmail(email);
+  const result = await EmailSubscriptionService.subscribeEmail(email, name);
 
   sendResponse(res, {
     success: true,
