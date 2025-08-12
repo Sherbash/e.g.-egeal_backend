@@ -149,37 +149,46 @@ import generateNumericNanoid from "../../utils/createNanoId";
 // Add to user.service.ts
 
 const registerUser = async (payload: IUser) => {
-  const { email, role, password, firstName, lastName, additionalNotes, referredBy, referralCode } = payload;
+  const {
+    email,
+    role,
+    password,
+    firstName,
+    lastName,
+    additionalNotes,
+    referredBy,
+    referralCode,
+  } = payload;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // 1. Check if user already exists
+    // 1. Check if user exists
     const existingUser = await User.findOne({ email }).session(session);
     if (existingUser) {
       throw new AppError(status.BAD_REQUEST, "Email already registered");
     }
 
-    // 2. Validate referral relationships
+    // 2. Validate referrer
     let referrerUser = null;
-    
-    // Case 1: Direct referredBy ID provided
     if (referredBy) {
       referrerUser = await User.findById(referredBy).session(session);
-      if (!referrerUser) {
+      if (!referrerUser)
         throw new AppError(status.BAD_REQUEST, "Referrer user not found");
-      }
-    }
-    // Case 2: Referral code provided
-    else if (referralCode) {
+    } else if (referralCode) {
       referrerUser = await User.findOne({ referralCode }).session(session);
-      if (!referrerUser) {
+      if (!referrerUser)
         throw new AppError(status.BAD_REQUEST, "Invalid referral code");
-      }
     }
 
-    // 3. Create new user
+    // 3. Generate new referral code for this user
+    const newReferralCode = generateNumericNanoid(10);
+
+    // 4. Create referral link for this user
+    const newReferralLink = `${process.env.CLIENT_URL}/signup?referralCode=${newReferralCode}`;
+
+    // 5. Create user record
     const userData = {
       firstName,
       lastName,
@@ -189,72 +198,70 @@ const registerUser = async (payload: IUser) => {
       isActive: true,
       additionalNotes,
       referredBy: referrerUser?._id || undefined,
-      referralCode: generateNumericNanoid(10), // Generate new code for this user
-      referralLink: `${process.env.CLIENT_URL}/register?referralCode=${referralCode}&referredBy=${referrerUser?._id}`,
+      referralCode: newReferralCode,
+      referralLink: newReferralLink,
     };
 
     const [newUser] = await User.create([userData], { session });
 
-    // 4. Create referral record if applicable
+    // 6. If there’s a referrer, create referral record
     if (referrerUser) {
-      await Referral.create([{
-        referrer: referrerUser._id,
-        referredUser: newUser._id,
-        status: "pending",
-        rewardAmount: null, // Will be set when verified
-        campaignId: undefined // Can be added later
-      }], { session });
+      await Referral.create(
+        [
+          {
+            referrer: referrerUser._id,
+            referredUser: newUser._id,
+            status: "pending",
+            rewardAmount: null,
+          },
+        ],
+        { session }
+      );
     }
 
-    // 5. Create role-specific profile
+    // 7. Role-specific profile creation
     let roleProfile;
     const roleData = {
       userId: newUser._id,
-      additionalNotes: additionalNotes || "empty"
+      additionalNotes: additionalNotes || "empty",
     };
 
     switch (role) {
       case UserRole.INFLUENCER:
         const influencerId = await generateUniqueId(
-          `${firstName}${lastName}`, 
-          Influencer, 
+          `${firstName}${lastName}`,
+          Influencer,
           "influencerId"
         );
-        console.log("influencerId", influencerId)
-        roleProfile = await Influencer.create([{ ...roleData, influencerId }], { session });
+        roleProfile = await Influencer.create([{ ...roleData, influencerId }], {
+          session,
+        });
         break;
-        
       case UserRole.FOUNDER:
         roleProfile = await Founder.create([roleData], { session });
         break;
-        
       case UserRole.INVESTOR:
         roleProfile = await Investor.create([roleData], { session });
         break;
-        
       case UserRole.USER:
         break;
-        
       default:
         throw new AppError(status.BAD_REQUEST, "Invalid role");
     }
 
-    console.log("roleProfile", roleProfile)
-    // 6. Prepare response
-    const response = {
+    await session.commitTransaction();
+
+    return {
       user: {
         _id: newUser._id,
         email: newUser.email,
         role: newUser.role,
         referralCode: newUser.referralCode,
-        referredBy: newUser.referredBy
+        referralLink: newUser.referralLink,
+        referredBy: newUser.referredBy,
       },
-      profile: roleProfile?.[0]
+      profile: roleProfile?.[0],
     };
-
-    await session.commitTransaction();
-    return response;
-
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -262,6 +269,7 @@ const registerUser = async (payload: IUser) => {
     session.endSession();
   }
 };
+
 const getAllUsers = async (filters: any) => {
   const {
     searchTerm,
