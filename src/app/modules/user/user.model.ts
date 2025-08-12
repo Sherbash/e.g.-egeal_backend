@@ -64,6 +64,7 @@ const userSchema = new Schema<IUser>(
       index: true,
       default: null,
     },
+    referralLink: { type: String, default: null },
     referredBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -77,9 +78,9 @@ const userSchema = new Schema<IUser>(
 );
 
 // Virtual for easy referral link access
-userSchema.virtual("referralLink").get(function () {
-  return `${process.env.CLIENT_URL}/signup?ref=${this.referralCode}`;
-});
+// userSchema.virtual("referralLink").get(function () {
+//   return `${process.env.CLIENT_URL}/signup?ref=${this.referralCode}`;
+// });
 
 // Password hashing
 userSchema.pre("save", async function (next) {

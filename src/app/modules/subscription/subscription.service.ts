@@ -5,14 +5,21 @@ import AppError from "../../errors/appError";
 const STEINHQ_URL = "https://api.steinhq.com/v1/storages/6899386bc088333365ca37f4";
 const SHEET_NAME = "EmailSubscriptions";
 
-const subscribeEmail = async (email: string) => {
+const subscribeEmail = async (email: string,name?: string) => {
   if (!email) {
     throw new AppError(status.BAD_REQUEST, "Email is required");
   }
 
+    const subscribedAt = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   const payload = {
+    name: name || "",
     email,
-    subscribedAt: new Date().toISOString(),
+    subscribedAt,
   };
 
   const res = await axios.post(`${STEINHQ_URL}/${SHEET_NAME}`, [payload]);
