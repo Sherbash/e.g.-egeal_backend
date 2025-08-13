@@ -304,10 +304,10 @@ const createGiveaway = async (payload: IGiveaway, user: IUser) => {
   const giveawayPayload = {
     ...payload,
     authorId: user.id,
-    priceMoney: payload.priceMoney, // Fixed $100 prize
-    isPrivate: payload.isPrivate, // Enforce private giveaway
-    maxParticipants: payload.maxParticipants || 30, // Limit to 30 participants
-    inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined, // Auto-generate for private giveaways
+    priceMoney: payload.priceMoney, 
+    isPrivate: payload.isPrivate, 
+    maxParticipants: payload.maxParticipants || 30, 
+    inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined, 
   };
 
   // Validate invite code for private giveaways
