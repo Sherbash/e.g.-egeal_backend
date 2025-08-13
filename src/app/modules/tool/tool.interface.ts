@@ -8,6 +8,7 @@ export interface ITool {
   imageUrl?: string; 
   commissionRate: number;
   isActive?: boolean;
+  launched?: boolean;
   founderId: Types.ObjectId;
 }
 
