@@ -118,6 +118,9 @@ const registerUser = async (payload: IUser) => {
 };
 
 const completeRegistration = async (email: string, otp: string) => {
+  if (!email || !otp) {
+    throw new AppError(status.BAD_REQUEST, "Email and OTP required!");
+  }
   const session = await mongoose.startSession();
   session.startTransaction();
 
