@@ -57,13 +57,107 @@ const deleteCouponIntoDB = async (id: string) => {
   return deleted;
 };
 
+// const applyCoupon = async (
+//   code: string,
+//   toolPrice: number,
+//   userId: string,
+//   toolId?: string
+// ) => {
+//   if (!code) throw new AppError(status.BAD_REQUEST, "Coupon code is required");
+//   if (!mongoose.Types.ObjectId.isValid(userId)) {
+//     throw new AppError(status.BAD_REQUEST, "Invalid user ID");
+//   }
+
+//   const coupon = await CouponModel.findOne({
+//     code: code.toUpperCase(),
+//     isActive: true,
+//   });
+//   if (!coupon) throw new AppError(status.BAD_REQUEST, "Invalid coupon code");
+
+//   // Check expiry
+//   if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+//     throw new AppError(status.BAD_REQUEST, "Coupon has expired");
+//   }
+
+//   // Check max usage (if set)
+//   if (
+//     typeof coupon.maxUsage === "number" &&
+//     coupon.usageCount >= coupon.maxUsage
+//   ) {
+//     throw new AppError(status.BAD_REQUEST, "Coupon usage limit reached");
+//   }
+
+//   // If coupon is restricted to a tool, ensure toolId matches
+//   if (coupon.toolId) {
+//     if (!toolId) {
+//       throw new AppError(
+//         status.BAD_REQUEST,
+//         "This coupon is valid only for a specific tool"
+//       );
+//     }
+//     if (coupon.toolId !== toolId) {
+//       throw new AppError(status.BAD_REQUEST, "Coupon not valid for this tool");
+//     }
+//   }
+
+//   // Calculate discount
+//   let discountAmount = 0;
+//   if (coupon.discountType === "PERCENTAGE") {
+//     discountAmount = (toolPrice * coupon.discountValue) / 100;
+//   } else {
+//     discountAmount = coupon.discountValue;
+//   }
+
+//   const finalPrice = Math.max(toolPrice - discountAmount, 0);
+
+//   // Atomically update usageCount and usedBy
+//   const update: any = {
+//     $inc: { usageCount: 1 },
+//   };
+//   if (!coupon.usedBy.some((u) => u.toString() === userId)) {
+//     update.$push = { usedBy: new mongoose.Types.ObjectId(userId) };
+//   }
+
+//   const updatedCoupon = await CouponModel.findOneAndUpdate(
+//     { _id: coupon._id, isActive: true },
+//     update,
+//     { new: true }
+//   ).lean();
+
+//   if (!updatedCoupon) {
+//     throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update coupon usage");
+//   }
+
+//   return {
+//     finalPrice,
+//     discountAmount,
+//     coupon: updatedCoupon,
+//   };
+// };
+
+
+const getMyCouponsFromDB = async (id: string) => {
+  const coupons = await CouponModel.find({ createdBy: id })
+    .populate("createdBy", "name email")
+    .lean();
+  if (!coupons || coupons.length === 0) {
+    throw new AppError(status.NOT_FOUND, "No coupons found for this user");
+  }
+  return coupons;
+};
+
+
+// coupon.service.ts
 const applyCoupon = async (
   code: string,
   toolPrice: number,
-  userId: string,
+  usedBy: string, // Changed parameter name to match req.body.usedBy
   toolId?: string
 ) => {
   if (!code) throw new AppError(status.BAD_REQUEST, "Coupon code is required");
+  if (!mongoose.Types.ObjectId.isValid(usedBy)) {
+    throw new AppError(status.BAD_REQUEST, "Invalid user ID in usedBy");
+  }
 
   const coupon = await CouponModel.findOne({
     code: code.toUpperCase(),
@@ -106,34 +200,34 @@ const applyCoupon = async (
   }
 
   const finalPrice = Math.max(toolPrice - discountAmount, 0);
-  
-// Track usage
-  coupon.usageCount = (coupon.usageCount ?? 0) + 1;
-  const userAlreadyTracked = coupon.usedBy?.some(
-    (u) => u.toString() === userId
-  );
-  if (!userAlreadyTracked) {
-    coupon.usedBy.push(new mongoose.Types.ObjectId(userId));
+
+  // Atomically update usageCount and usedBy
+  const update: any = {
+    $inc: { usageCount: 1 },
+  };
+  if (!coupon.usedBy.some((u) => u.toString() === usedBy)) {
+    update.$push = { usedBy: new mongoose.Types.ObjectId(usedBy) };
   }
-  await coupon.save();
+
+  const updatedCoupon = await CouponModel.findOneAndUpdate(
+    { _id: coupon._id, isActive: true },
+    update,
+    { new: true }
+  ).lean();
+
+  if (!updatedCoupon) {
+    throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update coupon usage");
+  }
 
   return {
     finalPrice,
     discountAmount,
-    coupon: coupon.toObject(),
+    coupon: updatedCoupon,
   };
 };
 
 
-const getMyCouponsFromDB = async (id: string) => {
-  const coupons = await CouponModel.find({ createdBy: id })
-    .populate("createdBy", "name email")
-    .lean();
-  if (!coupons || coupons.length === 0) {
-    throw new AppError(status.NOT_FOUND, "No coupons found for this user");
-  }
-  return coupons;
-};
+
 
 export const CouponServices = {
   createCouponIntoDB,

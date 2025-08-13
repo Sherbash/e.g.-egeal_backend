@@ -44,19 +44,17 @@ const { id } = req.params; // Extract user ID from URL
   });
 });
 
+// coupon.controller.ts
 const applyCoupon = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as any).user?._id;
-  if (!userId) throw new AppError(status.UNAUTHORIZED, "Unauthorized");
-
-  const { code, toolPrice, toolId } = req.body;
-  if (!code || toolPrice == null) {
-    throw new AppError(status.BAD_REQUEST, "code and toolPrice are required");
+  const { code, toolPrice, toolId, usedBy } = req.body;
+  if (!code || toolPrice == null || !usedBy) {
+    throw new AppError(status.BAD_REQUEST, "code, toolPrice, and usedBy are required");
   }
 
   const result = await CouponServices.applyCoupon(
     code,
     Number(toolPrice),
-    userId,
+    usedBy, // Pass user ID from req.body.usedBy
     toolId
   );
 
@@ -67,6 +65,8 @@ const applyCoupon = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+
 
 export const CouponControllers = {
   createCoupon,
