@@ -5,26 +5,15 @@ import catchAsync from "../../utils/catchAsync";
 import { Request, Response } from "express";
 import AppError from "../../errors/appError";
 import { ToolModel } from "./tool.model";
+import { IUser } from "../user/user.interface";
 
 const createTool = catchAsync(async (req: Request, res: Response) => {
   const body = req.body;
 
-  if (
-    !body.name ||
-    !body.description ||
-    !body.founderId ||
-    body.price == null
-  ) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "Name, description, founder id, and price are required"
-    );
-  }
-  if (body.price < 0) {
-    throw new AppError(status.BAD_REQUEST, "Price must be non-negative");
-  }
+  console.log("body", body)
+  
 
-  const result = await ToolServices.createToolIntoDB(body);
+  const result = await ToolServices.createToolIntoDB(body, req.user as IUser);
 
   sendResponse(res, {
     success: true,

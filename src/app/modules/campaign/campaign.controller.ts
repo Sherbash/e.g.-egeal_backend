@@ -19,7 +19,12 @@ const createCampaign = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllCampaigns = catchAsync(async (req: Request, res: Response) => {
-  const options = pickOptions(req.query, ["limit", "page"]);
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
   const result = await CampaignServices.getAllCampaigns(options);
 
   res.status(status.OK).json({
@@ -81,20 +86,33 @@ const addInfluencer = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateInfluencerStatus = catchAsync(async (req: Request, res: Response) => {
-  const result = await CampaignServices.updateInfluencerStatus(
-    req.params.campaignId,
-    req.params.influencerId,
-    req.body.status,
-    req.user as IUser
-  );
+const requestToJoinCampaign = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await CampaignServices.requestToJoinCampaign(req.params.campaignId, req.user as IUser);
 
-  res.status(status.OK).json({
-    success: true,
-    message: "Influencer status updated successfully",
-    data: result,
-  });
-});
+    res.status(status.OK).json({
+      success: true,
+      message: "Request to join campaign sent successfully",
+      data: result,
+    });
+  }
+);
+
+const updateInfluencerStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await CampaignServices.updateInfluencerStatus(
+      req.params.campaignId,
+      req.params.influencerId,
+      req.user as IUser
+    );
+
+    res.status(status.OK).json({
+      success: true,
+      message: "Influencer status updated successfully",
+      data: result,
+    });
+  }
+);
 
 export const CampaignController = {
   createCampaign,
@@ -103,5 +121,6 @@ export const CampaignController = {
   updateCampaign,
   deleteCampaign,
   addInfluencer,
-  updateInfluencerStatus
+  updateInfluencerStatus,
+  requestToJoinCampaign
 };

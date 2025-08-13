@@ -1,63 +1,70 @@
 import { Schema, model, Document, Types } from "mongoose";
 
 export interface ICampaign extends Document {
-  founderId: Types.ObjectId;        // Who created the campaign
-  toolId: Types.ObjectId;           // The tool being promoted
-  influencers: {                    // Influencers participating
-    userId: Types.ObjectId;
+  founderId: Types.ObjectId; // Who created the campaign
+  toolId: string; // The tool being promoted
+  campaignType: "JOB";
+  influencers: {
+    // Influencers participating
+    influencerId: Types.ObjectId;
     status: "pending" | "approved" | "completed" | "rejected";
   }[];
-  campaignName: string;             // Campaign name
-  description: string;              // Campaign details
-  budget: number;                   // Total campaign budget
-  startDate: Date;                  // When campaign goes live
-  endDate?: Date;                   // Optional end date
-  isActive: boolean;                // Campaign status
+  campaignName: string; // Campaign name
+  description: string; // Campaign details
+  budget: number; // Total campaign budget
+  startDate: Date; // When campaign goes live
+  endDate?: Date; // Optional end date
+  isActive: boolean; // Campaign status
   createdAt: Date;
   updatedAt: Date;
 }
 
 const CampaignSchema = new Schema<ICampaign>(
   {
-    founderId: { 
-      type: Schema.Types.ObjectId, 
-      ref: "User", 
-      required: true 
+    founderId: {
+      type: Schema.Types.ObjectId,
+      ref: "Founder",
+      required: true,
     },
     toolId: {
-      type: Schema.Types.ObjectId,
-      ref: "Tool",
-      required: true
+      type: String,
+      required: true,
     },
-
-    influencers: [{
-      userId: { 
-        type: Schema.Types.ObjectId, 
-        ref: "User"
+    campaignType: {
+      type: String,
+      enum: ["JOB"],
+      default: "JOB",
+    },
+    influencers: [
+      {
+        influencerId: {
+          type: Schema.Types.ObjectId,
+          ref: "Influencer",
+        },
+        status: {
+          type: String,
+          enum: ["pending", "approved", "completed", "rejected"],
+          default: "pending",
+        },
       },
-      status: { 
-        type: String, 
-        enum: ["pending", "approved", "completed", "rejected"],
-        default: "pending"
-      }
-    }],
+    ],
     campaignName: {
       type: String,
-      required: true
-    },
-    description: { 
-      type: String, 
-      required: true
-    },
-    budget: { 
-      type: Number, 
       required: true,
-      default: 0
     },
-    isActive: { 
-      type: Boolean, 
-      default: true 
-    }
+    description: {
+      type: String,
+      required: true,
+    },
+    budget: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

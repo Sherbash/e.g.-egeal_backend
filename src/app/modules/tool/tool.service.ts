@@ -5,18 +5,23 @@ import { ITool, IToolUpdate } from "./tool.interface";
 import { generateUniqueId } from "../../utils/generateUniqueSlug";
 import { Founder } from "../founder/founder.model";
 import mongoose from "mongoose";
+import { IUser } from "../user/user.interface";
 
-const createToolIntoDB = async (payload: ITool) => {
+const createToolIntoDB = async (payload: ITool, user: IUser) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
+
+    const founder = await Founder.findOne({userId: user?.id}).session(session);
     // 1. Generate unique toolId
     const toolId = await generateUniqueId(payload.name, ToolModel, "toolId");
 
+    // console.log("founder", founder)
     // 2. Prepare tool data
     const toolData = {
       ...payload,
+      founderId: founder?._id,
       toolId,
       isActive: payload.isActive ?? true,
     };

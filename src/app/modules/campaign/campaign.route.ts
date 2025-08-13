@@ -22,7 +22,7 @@ router.get("/:id", CampaignController.getCampaignById);
 // Update campaign - Founder or Admin
 router.patch(
   "/:id",
-  auth(UserRole.FOUNDER),
+  auth(UserRole.FOUNDER, UserRole.ADMIN),
   validateRequest(CampaignValidation.updateCampaignSchema),
   CampaignController.updateCampaign
 );
@@ -43,12 +43,19 @@ router.post(
   CampaignController.addInfluencer
 );
 
+// Request to join campaign - User
+router.post(
+  "/:campaignId/requests",
+  auth(UserRole.INFLUENCER),
+  CampaignController.requestToJoinCampaign
+);
+
 // Update influencer status - Founder or Admin
 router.patch(
   "/:campaignId/influencers/:influencerId/status",
   auth(UserRole.FOUNDER, UserRole.ADMIN),
 
-  validateRequest(CampaignValidation.updateInfluencerStatusSchema),
+  // validateRequest(CampaignValidation.updateInfluencerStatusSchema),
   CampaignController.updateInfluencerStatus
 );
 
