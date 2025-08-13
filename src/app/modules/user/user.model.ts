@@ -33,15 +33,15 @@ const userSchema = new Schema<IUser>(
 );
 
 // Password hashing
-userSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
-    this.password = await bcrypt.hash(
-      this.password,
-      Number(config.bcrypt_salt_rounds)
-    );
-  }
-  next();
-});
+// userSchema.pre("save", async function (next) {
+//   if (this.isModified("password")) {
+//     this.password = await bcrypt.hash(
+//       this.password,
+//       Number(config.bcrypt_salt_rounds)
+//     );
+//   }
+//   next();
+// });
 
 const UserModel = mongoose.model<IUser>("User", userSchema);
 export default UserModel;
