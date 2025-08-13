@@ -1,11 +1,23 @@
 import { Router } from "express";
-import { UserController } from "./user.controller";
 import validateRequest from "../../middleware/validateRequest";
 import { UserValidation } from "./user.validation";
+import { UserController } from "./user.controller";
 import auth from "../../middleware/auth";
 import { UserRole } from "./user.interface";
 
 const router = Router();
+
+router.post(
+  "/",
+  validateRequest(UserValidation.userValidationSchema),
+  UserController.registerUser
+);
+
+router.post(
+  "/verify-otp",
+  validateRequest(UserValidation.verifyOtpValidationSchema),
+  UserController.verifyOtp
+);
 
 router.get(
   "/me",
@@ -31,22 +43,7 @@ router.get(
   UserController.getSingleUser
 );
 
-router.post(
-  "/",
-  validateRequest(UserValidation.userValidationSchema),
-  UserController.registerUser
-);
-router.get(
-  "/",
-  // validateRequest(UserValidation.userValidationSchema),
-  UserController.getAllUsers
-);
-
-router.get(
-  "/",
-  // auth(),
-  UserController.getAllUsers
-);
+router.get("/", UserController.getAllUsers);
 
 router.patch(
   "/banned-user/:id",
@@ -54,23 +51,14 @@ router.patch(
   UserController.toggleUserStatus
 );
 
-router.get(
-  "/:id",
-  // auth(),
-  UserController.getSingleUser
-);
+router.get("/:id", UserController.getSingleUser);
 
 router.patch(
   "/:id",
-  // auth(),
   validateRequest(UserValidation.userUpdateValidationSchema),
   UserController.updateUser
 );
 
-router.delete(
-  "/:id",
-  // auth(),
-  UserController.deleteUser
-);
+router.delete("/:id", UserController.deleteUser);
 
 export const UserRoutes = router;
