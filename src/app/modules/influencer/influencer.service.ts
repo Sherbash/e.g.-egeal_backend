@@ -200,6 +200,36 @@ const getGigPageByUserId = async (userId: string) => {
     ...gigPage,
   };
 };
+const getGigPageByInfluencerId = async (influencerId: string) => {
+  console.log("influencerId", influencerId)
+  const influencer = await Influencer.findOne({ _id:influencerId });
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+  const gigPage = await GigPage.findOne({
+    influencerId: influencer?._id,
+  })
+    .populate({
+      path: "influencerId",
+      select: "userId influencerId",
+      populate: {
+        path: "userId",
+        select: "firstName lastName email",
+      },
+    })
+    .populate({
+      path: "affiliates",
+      select: "affiliateUrl toolId",
+    })
+    .lean();
+
+  if (!gigPage) {
+    throw new AppError(status.NOT_FOUND, "Gig page not found");
+  }
+
+  return gigPage;
+};
 
 const getGigPageById = async (gigId: string) => {
   const gigPage = await GigPage.findOne({ _id: gigId })
@@ -314,4 +344,5 @@ export const InfluencerService = {
   upsertBankDetails,
   getBankDetails,
   deleteBankDetails,
+  getGigPageByInfluencerId
 };

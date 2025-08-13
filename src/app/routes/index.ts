@@ -20,6 +20,7 @@ import { EmailSubscriptionRoutes } from "../modules/subscription/subscription.ro
 import { WaitlistRoutes } from "../modules/waitlist/waitlist.route";
 import { CouponRoutes } from "../modules/coupon/coupon.route";
 import { ReputationRoutes } from "../modules/influencer/Reputation/reputation.route";
+import { CampaignRoutes } from "../modules/campaign/campaign.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -97,10 +98,15 @@ const moduleRoutes = [
   {
     path: "/coupon",
     route: CouponRoutes,
-  },{
+  },
+  {
     path: "/reputation",
     route: ReputationRoutes,
-  }
+  },
+  {
+    path: "/campaign",
+    route: CampaignRoutes,
+  },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

@@ -1,57 +1,63 @@
 import { Schema, model, Document, Types } from "mongoose";
 
-export enum CampaignType {
-  EMAIL = "EMAIL",
-  SOCIAL = "SOCIAL",
-  AFFILIATE = "AFFILIATE",
-  FUNNEL = "FUNNEL",
-  GIVEAWAY = "GIVEAWAY",
-  JOB = "JOB",
+export interface ICampaign extends Document {
+  founderId: Types.ObjectId;        // Who created the campaign
+  toolId: Types.ObjectId;           // The tool being promoted
+  influencers: {                    // Influencers participating
+    userId: Types.ObjectId;
+    status: "pending" | "approved" | "completed" | "rejected";
+  }[];
+  campaignName: string;             // Campaign name
+  description: string;              // Campaign details
+  budget: number;                   // Total campaign budget
+  startDate: Date;                  // When campaign goes live
+  endDate?: Date;                   // Optional end date
+  isActive: boolean;                // Campaign status
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface ICampaign extends Document {
-  founderId: Types.ObjectId;
-  influencers: Types.ObjectId[];
-  name: string;
-  description?: string;
-  type: CampaignType;
-  startDate: Date;
-  endDate?: Date;
-  isActive: boolean;
-  tools: Types.ObjectId[];
-  createdBy: Types.ObjectId;
-  updatedBy?: Types.ObjectId;
-  bonusThreshold?: number;
-  bonusGift?: Types.ObjectId;
-  testimonials: Types.ObjectId[];
-}
-const CampaignSchema = new Schema(
+const CampaignSchema = new Schema<ICampaign>(
   {
-    founderId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    influencers: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        status: {
-          type: String,
-          enum: ["joined", "completed", "rejected"],
-          default: "joined",
-        },
+    founderId: { 
+      type: Schema.Types.ObjectId, 
+      ref: "User", 
+      required: true 
+    },
+    toolId: {
+      type: Schema.Types.ObjectId,
+      ref: "Tool",
+      required: true
+    },
+
+    influencers: [{
+      userId: { 
+        type: Schema.Types.ObjectId, 
+        ref: "User"
       },
-    ],
-    name: { type: String, required: true },
-    description: { type: String },
-    type: { type: String, enum: Object.values(CampaignType), required: true },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date },
-    isActive: { type: Boolean, default: true },
-    products: [{ type: Schema.Types.ObjectId, ref: "Product" }],
-    tools: [{ type: Schema.Types.ObjectId, ref: "Tool" }],
-    createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
-    bonusThreshold: { type: Number, default: 0 },
-    bonusGift: { type: Schema.Types.ObjectId, ref: "Gift" },
-    testimonials: [{ type: Schema.Types.ObjectId, ref: "AllReview" }],
+      status: { 
+        type: String, 
+        enum: ["pending", "approved", "completed", "rejected"],
+        default: "pending"
+      }
+    }],
+    campaignName: {
+      type: String,
+      required: true
+    },
+    description: { 
+      type: String, 
+      required: true
+    },
+    budget: { 
+      type: Number, 
+      required: true,
+      default: 0
+    },
+    isActive: { 
+      type: Boolean, 
+      default: true 
+    }
   },
   { timestamps: true }
 );
