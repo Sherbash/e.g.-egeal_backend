@@ -1,13 +1,27 @@
 import status from "http-status";
+
+import { Request, Response, NextFunction } from "express";
 import catchAsync from "../../utils/catchAsync";
-import sendResponse from "../../utils/sendResponse";
-import { Request, Response } from "express";
 import { UserServices } from "./user.service";
+import sendResponse from "../../utils/sendResponse";
 import { IJwtPayload } from "../auth/auth.interface";
 import { IUser } from "./user.interface";
 
-const registerUser = catchAsync(async (req: Request, res: Response) => {
+
+const registerUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const result = await UserServices.registerUser(req.body);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "OTP sent for verification",
+    data: result,
+  });
+});
+
+const verifyOtp = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { email, otp } = req.body;
+  const result = await UserServices.completeRegistration(email, otp);
 
   sendResponse(res, {
     statusCode: status.OK,
@@ -17,8 +31,7 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Add to user.controller.ts
-const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+const getAllUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const result = await UserServices.getAllUsers(req.query);
 
   sendResponse(res, {
@@ -29,8 +42,7 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Add to user.controller.ts
-const getSingleUser = catchAsync(async (req: Request, res: Response) => {
+const getSingleUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const result = await UserServices.getSingleUser(id);
 
@@ -42,8 +54,7 @@ const getSingleUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Add to user.controller.ts
-const updateUser = catchAsync(async (req: Request, res: Response) => {
+const updateUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const result = await UserServices.updateUser(id, req.body);
 
@@ -55,8 +66,7 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Add to user.controller.ts
-const deleteUser = catchAsync(async (req: Request, res: Response) => {
+const deleteUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const result = await UserServices.deleteUser(id);
 
@@ -68,7 +78,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const myProfile = catchAsync(async (req, res) => {
+const myProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const result = await UserServices.myProfile(req.user as IJwtPayload);
 
   sendResponse(res, {
@@ -78,7 +88,8 @@ const myProfile = catchAsync(async (req, res) => {
     data: result,
   });
 });
-const getMeRoleBasedInfo = catchAsync(async (req, res) => {
+
+const getMeRoleBasedInfo = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const result = await UserServices.getMeRoleBasedInfo(req.user as IUser);
   sendResponse(res, {
     statusCode: status.OK,
@@ -88,7 +99,7 @@ const getMeRoleBasedInfo = catchAsync(async (req, res) => {
   });
 });
 
-const toggleUserStatus = catchAsync(async (req, res) => {
+const toggleUserStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const result = await UserServices.toggleUserStatus(id);
   sendResponse(res, {
@@ -99,14 +110,14 @@ const toggleUserStatus = catchAsync(async (req, res) => {
   });
 });
 
-
 export const UserController = {
   registerUser,
+  verifyOtp,
   getAllUsers,
   getSingleUser,
   updateUser,
   deleteUser,
   myProfile,
   getMeRoleBasedInfo,
-  toggleUserStatus
+  toggleUserStatus,
 };
