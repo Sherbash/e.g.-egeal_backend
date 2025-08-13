@@ -8,6 +8,7 @@ import { Founder } from "../founder/founder.model";
 import { ToolModel } from "../tool/tool.model";
 import { Types } from "mongoose";
 import { Influencer } from "../influencer/influencer.model";
+import UserModel from "../user/user.model";
 
 const createCampaign = async (payload: ICampaign, user: IUser) => {
   const existingFounder = await Founder.findOne({ userId: user?.id });
@@ -46,6 +47,13 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
   };
 
   const result = await Campaign.create(campaignData);
+
+  await UserModel.findOneAndUpdate(
+    { _id: user?.id },
+    { $set: { verified: true } },
+    { new: true }
+  );
+
   return result;
 };
 

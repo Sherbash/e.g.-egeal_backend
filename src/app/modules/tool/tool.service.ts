@@ -6,14 +6,17 @@ import { generateUniqueId } from "../../utils/generateUniqueSlug";
 import { Founder } from "../founder/founder.model";
 import mongoose from "mongoose";
 import { IUser } from "../user/user.interface";
+import { IPaginationOptions } from "../../interface/pagination";
+import { paginationHelper } from "../../utils/paginationHelpers";
 
 const createToolIntoDB = async (payload: ITool, user: IUser) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-
-    const founder = await Founder.findOne({userId: user?.id}).session(session);
+    const founder = await Founder.findOne({ userId: user?.id }).session(
+      session
+    );
     // 1. Generate unique toolId
     const toolId = await generateUniqueId(payload.name, ToolModel, "toolId");
 
@@ -66,9 +69,51 @@ const createToolIntoDB = async (payload: ITool, user: IUser) => {
   }
 };
 
-const getAllToolsFromDB = async () => {
-  const tools = await ToolModel.find({ isActive: true }).lean();
-  return tools;
+const getAllToolsFromDB = async (
+  paginationOptions: IPaginationOptions,
+  filters: { searchTerm?: string; isActive?: boolean; launched?: boolean }
+) => {
+  const { limit, page, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(paginationOptions);
+
+  // Base query for active tools
+  const query: any = {};
+
+  // Search functionality
+  if (filters.searchTerm) {
+    query.$or = [
+      { name: { $regex: filters.searchTerm, $options: "i" } },
+      { description: { $regex: filters.searchTerm, $options: "i" } },
+      { toolId: { $regex: filters.searchTerm, $options: "i" } },
+    ];
+  }
+
+  // Price filter
+  if (filters.isActive) {
+    query.isActive = filters.isActive;
+  }
+
+  // Price filter
+  if (filters.launched) {
+    query.launched = filters.launched;
+  }
+
+  const tools = await ToolModel.find(query)
+    .lean()
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await ToolModel.countDocuments(query);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: tools,
+  };
 };
 
 const getSingleToolFromDB = async (id: string) => {
@@ -92,6 +137,7 @@ const getSingleToolByToolIdFromDB = async (toolId: string) => {
 const updateToolIntoDB = async (id: string, payload: IToolUpdate) => {
   const updateData = {
     name: payload.name,
+    logo: payload?.logo,
     description: payload.description,
     price: payload.price,
     commissionRate: payload.commissionRate,

@@ -6,12 +6,12 @@ import { Request, Response } from "express";
 import AppError from "../../errors/appError";
 import { ToolModel } from "./tool.model";
 import { IUser } from "../user/user.interface";
+import pickOptions from "../../utils/pick";
 
 const createTool = catchAsync(async (req: Request, res: Response) => {
   const body = req.body;
 
-  console.log("body", body)
-  
+  console.log("body", body);
 
   const result = await ToolServices.createToolIntoDB(body, req.user as IUser);
 
@@ -24,7 +24,14 @@ const createTool = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllTools = catchAsync(async (req: Request, res: Response) => {
-  const result = await ToolServices.getAllToolsFromDB();
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
+  const filters = pickOptions(req.query, ["searchTerm",  "isActive" , "launched"]);
+  const result = await ToolServices.getAllToolsFromDB(options, filters);
 
   sendResponse(res, {
     success: true,
