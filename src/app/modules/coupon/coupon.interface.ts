@@ -1,16 +1,16 @@
 import { Types } from "mongoose";
 
 export interface ICoupon {
-  code: string; // uppercase, unique
+  code: string;
   description?: string;
   discountType: "PERCENTAGE" | "FIXED";
-  discountValue: number; // e.g. 10 (10% or 10 units)
-  toolId: string; // <-- string, not ObjectId
-  createdBy: Types.ObjectId; // admin/founder who created
-  maxUsage?: number | null; // optional cap (total uses)
-  usageCount: number; // total times used
-  usedBy: Types.ObjectId[]; // unique user ids who have used the coupon
-  expiresAt: Date | null;
+  discountValue: number;
+  toolId?: string;
+  createdBy: Types.ObjectId;
+  maxUsage?: number | null;
+  usageCount: number;
+  usedBy: Types.ObjectId[];
+  expiresAt?: Date | null;
   isActive?: boolean;
 }
 

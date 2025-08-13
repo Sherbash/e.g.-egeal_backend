@@ -5,28 +5,17 @@ import catchAsync from "../../utils/catchAsync";
 import AppError from "../../errors/appError";
 import { CouponServices } from "./coupon.service";
 import sendResponse from "../../utils/sendResponse";
+import { ICoupon } from "./coupon.interface";
 
-
+// coupon.controller.ts
 const createCoupon = catchAsync(async (req: Request, res: Response) => {
-  // ensure req.user exists via your auth middleware
-  const userId = (req as any).user?._id;
-  if (!userId) throw new AppError(status.UNAUTHORIZED, "Unauthorized");
-
-  if (!req.body.code || !req.body.discountType || req.body.discountValue == null) {
-    throw new AppError(status.BAD_REQUEST, "code, discountType and discountValue are required");
-  }
-
-  const payload = {
-    ...req.body,
-    code: req.body.code.toString().toUpperCase(),
-    createdBy: userId,
-  };
+  const payload = req.body;
 
   const result = await CouponServices.createCouponIntoDB(payload);
 
   sendResponse(res, {
+    statusCode: status.CREATED,
     success: true,
-    statusCode: status.OK,
     message: "Coupon created successfully",
     data: result,
   });
@@ -42,16 +31,32 @@ const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const applyCoupon = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as any).user?._id;
-  if (!userId) throw new AppError(status.UNAUTHORIZED, "Unauthorized");
+const getMyCoupons = catchAsync(async (req: Request, res: Response) => {
+  
+const { id } = req.params; // Extract user ID from URL
+  const result = await CouponServices.getMyCouponsFromDB(id);
 
-  const { code, toolPrice, toolId } = req.body;
-  if (!code || toolPrice == null) {
-    throw new AppError(status.BAD_REQUEST, "code and toolPrice are required");
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Coupons fetched successfully",
+    data: result,
+  });
+});
+
+// coupon.controller.ts
+const applyCoupon = catchAsync(async (req: Request, res: Response) => {
+  const { code, toolPrice, toolId, usedBy } = req.body;
+  if (!code || toolPrice == null || !usedBy) {
+    throw new AppError(status.BAD_REQUEST, "code, toolPrice, and usedBy are required");
   }
 
-  const result = await CouponServices.applyCoupon(code, Number(toolPrice), userId, toolId);
+  const result = await CouponServices.applyCoupon(
+    code,
+    Number(toolPrice),
+    usedBy, // Pass user ID from req.body.usedBy
+    toolId
+  );
 
   sendResponse(res, {
     success: true,
@@ -61,8 +66,11 @@ const applyCoupon = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+
 export const CouponControllers = {
   createCoupon,
   getAllCoupons,
   applyCoupon,
+  getMyCoupons
 };

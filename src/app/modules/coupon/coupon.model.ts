@@ -5,16 +5,25 @@ interface ICouponDocument extends ICoupon, Document {}
 
 const couponSchema = new Schema<ICouponDocument>(
   {
-    code: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    code: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+      trim: true,
+    },
     description: { type: String },
-    discountType: { type: String, enum: ["PERCENTAGE", "FIXED"], required: true },
+    discountType: {
+      type: String,
+      enum: ["PERCENTAGE", "FIXED"],
+      required: true,
+    },
     discountValue: { type: Number, required: true, min: 0 },
-    // toolId is a string key that matches Tool.toolId
-    toolId: { type: String }, 
+    toolId: { type: String },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    maxUsage: { type: Number }, // optional
+    maxUsage: { type: Number },
     usageCount: { type: Number, default: 0 },
-    usedBy: [{ type: Schema.Types.ObjectId, ref: "User" }], // unique user ids (no duplicates enforced here but handled in service)
+    usedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     expiresAt: { type: Date },
     isActive: { type: Boolean, default: true },
   },
