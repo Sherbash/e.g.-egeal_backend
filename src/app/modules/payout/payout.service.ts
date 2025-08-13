@@ -98,6 +98,14 @@ const createPayoutRequest = async (payload: IPayoutRequest) => {
     );
   }
 
+   // Check minimum payout amount
+  if (payload.amount < 50) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Minimum payout amount is $50"
+    );
+  }
+
   // Confirm influencer exists
   const influencer = await Influencer.findOne({
     influencerId: payload.influencerId,
