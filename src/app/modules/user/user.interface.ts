@@ -17,6 +17,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
+  verified: boolean;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

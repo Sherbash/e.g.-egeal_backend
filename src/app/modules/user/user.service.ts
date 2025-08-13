@@ -186,7 +186,7 @@ const registerUser = async (payload: IUser) => {
     const newReferralCode = generateNumericNanoid(10);
 
     // 4. Create referral link for this user
-    const newReferralLink = `${process.env.CLIENT_URL}/signup?referralCode=${newReferralCode}`;
+    const newReferralLink = `${process.env.CLIENT_URL}/register?referralCode=${newReferralCode}`;
 
     // 5. Create user record
     const userData = {
@@ -307,6 +307,8 @@ const getAllUsers = async (filters: any) => {
   sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
 
   const users = await User.find(query)
+    .populate("referralCount")
+    .populate("referralStats")
     .select("-password")
     .sort(sortOptions)
     .skip(skip)
@@ -361,7 +363,11 @@ const getAllUsers = async (filters: any) => {
 
 // Add to user.service.ts
 const getSingleUser = async (id: string) => {
-  const user = await User.findById(id).select("-password");
+  const user = await User.findById(id)
+    .populate("referralCount")
+    .populate("referralStats")
+    .select("-password")
+    .lean();
 
   if (!user) {
     throw new AppError(status.NOT_FOUND, "User not found!");
@@ -383,7 +389,7 @@ const getSingleUser = async (id: string) => {
   }
 
   return {
-    ...user.toObject(),
+    ...user,
     roleData,
   };
 };
@@ -473,7 +479,7 @@ const updateUser = async (id: string, payload: any) => {
     }
 
     return {
-      ...updatedUser?.toObject(),
+      ...updatedUser,
       roleData: updatedRoleData,
     };
   } catch (error) {
@@ -524,7 +530,10 @@ const deleteUser = async (id: string) => {
 };
 
 const myProfile = async (authUser: IJwtPayload) => {
-  const isUserExists = await User.findById(authUser.id);
+  const isUserExists = await User.findById(authUser.id)
+    .populate("referralCount")
+    .populate("referralStats")
+    .select("-password");
   if (!isUserExists) {
     throw new AppError(status.NOT_FOUND, "User not found!");
   }
@@ -535,7 +544,7 @@ const myProfile = async (authUser: IJwtPayload) => {
   const profile = await User.findOne({ user: isUserExists._id });
 
   return {
-    ...isUserExists.toObject(),
+    ...isUserExists,
     profile: profile || null,
   };
 };
