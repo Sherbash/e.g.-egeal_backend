@@ -29,6 +29,27 @@ interface IBankDetails {
   cryptoNetwork?: string;
 }
 
+//  reputation: {
+//       score: {
+//         type: Number,
+//         default: 50,
+//         min: 0,
+//         max: 100,
+//       },
+//       isVerified: {
+//         type: Boolean,
+//         default: false,
+//       },
+//       badges: [String],
+//       lastUpdated: Date,
+//     },
+interface IReputation {
+  score: number;
+  isVerified: boolean;
+  badges: string[];
+  lastUpdated: Date;
+}
+
 // Main Influencer Interface extending Mongoose Document
 export interface IInfluencer extends Document {
   userId: Types.ObjectId;
@@ -39,6 +60,8 @@ export interface IInfluencer extends Document {
   updatedAt: string;
 
   gigPage?: IGigPage;
+
+  reputation?: IReputation;
 
   // Optional bankDetails object
   bankDetails?: IBankDetails;

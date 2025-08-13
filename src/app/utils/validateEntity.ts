@@ -3,6 +3,7 @@ import status from "http-status";
 import { StoryModel } from "../modules/storyPoll/storyPoll.model";
 import { ToolModel } from "../modules/tool/tool.model";
 import AppError from "../errors/appError";
+import { Influencer } from "../modules/influencer/influencer.model";
 
 // Define a type for supported models
 type EntityModel = Model<any> & {
@@ -13,6 +14,7 @@ type EntityModel = Model<any> & {
 const ENTITY_MODELS: Record<string, EntityModel> = {
   story: StoryModel,
   tool: ToolModel,
+  influencer: Influencer
 };
 
 export const validateEntity = async (
@@ -25,7 +27,7 @@ export const validateEntity = async (
   if (!model) {
     throw new AppError(status.BAD_REQUEST, "Invalid entity type");
   }
-
+// console.log("entityId", entityId, entityType, entityQueryField)
   const entityExists = await model.findOne({ [entityQueryField]: entityId });
   if (!entityExists) {
     throw new AppError(status.NOT_FOUND, `${entityType} not found`);

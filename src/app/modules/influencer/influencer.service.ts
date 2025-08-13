@@ -9,6 +9,8 @@ import { GigPage, IGigPage } from "./influencer-gigPage.model";
 import { IUser } from "../user/user.interface";
 import { generateUniqueId } from "../../utils/generateUniqueSlug";
 import { Affiliate } from "../affiliate/affiliate.model";
+import { Campaign } from "../campaign/campaign.model";
+import { ReviewModel } from "../global-review/global-review.model";
 
 interface IInfluencerFilters {
   searchTerm?: string;
@@ -263,9 +265,6 @@ const deleteGigPage = async (userId: string) => {
   return result;
 };
 
-
-
-
 const upsertBankDetails = async (influencerId: string, bankDetails: any) => {
   const updated = await Influencer.findOneAndUpdate(
     { influencerId },
@@ -281,7 +280,9 @@ const upsertBankDetails = async (influencerId: string, bankDetails: any) => {
 };
 
 const getBankDetails = async (influencerId: string) => {
-  const influencer = await Influencer.findOne({ influencerId }).select("bankDetails");
+  const influencer = await Influencer.findOne({ influencerId }).select(
+    "bankDetails"
+  );
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }

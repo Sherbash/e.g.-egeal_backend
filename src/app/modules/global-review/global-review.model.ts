@@ -22,7 +22,7 @@ const reviewSchema = new Schema<IGlobalReview>(
       enum: ["pending", "approved", "rejected"] as const, // Explicitly cast as const for TypeScript
       default: "pending",
     },
-    isApproved: { type: Boolean, default: false },
+    // isApproved: { type: Boolean, default: false },
     isEditorPicked: { type: Boolean, default: false },
     rewardGiven: { type: Boolean, default: false },
     comments: [{ type: Schema.Types.ObjectId, ref: "Comment", default: [] }], // Default to empty array
