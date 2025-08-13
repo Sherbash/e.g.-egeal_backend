@@ -19,6 +19,7 @@ import { CommentRoutes } from "../modules/global-comment/comment.router";
 import { EmailSubscriptionRoutes } from "../modules/subscription/subscription.route";
 import { WaitlistRoutes } from "../modules/waitlist/waitlist.route";
 import { CouponRoutes } from "../modules/coupon/coupon.route";
+import { TicketRoutes } from "../modules/ticket/ticket.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -96,6 +97,10 @@ const moduleRoutes = [
   {
     path: "/coupon",
     route: CouponRoutes,
+  },
+  {
+    path: "/tickets",
+    route: TicketRoutes,
   },
 ];
 
