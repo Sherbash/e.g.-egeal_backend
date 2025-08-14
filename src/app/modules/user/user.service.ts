@@ -122,6 +122,7 @@ const registerUser = async (payload: IUser) => {
     if (existingUser) {
       throw new AppError(status.BAD_REQUEST, "Email already registered");
     }
+
     const existingTempUser = await TempUserModel.findOne({ email }).session(
       session
     );
