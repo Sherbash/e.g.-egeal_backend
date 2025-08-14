@@ -161,6 +161,7 @@ const ToggleReviewEditorPick = async (reviewId: string) => {
     { $set: { isEditorPicked: !review.isEditorPicked } },
     { new: true }
   );
+  
   return updatedReview;
 };
 

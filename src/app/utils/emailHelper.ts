@@ -11,7 +11,7 @@ export const transporter = nodemailer.createTransport({
 
 export const sendEmail = async (to: string, subject: string, html: string) => {
   await transporter.sendMail({
-    from: `"Marshall Team" <${config.gmail}>`,
+    from: `"Egeal AI Hub" <${config.gmail}>`,
     to,
     subject,
     html,

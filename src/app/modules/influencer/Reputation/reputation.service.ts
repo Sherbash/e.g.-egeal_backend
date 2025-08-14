@@ -10,39 +10,24 @@ const calculateReputation = async (
 ): Promise<{ score: number; badges: string[] }> => {
   const influencerObjectId = new mongoose.Types.ObjectId(influencerId);
 
-  // Get all relevant data in parallel
-  const [reviews, activeCampaigns] = await Promise.all([
-    // Approved reviews for this influencer
-    ReviewModel.find({
-      entityType: "influencer",
-      entityId: influencerObjectId,
-      status: "approved",
-    }),
+  const reviews = await ReviewModel.find({
+    entityType: "influencer",
+    entityId: influencerObjectId,
+    status: "approved",
+  });
 
-    // Campaigns where influencer is either pending or approved
-    Campaign.find({
-      "influencers.influencerId": influencerObjectId,
-      "influencers.status": { $in: ["pending", "approved"] },
-    }),
-  ]);
-
-  // Calculate review metrics (50% weight)
   const reviewCount = reviews.length;
+
+  if (reviewCount === 0) {
+    return { score: 0, badges: [] };
+  }
+
   const averageRating =
-    reviewCount > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
-      : 0;
-  const reviewScore = averageRating * 20; // Convert 5-star to 100 scale
+    reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount;
 
-  // Calculate campaign metrics (50% weight)
-  const campaignCount = activeCampaigns.length;
-  const campaignScore = Math.min(campaignCount * 5, 50); // Max 50 points for campaigns
+  const score = Math.min(100, Math.floor(averageRating * 20));
 
-  // Calculate composite score (0-100)
-  const score = Math.min(100, Math.floor(reviewScore + campaignScore));
-
-  // Determine badges
-  const badges = [];
+  const badges: string[] = [];
   if (score >= 80) badges.push("Elite");
   else if (score >= 65) badges.push("Trusted");
   else if (score >= 50) badges.push("Verified");
