@@ -7,6 +7,7 @@ import { IPaginationOptions } from "../../interface/pagination";
 import { ReviewModel } from "./global-review.model";
 import { IGlobalReview } from "./global-review.interface";
 import { InfluencerReputationService } from "../influencer/Reputation/reputation.service";
+import { IUser } from "../user/user.interface";
 
 /**
  * Create Review (Dynamic for any entity)
@@ -34,9 +35,7 @@ const createReview = async (payload: any, userId: string) => {
 
   // Update reputation if reviewing an influencer
   if (payload.entityType === "influencer") {
-    await InfluencerReputationService.handleNewReview(
-      review
-    );
+    await InfluencerReputationService.handleNewReview(review);
   }
 
   return review;
@@ -47,7 +46,7 @@ const createReview = async (payload: any, userId: string) => {
  */
 const updateReview = async (
   reviewId: string,
-  userId: string,
+  user: IUser,
   updateData: Partial<IGlobalReview>
 ) => {
   const review = await ReviewModel.findById(reviewId);
@@ -55,22 +54,75 @@ const updateReview = async (
     throw new AppError(status.NOT_FOUND, "Review not found");
   }
 
-  // Only owner or admin can update
-  if (review.userId.toString() !== userId) {
-    throw new AppError(
-      status.FORBIDDEN,
-      "Not authorized to update this review"
-    );
+  // Role-based authorization
+  if (user?.role !== "admin") {
+    if (review.userId.toString() !== user?.id) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "Not authorized to update this review"
+      );
+    }
+
+    // Restrict allowed fields for non-admin
+    const allowedFields = [
+      "rating",
+      "reviewText",
+      "reviewVideoUrl",
+      "proofUrl",
+      "entityId",
+      "entityType",
+    ];
+    const filteredData: Partial<IGlobalReview> = {};
+
+    for (const key of allowedFields) {
+      if (key in updateData) {
+        filteredData[key as keyof IGlobalReview] = updateData[
+          key as keyof IGlobalReview
+        ] as any;
+      }
+    }
+
+    updateData = filteredData;
   }
 
   // Validate rating range
-  if (updateData.rating && (updateData.rating < 1 || updateData.rating > 5)) {
+  if (
+    updateData.rating !== undefined &&
+    (updateData.rating < 1 || updateData.rating > 5)
+  ) {
     throw new AppError(status.BAD_REQUEST, "Rating must be between 1 and 5");
   }
 
   const result = await ReviewModel.findOneAndUpdate(
     { _id: reviewId },
     { $set: updateData },
+    { new: true }
+  );
+
+  return result;
+};
+
+const updateReviewStatus = async (
+  reviewId: string,
+  user: IUser,
+  reviewStatus: boolean
+) => {
+  const review = await ReviewModel.findById(reviewId);
+  if (!review) {
+    throw new AppError(status.NOT_FOUND, "Review not found");
+  }
+
+  if (user?.role !== "admin") {
+    if (review.userId.toString() !== user?.id) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "Not authorized to update this review"
+      );
+    }
+  }
+  const result = await ReviewModel.findOneAndUpdate(
+    { _id: reviewId },
+    { $set: { status: reviewStatus } },
     { new: true }
   );
   return result;
@@ -161,7 +213,7 @@ const ToggleReviewEditorPick = async (reviewId: string) => {
     { $set: { isEditorPicked: !review.isEditorPicked } },
     { new: true }
   );
-  
+
   return updatedReview;
 };
 
@@ -198,4 +250,5 @@ export const ReviewService = {
   getReviewsByEntity,
   getAllReviewForDb,
   ToggleReviewEditorPick,
+  updateReviewStatus,
 };

@@ -4,6 +4,7 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { ReviewService } from "./global-review.services";
 import pickOptions from "../../utils/pick";
+import { IUser } from "../user/user.interface";
 
 // Create Review
 const createReview = catchAsync(async (req: Request, res: Response) => {
@@ -44,10 +45,10 @@ const getAllReview = catchAsync(async (req, res) => {
 // Update Review
 const updateReview = catchAsync(async (req: Request, res: Response) => {
   const reviewId = req.params.id;
-  const userId = req.user?.id;
+  const user = req.user;
   const updateData = req.body;
 
-  const result = await ReviewService.updateReview(reviewId, userId, updateData);
+  const result = await ReviewService.updateReview(reviewId, user as IUser, updateData);
 
   sendResponse(res, {
     success: true,
@@ -56,6 +57,22 @@ const updateReview = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+const updateReviewStatus = catchAsync(async (req: Request, res: Response) => {
+  
+  const reviewId = req.params.id;
+  const user = req.user;
+  const { reviewStatus } = req.body;
+
+  const result = await ReviewService.updateReviewStatus(reviewId,user as IUser, reviewStatus);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Review updated successfully",
+    data: result,
+  });
+})
 
 // Toggle Review Editor Pick
 const toggleReviewEditorPick = catchAsync(async (req: Request, res: Response) => {
@@ -135,4 +152,5 @@ export const ReviewController = {
   getReviewsByUser,
   getReviewsByEntity,
   toggleReviewEditorPick,
+  updateReviewStatus
 };

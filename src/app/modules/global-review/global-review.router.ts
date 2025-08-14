@@ -23,6 +23,12 @@ router.patch(
   auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
   ReviewController.updateReview
 );
+// Update Review status
+router.patch(
+  "/status/:id",
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  ReviewController.updateReviewStatus
+);
 
 
 // Update Review
