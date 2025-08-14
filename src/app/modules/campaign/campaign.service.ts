@@ -9,15 +9,17 @@ import { ToolModel } from "../tool/tool.model";
 import { Types } from "mongoose";
 import { Influencer } from "../influencer/influencer.model";
 import UserModel from "../user/user.model";
+import { findProfileByRole } from "../../utils/findUser";
 
 const createCampaign = async (payload: ICampaign, user: IUser) => {
-  const existingFounder = await Founder.findOne({ userId: user?.id });
+  const existingFounder = await findProfileByRole(user);
 
   const founderId = existingFounder?._id;
 
   if (!founderId) {
     throw new AppError(status.BAD_REQUEST, "Founder not found");
   }
+
   const existingCampaign = await Campaign.findOne({
     founderId,
     toolId: payload?.toolId,
@@ -205,9 +207,13 @@ const addInfluencerToCampaign = async (
 };
 
 const requestToJoinCampaign = async (campaignId: string, user: IUser) => {
-  const existingInfluencer = await Influencer.findOne({ userId: user?.id });
+  const existingInfluencer = await findProfileByRole(user);
 
   const InfluencerId = existingInfluencer?._id;
+
+  if (!InfluencerId) {
+    throw new AppError(status.BAD_REQUEST, "Founder not found");
+  }
 
   const campaign = await Campaign.findById(campaignId);
   if (!campaign) throw new AppError(status.NOT_FOUND, "Campaign not found");
@@ -215,16 +221,21 @@ const requestToJoinCampaign = async (campaignId: string, user: IUser) => {
   // Check if already requested/joined
   const exists = campaign.influencers.some(
     (inf) =>
-      inf.influencerId.toString() === (InfluencerId as string | undefined)
+      inf.influencerId.toString() === (InfluencerId as string | Types.ObjectId)
   );
   if (exists) throw new AppError(status.CONFLICT, "Already requested/joined");
 
-  campaign.influencers.push({
-    influencerId: new Types.ObjectId(InfluencerId),
-    status: "pending", // Default status
-  });
-
-  console.log("check campaign", campaign);
+  if (existingInfluencer?.userId?.verified === false) {
+    campaign.influencers.push({
+      influencerId: new Types.ObjectId(InfluencerId),
+      status: "pending",
+    });
+  } else if (existingInfluencer?.userId?.verified === true) {
+    campaign.influencers.push({
+      influencerId: new Types.ObjectId(InfluencerId),
+      status: "approved",
+    });
+  }
 
   await campaign.save();
   return campaign;
@@ -232,7 +243,7 @@ const requestToJoinCampaign = async (campaignId: string, user: IUser) => {
 
 const updateInfluencerStatus = async (
   campaignId: string,
-  influencerId: string,
+  influencerId: string, // This is the Influencer profile ID
   user: IUser
 ) => {
   // 1. Validate campaign exists
@@ -257,7 +268,7 @@ const updateInfluencerStatus = async (
     }
   }
 
-  // 3. Find and update influencer status
+  // 3. Find the influencer in the campaign
   const influencerToUpdate = campaign.influencers.find(
     (inf) => inf.influencerId.toString() === influencerId
   );
@@ -269,9 +280,25 @@ const updateInfluencerStatus = async (
     );
   }
 
-  // 4. Toggle status (approved ↔ rejected)
-  influencerToUpdate.status =
-    influencerToUpdate.status === "approved" ? "rejected" : "approved";
+  // 4. Update status to approved
+  influencerToUpdate.status = "approved";
+
+  // 5. Also mark the linked User as verified
+  if (influencerToUpdate.status === "approved") {
+    // Get the Influencer profile to access userId
+    const influencerProfile = await Influencer.findById(influencerId);
+    if (!influencerProfile) {
+      throw new AppError(status.NOT_FOUND, "Influencer profile not found");
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      influencerProfile.userId, // Link to actual User _id
+      { verified: true },
+      { new: true }
+    );
+  }
+
+  // 6. Save the campaign
   await campaign.save();
 
   return campaign;

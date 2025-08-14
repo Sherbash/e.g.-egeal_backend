@@ -9,7 +9,7 @@ export const findProfileByRole = async (user: IUser) => {
   let profile = null;
 
   if (user.role === UserRole.FOUNDER) {
-    profile = await Founder.findOne({ userId: user.id }).populate("userId");
+    profile = await Founder.findOne({ userId: user.id }).populate("userId") as any;
     if (!profile) {
       throw new AppError(status.NOT_FOUND, "Founder profile not found");
     }

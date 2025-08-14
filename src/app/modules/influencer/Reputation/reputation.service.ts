@@ -36,6 +36,7 @@ const calculateReputation = async (
 };
 
 const updateInfluencerReputation = async (influencerId: string | mongoose.Types.ObjectId) => {
+  // console.log("influencerId", influencerId)
   const { score, badges } = await calculateReputation(influencerId);
 
   const updatedInfluencer = await Influencer.findByIdAndUpdate(
