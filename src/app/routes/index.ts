@@ -23,6 +23,7 @@ import { ReputationRoutes } from "../modules/influencer/Reputation/reputation.ro
 import { CampaignRoutes } from "../modules/campaign/campaign.route";
 import { TicketRoutes } from "../modules/ticket/ticket.route";
 import { LeaderboardRoutes } from "../modules/leaderboard/leaderboard.route";
+import { InvestorWaitlistRoutes } from "../modules/investorWaitlist/investorWaitlist.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -96,6 +97,10 @@ const moduleRoutes = [
   {
     path: "/waitlist",
     route: WaitlistRoutes,
+  },
+  {
+    path: "/investor-waitlist",
+    route: InvestorWaitlistRoutes,
   },
   {
     path: "/coupon",
