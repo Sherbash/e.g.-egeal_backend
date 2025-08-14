@@ -1,12 +1,9 @@
-import { Server as HttpServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
+import { Server } from "http";
 import mongoose from "mongoose";
 import app from "./app";
 import config from "./app/config";
-import { setupChatSocket } from "./app/modules/chat/chat.socket";
 
-let server: HttpServer | null = null;
-let io: SocketIOServer | null = null;
+let server: Server | null = null;
 
 // Database connection
 async function connectToDatabase() {
@@ -22,34 +19,13 @@ async function connectToDatabase() {
 // Graceful shutdown
 function gracefulShutdown(signal: string) {
   console.log(`Received ${signal}. Closing server...`);
-  if (io) {
-    io.close(() => {
-      console.log("Socket.IO server closed");
-    });
-  }
   if (server) {
     server.close(() => {
-      console.log("HTTP server closed gracefully");
-      mongoose.connection.close()
-        .then(() => {
-          console.log("MongoDB connection closed");
-          process.exit(0);
-        })
-        .catch((err) => {
-          console.error("Error closing MongoDB connection:", err);
-          process.exit(1);
-        });
+      console.log("Server closed gracefully");
+      process.exit(0);
     });
   } else {
-    mongoose.connection.close()
-      .then(() => {
-        console.log("MongoDB connection closed");
-        process.exit(0);
-      })
-      .catch((err) => {
-        console.error("Error closing MongoDB connection:", err);
-        process.exit(1);
-      });
+    process.exit(0);
   }
 }
 
@@ -59,32 +35,8 @@ async function bootstrap() {
     await connectToDatabase();
     //await seed();
 
-    // Create HTTP server
-    server = new HttpServer(app);
-
-    // Initialize Socket.IO
-    io = new SocketIOServer(server, {
-  cors: {
-    origin: ["http://localhost:3000", "http://localhost:5173"], // দুইটা allowed origins
-    methods: ["GET", "POST"],
-    credentials: true,  // optional, যদি credentials দরকার হয়
-  },
-});
-
-    // Log global connection/disconnection
-    io.on("connection", (socket) => {
-      console.log(`🔗 Socket connected: ${socket.id}`);
-      socket.on("disconnect", (reason) => {
-        console.log(`❌ Socket disconnected: ${socket.id} | Reason: ${reason}`);
-      });
-    });
-
-    // Setup Socket.IO chat handlers
-    setupChatSocket(io);
-
-    // Start server
-    server.listen(config.port, () => {
-      console.log(`🚀 Eagle server & Socket.IO listening on port ${config.port}`);
+    server = app.listen(config.port, () => {
+      console.log(`🚀 Application is running on port ${config.port}`);
     });
 
     // Listen for termination signals

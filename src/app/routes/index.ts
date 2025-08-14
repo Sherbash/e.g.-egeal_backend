@@ -3,7 +3,7 @@ import { UserRoutes } from "../modules/user/user.routes";
 import { AuthRoutes } from "../modules/auth/auth.route";
 import { CourseRoutes } from "../modules/course/course.route";
 import { AffiliateRoutes } from "../modules/affiliate/affiliate.route";
-import { ChatRoutes } from "../modules/chat/chat.route";
+// import { ChatRoutes } from "../modules/chat/chat.route";
 import { ToolRoutes } from "../modules/tool/tool.routes";
 import { PromotionRoutes } from "../modules/promotion/promotion.route";
 import { PaymentRoutes } from "../modules/payment/payment.route";
@@ -46,7 +46,7 @@ const moduleRoutes = [
     path: "/affiliates",
     route: AffiliateRoutes,
   },
-  { path: "/chat", route: ChatRoutes },
+  // { path: "/chat", route: ChatRoutes },
   { path: "/promotion", route: PromotionRoutes },
   {
     path: "/payment",
