@@ -9,8 +9,6 @@ import { GigPage, IGigPage } from "./influencer-gigPage.model";
 import { IUser } from "../user/user.interface";
 import { generateUniqueId } from "../../utils/generateUniqueSlug";
 import { Affiliate } from "../affiliate/affiliate.model";
-import { Campaign } from "../campaign/campaign.model";
-import { ReviewModel } from "../global-review/global-review.model";
 
 interface IInfluencerFilters {
   searchTerm?: string;
@@ -147,18 +145,7 @@ const createGigPage = async (user: IUser, payload: IGigPage) => {
 
 const getGigPage = async (username: string) => {
   const gigPage = await GigPage.findOne({ username: username.toLowerCase() })
-    .populate({
-      path: "influencerId",
-      select: "userId",
-      populate: {
-        path: "userId",
-        select: "firstName lastName email",
-      },
-    })
-    .populate({
-      path: "affiliates",
-      select: "affiliateUrl toolId",
-    })
+    .populate("influencerId")
     .lean();
 
   if (!gigPage) {
@@ -178,18 +165,7 @@ const getGigPageByUserId = async (userId: string) => {
   const gigPage = await GigPage.findOne({
     influencerId: influencer._id,
   })
-    .populate({
-      path: "influencerId",
-      select: "userId",
-      populate: {
-        path: "userId",
-        select: "firstName lastName email",
-      },
-    })
-    .populate({
-      path: "affiliates",
-      select: "affiliateUrl toolId",
-    })
+    .populate("influencerId")
     .lean();
 
   if (!gigPage) {
@@ -201,27 +177,15 @@ const getGigPageByUserId = async (userId: string) => {
   };
 };
 const getGigPageByInfluencerId = async (influencerId: string) => {
-  console.log("influencerId", influencerId)
-  const influencer = await Influencer.findOne({ _id:influencerId });
+  const influencer = await Influencer.findOne({ _id: influencerId });
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
   const gigPage = await GigPage.findOne({
-    influencerId: influencer?._id,
+    influencerId: influencer._id,
   })
-    .populate({
-      path: "influencerId",
-      select: "userId influencerId",
-      populate: {
-        path: "userId",
-        select: "firstName lastName email",
-      },
-    })
-    .populate({
-      path: "affiliates",
-      select: "affiliateUrl toolId",
-    })
+    .populate("influencerId")
     .lean();
 
   if (!gigPage) {
@@ -233,14 +197,7 @@ const getGigPageByInfluencerId = async (influencerId: string) => {
 
 const getGigPageById = async (gigId: string) => {
   const gigPage = await GigPage.findOne({ _id: gigId })
-    .populate({
-      path: "influencerId",
-      select: "userId influencerId",
-      populate: {
-        path: "userId",
-        select: "firstName lastName email",
-      },
-    })
+    .populate("influencerId")
     .lean();
 
   if (!gigPage) {
@@ -344,5 +301,5 @@ export const InfluencerService = {
   upsertBankDetails,
   getBankDetails,
   deleteBankDetails,
-  getGigPageByInfluencerId
+  getGigPageByInfluencerId,
 };

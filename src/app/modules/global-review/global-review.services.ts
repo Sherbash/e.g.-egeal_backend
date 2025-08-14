@@ -125,6 +125,12 @@ const updateReviewStatus = async (
     { $set: { status: reviewStatus } },
     { new: true }
   );
+
+  if (result?.entityType === "influencer") {
+    await InfluencerReputationService.updateInfluencerReputation(
+      result?.entityId
+    );
+  }
   return result;
 };
 
@@ -193,7 +199,7 @@ const deleteReview = async (
  * Get Single Review by ID
  */
 const getReviewById = async (reviewId: string) => {
-  const review = await ReviewModel.findOne({ reviewId, isApproved: true })
+  const review = await ReviewModel.findOne({ _id: reviewId })
     .populate("userId", "firstName lastName email")
     .populate("entityId", "title")
     .populate("comments");
@@ -204,7 +210,7 @@ const getReviewById = async (reviewId: string) => {
 };
 
 const ToggleReviewEditorPick = async (reviewId: string) => {
-  const review = await ReviewModel.findById(reviewId);
+  const review = await ReviewModel.findById({ _id: reviewId});
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
   }

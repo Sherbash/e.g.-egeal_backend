@@ -6,7 +6,7 @@ import status from "http-status";
 import AppError from "../../../errors/appError";
 
 const calculateReputation = async (
-  influencerId: string
+  influencerId: string | mongoose.Types.ObjectId
 ): Promise<{ score: number; badges: string[] }> => {
   const influencerObjectId = new mongoose.Types.ObjectId(influencerId);
 
@@ -35,7 +35,7 @@ const calculateReputation = async (
   return { score, badges };
 };
 
-const updateInfluencerReputation = async (influencerId: string) => {
+const updateInfluencerReputation = async (influencerId: string | mongoose.Types.ObjectId) => {
   const { score, badges } = await calculateReputation(influencerId);
 
   const updatedInfluencer = await Influencer.findByIdAndUpdate(
