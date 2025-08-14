@@ -22,6 +22,7 @@ import { CouponRoutes } from "../modules/coupon/coupon.route";
 import { ReputationRoutes } from "../modules/influencer/Reputation/reputation.route";
 import { CampaignRoutes } from "../modules/campaign/campaign.route";
 import { TicketRoutes } from "../modules/ticket/ticket.route";
+import { LeaderboardRoutes } from "../modules/leaderboard/leaderboard.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -111,6 +112,10 @@ const moduleRoutes = [
   {
     path: "/tickets",
     route: TicketRoutes,
+  },
+  {
+    path: "/leaderboard",
+    route: LeaderboardRoutes,
   },
 ];
 

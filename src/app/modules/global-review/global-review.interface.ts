@@ -12,6 +12,7 @@ export interface IGlobalReview {
   reviewVideoUrl?: string;
   proofUrl?: string;
   isEditorPicked: boolean;
+  bestReview: boolean;
   status: "pending" | "approved" | "rejected";
   rewardGiven: boolean;
   comments?: Types.ObjectId[];
