@@ -9,6 +9,8 @@ import { GigPage, IGigPage } from "./influencer-gigPage.model";
 import { IUser } from "../user/user.interface";
 import { generateUniqueId } from "../../utils/generateUniqueSlug";
 import { Affiliate } from "../affiliate/affiliate.model";
+import { Campaign } from "../campaign/campaign.model";
+import { ReviewModel } from "../global-review/global-review.model";
 
 interface IInfluencerFilters {
   searchTerm?: string;
@@ -198,6 +200,36 @@ const getGigPageByUserId = async (userId: string) => {
     ...gigPage,
   };
 };
+const getGigPageByInfluencerId = async (influencerId: string) => {
+  console.log("influencerId", influencerId)
+  const influencer = await Influencer.findOne({ _id:influencerId });
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+  const gigPage = await GigPage.findOne({
+    influencerId: influencer?._id,
+  })
+    .populate({
+      path: "influencerId",
+      select: "userId influencerId",
+      populate: {
+        path: "userId",
+        select: "firstName lastName email",
+      },
+    })
+    .populate({
+      path: "affiliates",
+      select: "affiliateUrl toolId",
+    })
+    .lean();
+
+  if (!gigPage) {
+    throw new AppError(status.NOT_FOUND, "Gig page not found");
+  }
+
+  return gigPage;
+};
 
 const getGigPageById = async (gigId: string) => {
   const gigPage = await GigPage.findOne({ _id: gigId })
@@ -263,9 +295,6 @@ const deleteGigPage = async (userId: string) => {
   return result;
 };
 
-
-
-
 const upsertBankDetails = async (influencerId: string, bankDetails: any) => {
   const updated = await Influencer.findOneAndUpdate(
     { influencerId },
@@ -281,7 +310,9 @@ const upsertBankDetails = async (influencerId: string, bankDetails: any) => {
 };
 
 const getBankDetails = async (influencerId: string) => {
-  const influencer = await Influencer.findOne({ influencerId }).select("bankDetails");
+  const influencer = await Influencer.findOne({ influencerId }).select(
+    "bankDetails"
+  );
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
@@ -313,4 +344,5 @@ export const InfluencerService = {
   upsertBankDetails,
   getBankDetails,
   deleteBankDetails,
+  getGigPageByInfluencerId
 };

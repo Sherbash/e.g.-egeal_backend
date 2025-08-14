@@ -5,26 +5,15 @@ import catchAsync from "../../utils/catchAsync";
 import { Request, Response } from "express";
 import AppError from "../../errors/appError";
 import { ToolModel } from "./tool.model";
+import { IUser } from "../user/user.interface";
+import pickOptions from "../../utils/pick";
 
 const createTool = catchAsync(async (req: Request, res: Response) => {
   const body = req.body;
 
-  if (
-    !body.name ||
-    !body.description ||
-    !body.founderId ||
-    body.price == null
-  ) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "Name, description, founder id, and price are required"
-    );
-  }
-  if (body.price < 0) {
-    throw new AppError(status.BAD_REQUEST, "Price must be non-negative");
-  }
+  console.log("body", body);
 
-  const result = await ToolServices.createToolIntoDB(body);
+  const result = await ToolServices.createToolIntoDB(body, req.user as IUser);
 
   sendResponse(res, {
     success: true,
@@ -35,7 +24,14 @@ const createTool = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllTools = catchAsync(async (req: Request, res: Response) => {
-  const result = await ToolServices.getAllToolsFromDB();
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
+  const filters = pickOptions(req.query, ["searchTerm",  "isActive" , "launched"]);
+  const result = await ToolServices.getAllToolsFromDB(options, filters);
 
   sendResponse(res, {
     success: true,

@@ -1,42 +1,72 @@
-import { Schema, model, Document, Types } from 'mongoose';
-
-export enum CampaignType {
-  EMAIL = 'EMAIL',
-  SOCIAL = 'SOCIAL',
-  AFFILIATE = 'AFFILIATE',
-  FUNNEL = 'FUNNEL',
-  GIVEAWAY = 'GIVEAWAY'
-}
-
+import { Schema, model, Document, Types } from "mongoose";
 
 export interface ICampaign extends Document {
-  name: string;
-  description?: string;
-  type: CampaignType;
-  startDate: Date;
-  endDate?: Date;
-  isActive: boolean;
-  tools: Types.ObjectId[];
-  createdBy: Types.ObjectId;
-  updatedBy?: Types.ObjectId;
-  bonusThreshold?: number;
-  bonusGift?: Types.ObjectId;
-  testimonials: Types.ObjectId[];
+  founderId: Types.ObjectId; // Who created the campaign
+  toolId: string; // The tool being promoted
+  campaignType: "JOB";
+  influencers: {
+    // Influencers participating
+    influencerId: Types.ObjectId;
+    status: "pending" | "approved" | "completed" | "rejected";
+  }[];
+  campaignName: string; // Campaign name
+  description: string; // Campaign details
+  budget: number; // Total campaign budget
+  startDate: Date; // When campaign goes live
+  endDate?: Date; // Optional end date
+  isActive: boolean; // Campaign status
+  createdAt: Date;
+  updatedAt: Date;
 }
-const CampaignSchema = new Schema({
-  name: { type: String, required: true },
-  description: { type: String },
-  type: { type: String, enum: Object.values(CampaignType), required: true },
-  startDate: { type: Date, required: true },
-  endDate: { type: Date },
-  isActive: { type: Boolean, default: true },
-  products: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
-  tools: [{ type: Schema.Types.ObjectId, ref: 'Tool' }],
-  createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
-  bonusThreshold: { type: Number, default: 0 },
-  bonusGift: { type: Schema.Types.ObjectId, ref: 'Gift' },
-  testimonials: [{ type: Schema.Types.ObjectId, ref: 'AllReview' }]
-}, { timestamps: true });
 
-export const Campaign = model<ICampaign>('Campaign', CampaignSchema);
+const CampaignSchema = new Schema<ICampaign>(
+  {
+    founderId: {
+      type: Schema.Types.ObjectId,
+      ref: "Founder",
+      required: true,
+    },
+    toolId: {
+      type: String,
+      required: true,
+    },
+    campaignType: {
+      type: String,
+      enum: ["JOB"],
+      default: "JOB",
+    },
+    influencers: [
+      {
+        influencerId: {
+          type: Schema.Types.ObjectId,
+          ref: "Influencer",
+        },
+        status: {
+          type: String,
+          enum: ["pending", "approved",  "rejected"],
+          default: "pending",
+        },
+      },
+    ],
+    campaignName: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    budget: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  { timestamps: true }
+);
+
+export const Campaign = model<ICampaign>("Campaign", CampaignSchema);

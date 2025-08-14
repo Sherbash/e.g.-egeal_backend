@@ -1,7 +1,5 @@
 import mongoose, { Schema } from "mongoose";
 import { IUser, UserRole } from "./user.interface";
-import bcrypt from "bcrypt";
-import config from "../../config";
 
 const userSchema = new Schema<IUser>(
   {
@@ -24,14 +22,35 @@ const userSchema = new Schema<IUser>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    points: {
-      type: Number,
-      default: 0,
+    verified: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
 );
+// Virtual for referral stats (computed on demand)
+userSchema.virtual("referralStats", {
+  ref: "Referral",
+  localField: "_id",
+  foreignField: "referrer",
+  justOne: false,
+  options: {
+    projection: {
+      status: 1,
+      rewardAmount: 1,
+      verifiedAt: 1,
+    },
+  },
+});
 
+// In user.model.ts
+userSchema.virtual("referralCount", {
+  ref: "Referral",
+  localField: "_id",
+  foreignField: "referrer",
+  count: true,
+});
 // Password hashing
 // userSchema.pre("save", async function (next) {
 //   if (this.isModified("password")) {

@@ -5,6 +5,7 @@ interface IToolDocument extends ITool, Document {}
 
 const toolSchema = new Schema<IToolDocument>({
   name: { type: String, required: true },
+  logo: { type: String, required: true },
   description: { type: String, required: true },
   price: { type: Number, required: true, min: 0 },
   commissionRate: { type: Number, required: true },
