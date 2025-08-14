@@ -1,17 +1,32 @@
 import express from "express";
-import ReputationController from "./reputation.controller";
+import { ReputationController } from "./reputation.controller";
+import auth from "../../../middleware/auth";
+import { UserRole } from "../../user/user.interface";
 
 const router = express.Router();
 
-// GET /api/reputation/leaderboard - Get top influencers
-router.get('/leaderboard', ReputationController.getLeaderboard);
+router.get(
+  "/:influencerId/score",
+//   auth(UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  ReputationController.calculateReputationScore
+);
 
-// GET /api/reputation/:id - Get influencer reputation
-router.get('/:id', ReputationController.getReputation);
+router.patch(
+  "/:influencerId/update",
+  auth(UserRole.ADMIN),
+  ReputationController.updateReputation
+);
 
+router.post(
+  "/:influencerId/campaign/:campaignId",
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
+  ReputationController.handleCampaignParticipation
+);
 
-// POST /api/reputation/:id/recalculate - Manual recalculate
-router.post('/:id/recalculate', ReputationController.recalculateReputation);
-
+router.post(
+  "/review",
+  auth(UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  ReputationController.handleNewReview
+);
 
 export const ReputationRoutes = router;

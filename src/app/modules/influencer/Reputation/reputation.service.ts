@@ -1,118 +1,125 @@
-// reputation
-
 import mongoose from "mongoose";
 import { ReviewModel } from "../../global-review/global-review.model";
 import { Campaign } from "../../campaign/campaign.model";
 import { Influencer } from "../influencer.model";
+import status from "http-status";
+import AppError from "../../../errors/appError";
 
-const ReputationService = {
-  async calculateScore(influencerId: string): Promise<number> {
-    // Convert to ObjectId
-    const influencerObjectId = new mongoose.Types.ObjectId(influencerId);
+const calculateReputation = async (
+  influencerId: string
+): Promise<{ score: number; badges: string[] }> => {
+  const influencerObjectId = new mongoose.Types.ObjectId(influencerId);
 
-    // Get all relevant data in one query
-    const [reviews, campaigns] = await Promise.all([
-      ReviewModel.find({
-        entityType: "influencer",
-        entityId: influencerObjectId,
-        // status: "approved",
-      }),
-      Campaign.find({
-        influencers: influencerObjectId,
-      }),
-    ]);
+  // Get all relevant data in parallel
+  const [reviews, activeCampaigns] = await Promise.all([
+    // Approved reviews for this influencer
+    ReviewModel.find({
+      entityType: "influencer",
+      entityId: influencerObjectId,
+      status: "approved",
+    }),
 
-    // Calculate basic metrics
-    const reviewCount = reviews.length;
-    const averageRating =
-      reviewCount > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
-        : 0;
+    // Campaigns where influencer is either pending or approved
+    Campaign.find({
+      "influencers.influencerId": influencerObjectId,
+      "influencers.status": { $in: ["pending", "approved"] },
+    }),
+  ]);
 
-    // Since influencers are stored as ObjectId references in Campaign,
-    // we just need to count campaigns where the influencer is present
-    const totalCampaigns = campaigns.length;
+  // Calculate review metrics (50% weight)
+  const reviewCount = reviews.length;
+  const averageRating =
+    reviewCount > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+      : 0;
+  const reviewScore = averageRating * 20; // Convert 5-star to 100 scale
 
-    // For completion rate, we'd need to know which campaigns were completed
-    // This would require either:
-    // 1. Adding status to Campaign model, or
-    // 2. Using another field to track completion
-    // For now, we'll assume all campaigns joined are completed
-    const completionRate = totalCampaigns > 0 ? 100 : 0;
+  // Calculate campaign metrics (50% weight)
+  const campaignCount = activeCampaigns.length;
+  const campaignScore = Math.min(campaignCount * 5, 50); // Max 50 points for campaigns
 
-    // Simple dynamic score formula
-    const score = Math.min(
-      100,
-      Math.floor(
-        averageRating * 20 + // 50% weight (converts 5-star to 100 scale)
-          completionRate * 0.5 // 50% weight
-      )
-    );
+  // Calculate composite score (0-100)
+  const score = Math.min(100, Math.floor(reviewScore + campaignScore));
 
-    return score;
-  },
+  // Determine badges
+  const badges = [];
+  if (score >= 80) badges.push("Elite");
+  else if (score >= 65) badges.push("Trusted");
+  else if (score >= 50) badges.push("Verified");
 
-  async updateInfluencerReputation(influencerId: string) {
-    console.log("influencerId", influencerId)
-    const score = await this.calculateScore(influencerId);
-    const badges = this.determineBadges(score);
+  return { score, badges };
+};
 
-    await Influencer.findByIdAndUpdate(influencerId, {
+const updateInfluencerReputation = async (influencerId: string) => {
+  const { score, badges } = await calculateReputation(influencerId);
+
+  const updatedInfluencer = await Influencer.findByIdAndUpdate(
+    influencerId,
+    {
       $set: {
         "reputation.score": score,
         "reputation.badges": badges,
         "reputation.lastUpdated": new Date(),
-        "reputation.isVerified": score >= 60, // Auto-verify at 60+ score
+        "reputation.isVerified": score >= 60,
       },
-    });
+    },
+    { new: true }
+  );
 
-    return { score, badges };
-  },
+  if (!updatedInfluencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
 
-  determineBadges(score: number): string[] {
-    const badges = [];
-    if (score >= 80) badges.push("Elite");
-    if (score >= 65) badges.push("Trusted");
-    if (score >= 50) badges.push("Verified");
-    return badges;
-  },
-
-  // New method to update reputation when campaign status changes
-  async handleCampaignParticipation(influencerId: string, campaignId: string) {
-    // You would call this when an influencer joins/completes a campaign
-    return this.updateInfluencerReputation(influencerId);
-  },
-
-  // New method to update reputation when review is added
-  async handleNewReview(review: any) {
-    if (review.entityType === "influencer") {
-      return this.updateInfluencerReputation(review.entityId);
-    }
-  },
+  return { score, badges };
 };
 
-const addInfluencerToCampaign = async (
-  campaignId: string,
-  influencerId: string
+const handleCampaignStatusChange = async (
+  influencerId: string,
+  campaignId: string
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Add to campaign
-    await Campaign.findByIdAndUpdate(
-      campaignId,
-      { $addToSet: { influencers: influencerId } },
+    // 1. Find the campaign to check current status of this influencer
+    const campaign = await Campaign.findOne(
+      {
+        _id: campaignId,
+        "influencers.influencerId": new mongoose.Types.ObjectId(influencerId),
+      },
+      { "influencers.$": 1 } // Only return the matched influencer
+    ).session(session);
+
+    if (
+      !campaign ||
+      !campaign.influencers ||
+      campaign.influencers.length === 0
+    ) {
+      throw new Error("Influencer not found in this campaign");
+    }
+
+    const currentStatus = campaign.influencers[0].status;
+
+    // 2. Decide new status (toggle)
+    const newStatus = currentStatus === "pending" ? "approved" : "pending";
+
+    // 3. Update status in DB
+    await Campaign.findOneAndUpdate(
+      {
+        _id: campaignId,
+        "influencers.influencerId": new mongoose.Types.ObjectId(influencerId),
+      },
+      {
+        $set: { "influencers.$.status": newStatus },
+      },
       { session }
     );
 
-    // Update reputation
-    await ReputationService.handleCampaignParticipation(
-      influencerId,
-      campaignId
-    );
+    // 4. Update influencer reputation
+    const result = await updateInfluencerReputation(influencerId);
 
     await session.commitTransaction();
+    return { ...result, newStatus };
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -121,7 +128,16 @@ const addInfluencerToCampaign = async (
   }
 };
 
+const handleNewReview = async (review: any) => {
+  if (review.entityType === "influencer") {
+    return updateInfluencerReputation(review.entityId);
+  }
+  return null;
+};
+
 export const InfluencerReputationService = {
-  addInfluencerToCampaign,
-  ReputationService,
+  calculateReputation,
+  updateInfluencerReputation,
+  handleCampaignStatusChange,
+  handleNewReview,
 };

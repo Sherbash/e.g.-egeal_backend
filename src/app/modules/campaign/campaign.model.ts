@@ -43,7 +43,7 @@ const CampaignSchema = new Schema<ICampaign>(
         },
         status: {
           type: String,
-          enum: ["pending", "approved", "completed", "rejected"],
+          enum: ["pending", "approved",  "rejected"],
           default: "pending",
         },
       },

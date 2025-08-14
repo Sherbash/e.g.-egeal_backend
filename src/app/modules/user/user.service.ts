@@ -49,6 +49,7 @@ const registerUser = async (payload: IUser) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
+  console.log("payload", payload)
   try {
     // 1. Check if user exists in User or TempUser
     const existingUser = await UserModel.findOne({ email }).session(session);

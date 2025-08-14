@@ -34,7 +34,7 @@ const createReview = async (payload: any, userId: string) => {
 
   // Update reputation if reviewing an influencer
   if (payload.entityType === "influencer") {
-    await InfluencerReputationService.ReputationService.handleNewReview(
+    await InfluencerReputationService.handleNewReview(
       review
     );
   }
