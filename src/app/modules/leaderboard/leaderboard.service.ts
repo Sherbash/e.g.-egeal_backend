@@ -10,40 +10,58 @@ const getLeaderboard = async () => {
       { $match: { "influencers.status": "approved" } },
       {
         $group: {
-          _id: "$influencers.influencerId",
+          _id: "$influencers.influencerId", // Influencer profile ID
           campaignsJoined: { $sum: 1 },
-          lastCampaignDate: { $max: "$createdAt" }
-        }
+          lastCampaignDate: { $max: "$createdAt" },
+        },
       },
       { $sort: { campaignsJoined: -1, lastCampaignDate: -1 } },
       { $limit: 10 },
+
+      // Step 1: Get Influencer profile
       {
         $lookup: {
           from: "influencers",
           localField: "_id",
           foreignField: "_id",
-          as: "influencer"
-        }
+          as: "influencer",
+        },
       },
       { $unwind: "$influencer" },
+
+      // Step 2: Get linked User data from Influencer.userId
+      {
+        $lookup: {
+          from: "users",
+          localField: "influencer.userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+
+      // Step 3: Final projection
       {
         $project: {
-          influencerId: "$influencer.influencerId",
+          influencerId: "$influencer._id",
           campaignsJoined: 1,
           reputationScore: "$influencer.reputation.score",
-          profileImage: { $ifNull: ["$influencer.profileImage", null] }
-        }
-      }
+          profileImage: { $ifNull: ["$influencer.profileImage", null] },
+          name: "$user.name",
+          email: "$user.email",
+          verified: "$user.verified",
+        },
+      },
     ]),
 
     // 2. Best Reviews (Editor's Pick)
     ReviewModel.aggregate([
-      { 
-        $match: { 
+      {
+        $match: {
           entityType: "influencer",
           bestReview: true,
-          status: "approved"
-        } 
+          status: "approved",
+        },
       },
       { $sort: { rating: -1, createdAt: -1 } },
       { $limit: 5 },
@@ -52,8 +70,8 @@ const getLeaderboard = async () => {
           from: "influencers",
           localField: "entityId",
           foreignField: "_id",
-          as: "influencer"
-        }
+          as: "influencer",
+        },
       },
       { $unwind: "$influencer" },
       {
@@ -61,8 +79,8 @@ const getLeaderboard = async () => {
           from: "users",
           localField: "userId",
           foreignField: "_id",
-          as: "reviewer"
-        }
+          as: "reviewer",
+        },
       },
       { $unwind: "$reviewer" },
       {
@@ -73,14 +91,16 @@ const getLeaderboard = async () => {
           createdAt: 1,
           influencer: {
             influencerId: "$influencer.influencerId",
-            profileImage: { $ifNull: ["$influencer.profileImage", null] }
+            profileImage: { $ifNull: ["$influencer.profileImage", null] },
           },
           reviewer: {
-            name: { $concat: ["$reviewer.firstName", " ", "$reviewer.lastName"] },
-            profileImage: { $ifNull: ["$reviewer.profileImage", null] }
-          }
-        }
-      }
+            name: {
+              $concat: ["$reviewer.firstName", " ", "$reviewer.lastName"],
+            },
+            profileImage: { $ifNull: ["$reviewer.profileImage", null] },
+          },
+        },
+      },
     ]),
 
     // 3. Top Influencers (by reputation score)
@@ -97,19 +117,19 @@ const getLeaderboard = async () => {
             $cond: [
               { $gt: ["$reputation.score", 0] },
               { $multiply: ["$reputation.score", 0.8] }, // Example calculation
-              0
-            ]
-          }
-        }
-      }
-    ])
+              0,
+            ],
+          },
+        },
+      },
+    ]),
   ]);
 
   return {
     mostActive,
     bestReviews,
     topInfluencers,
-    lastUpdated: new Date()
+    lastUpdated: new Date(),
   };
 };
 
