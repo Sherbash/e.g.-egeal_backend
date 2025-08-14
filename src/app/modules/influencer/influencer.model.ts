@@ -47,12 +47,26 @@ const influencerSchema = new Schema<IInfluencer>(
         ref: "Tool",
       },
     ],
+    reputation: {
+      score: {
+        type: Number,
+        default: 50,
+        min: 0,
+        max: 100,
+      },
+      isVerified: {
+        type: Boolean,
+        default: false,
+      },
+      badges: [String],
+      lastUpdated: Date,
+    },
 
     additionalNotes: {
       type: String,
       default: "empty",
     },
-     // ✅ Optional Bank Details
+    // ✅ Optional Bank Details
     bankDetails: {
       bankName: { type: String },
       accountNumber: { type: String },

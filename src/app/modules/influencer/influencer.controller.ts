@@ -52,6 +52,16 @@ const getGigPageById = catchAsync(async (req, res) => {
   });
 });
 
+const getGigPageByInfluencerId = catchAsync(async (req, res) => {
+  const result = await InfluencerService.getGigPageByInfluencerId(req.params.influencerId);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Gig page retrieved successfully",
+    data: result,
+  });
+});
+
 const updateGigPage = catchAsync(async (req, res) => {
   const result = await InfluencerService.updateGigPage(req.user.id, req.body);
   sendResponse(res, {
@@ -128,4 +138,5 @@ export const InfluencerController = {
   upsertBankDetails,
   getBankDetails,
   deleteBankDetails,
+  getGigPageByInfluencerId
 };

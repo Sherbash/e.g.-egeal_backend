@@ -19,7 +19,10 @@ import { CommentRoutes } from "../modules/global-comment/comment.router";
 import { EmailSubscriptionRoutes } from "../modules/subscription/subscription.route";
 import { WaitlistRoutes } from "../modules/waitlist/waitlist.route";
 import { CouponRoutes } from "../modules/coupon/coupon.route";
+import { ReputationRoutes } from "../modules/influencer/Reputation/reputation.route";
+import { CampaignRoutes } from "../modules/campaign/campaign.route";
 import { TicketRoutes } from "../modules/ticket/ticket.route";
+import { LeaderboardRoutes } from "../modules/leaderboard/leaderboard.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -99,8 +102,20 @@ const moduleRoutes = [
     route: CouponRoutes,
   },
   {
+    path: "/reputation",
+    route: ReputationRoutes,
+  },
+  {
+    path: "/campaign",
+    route: CampaignRoutes,
+  },
+  {
     path: "/tickets",
     route: TicketRoutes,
+  },
+  {
+    path: "/leaderboard",
+    route: LeaderboardRoutes,
   },
 ];
 
