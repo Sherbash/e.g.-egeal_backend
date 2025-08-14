@@ -1,20 +1,4 @@
-// import { IUser, UserRole } from "./user.interface";
-// import AppError from "../../errors/appError";
-// import status from "http-status";
-// import UserModel from "./user.model";
-// import mongoose from "mongoose";
-// import { Influencer } from "../influencer/influencer.model";
-// import { Founder } from "../founder/founder.model";
-// import { Investor } from "../investor/investor.model";
-// import { generateUniqueId } from "../../utils/generateUniqueSlug";
-// import bcrypt from "bcrypt";
-// import config from "../../config";
-// import { IJwtPayload } from "../auth/auth.interface";
-// import { findProfileByRole } from "../../utils/findUser";
-// import { Referral } from "../referral/referral.model";
-// import generateNumericNanoid from "../../utils/createNanoId";
-// import { TempUserModel } from "./tempUser.model";
-// import { createAndSendOtp, verifyOtp } from "../otp/otp.service";
+
 
 import bcrypt from "bcrypt";
 import { IUser, UserRole } from "./user.interface";
@@ -118,9 +102,9 @@ const registerUser = async (payload: IUser) => {
 };
 
 const completeRegistration = async (email: string, otp: string) => {
-  if (!email || !otp) {
-    throw new AppError(status.BAD_REQUEST, "Email and OTP required!");
-  }
+  // if (!email || !otp) {
+  //   throw new AppError(status.BAD_REQUEST, "Email and OTP required!");
+  // }
   const session = await mongoose.startSession();
   session.startTransaction();
 
