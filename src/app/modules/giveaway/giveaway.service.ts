@@ -191,7 +191,6 @@
 //   return result;
 // };
 
-
 // const cancelGiveaway = async (giveawayId: string, user: IUser) => {
 //   const giveaway = await Giveaway.findById(giveawayId);
 
@@ -304,46 +303,103 @@ const createGiveaway = async (payload: IGiveaway, user: IUser) => {
   const giveawayPayload = {
     ...payload,
     authorId: user.id,
-    priceMoney: payload.priceMoney, 
-    isPrivate: payload.isPrivate, 
-    maxParticipants: payload.maxParticipants || 30, 
-    inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined, 
+    priceMoney: payload.priceMoney,
+    isPrivate: payload.isPrivate,
+    maxParticipants: payload.maxParticipants || 30,
+    inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
   };
 
   // Validate invite code for private giveaways
   if (giveawayPayload.isPrivate && !giveawayPayload.inviteCode) {
-    throw new AppError(status.BAD_REQUEST, "Private giveaways require an invite code");
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Private giveaways require an invite code"
+    );
   }
 
   const result = await Giveaway.create(giveawayPayload);
   return result;
 };
 
-const getAllGiveaways = async () => {
-  const giveaways = await Giveaway.find()
-    .populate("authorId", "-password")
-    .populate("winnerId", "-password");
-  return giveaways;
+const getAllGiveaways = async (options: IPaginationOptions) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
+  const queryConditions: any = {};
+
+  const [giveaways, total] = await Promise.all([
+    Giveaway.find()
+      .populate("authorId", "-password")
+      .populate("winnerId", "-password")
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Giveaway.countDocuments(queryConditions),
+  ]);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: giveaways,
+  };
 };
 
-const getAllGiveawaysByRole = async (user: IUser) => {
+const getAllGiveawaysByRole = async (
+  user: IUser,
+  options: IPaginationOptions
+) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
+  const queryConditions: any = {};
+
   let allGiveaways;
+  let total;
+
   if (user?.role === "admin") {
-    allGiveaways = await Giveaway.find()
+    allGiveaways = await Giveaway.find(queryConditions)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit)
       .populate("authorId", "-password")
       .populate("winnerId", "-password");
+
+    total = await Giveaway.countDocuments(queryConditions);
   } else if (user?.role === "founder") {
     allGiveaways = await Giveaway.find({ authorId: user?.id })
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit)
       .populate("authorId", "-password")
       .populate("winnerId", "-password");
+
+    total = await Giveaway.countDocuments({ authorId: user?.id });
   } else {
     throw new AppError(status.FORBIDDEN, "Unauthorized to view giveaways");
   }
-  return allGiveaways;
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: allGiveaways,
+  };
 };
 
-const getGiveawaysWithAtLeastOneParticipant = async () => {
-  const giveaways = await Giveaway.aggregate([
+const getGiveawaysWithAtLeastOneParticipant = async (
+  options: IPaginationOptions
+) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
+  const queryConditions: any = [
     { $sort: { createdAt: -1 } },
     {
       $addFields: {
@@ -385,12 +441,28 @@ const getGiveawaysWithAtLeastOneParticipant = async () => {
         },
       },
     },
-  ]);
-  return giveaways;
+  ];
+  const giveaways = await Giveaway.aggregate(queryConditions)
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Giveaway.countDocuments(queryConditions);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: giveaways,
+  };
 };
 
 const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
-  const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
 
   const giveaways = await Giveaway.find({ status: "ongoing" })
     .sort({ [sortBy]: sortOrder })
@@ -402,7 +474,7 @@ const getAllOngoingGiveaways = async (options: IPaginationOptions) => {
   const total = await Giveaway.countDocuments({ status: "ongoing" });
 
   return {
-    meta: { page, limit, total },
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     data: giveaways,
   };
 };
@@ -411,7 +483,10 @@ const getGiveawayById = async (giveawayId: string) => {
   const giveaway = await Giveaway.findById(giveawayId)
     .populate("authorId", "-password")
     .populate("winnerId", "-password")
-    .populate("participants", "_id userId socialUsername videoLink proofs isWinner submittedAt");
+    .populate(
+      "participants",
+      "_id userId socialUsername videoLink proofs isWinner submittedAt"
+    );
 
   if (!giveaway) {
     throw new AppError(status.NOT_FOUND, "Giveaway not found");
@@ -420,7 +495,11 @@ const getGiveawayById = async (giveawayId: string) => {
   return giveaway;
 };
 
-const updateGiveaway = async (giveawayId: string, payload: Partial<IGiveaway>, user: IUser) => {
+const updateGiveaway = async (
+  giveawayId: string,
+  payload: Partial<IGiveaway>,
+  user: IUser
+) => {
   const giveaway = await Giveaway.findById(giveawayId);
   if (!giveaway) {
     throw new AppError(status.NOT_FOUND, "Giveaway not found");
@@ -430,18 +509,29 @@ const updateGiveaway = async (giveawayId: string, payload: Partial<IGiveaway>, u
     // Allow admin to update
   } else if (user?.role === "founder") {
     if (giveaway.authorId.toString() !== user?.id.toString()) {
-      throw new AppError(status.FORBIDDEN, "You are not authorized to update this giveaway");
+      throw new AppError(
+        status.FORBIDDEN,
+        "You are not authorized to update this giveaway"
+      );
     }
   } else {
-    throw new AppError(status.FORBIDDEN, "You are not authorized to update this giveaway");
+    throw new AppError(
+      status.FORBIDDEN,
+      "You are not authorized to update this giveaway"
+    );
   }
 
   // Prevent updating critical fields
   if (payload.priceMoney || payload.maxParticipants || payload.inviteCode) {
-    throw new AppError(status.BAD_REQUEST, "Cannot update prize money, participant limit, or invite code");
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Cannot update prize money, participant limit, or invite code"
+    );
   }
 
-  const result = await Giveaway.findByIdAndUpdate(giveawayId, payload, { new: true });
+  const result = await Giveaway.findByIdAndUpdate(giveawayId, payload, {
+    new: true,
+  });
   return result;
 };
 
@@ -452,20 +542,33 @@ const cancelGiveaway = async (giveawayId: string, user: IUser) => {
   }
 
   if (giveaway.status !== "ongoing") {
-    throw new AppError(status.BAD_REQUEST, "Giveaway is not ongoing and cannot be canceled");
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Giveaway is not ongoing and cannot be canceled"
+    );
   }
 
   if (user?.role === "admin") {
     // Allow admin to cancel
   } else if (user?.role === "founder") {
     if (giveaway.authorId.toString() !== user?.id.toString()) {
-      throw new AppError(status.FORBIDDEN, "You are not authorized to cancel this giveaway");
+      throw new AppError(
+        status.FORBIDDEN,
+        "You are not authorized to cancel this giveaway"
+      );
     }
   } else {
-    throw new AppError(status.FORBIDDEN, "You are not authorized to cancel this giveaway");
+    throw new AppError(
+      status.FORBIDDEN,
+      "You are not authorized to cancel this giveaway"
+    );
   }
 
-  const result = await Giveaway.findByIdAndUpdate(giveawayId, { status: "closed" }, { new: true });
+  const result = await Giveaway.findByIdAndUpdate(
+    giveawayId,
+    { status: "closed" },
+    { new: true }
+  );
   return result;
 };
 
@@ -493,7 +596,14 @@ const getGiveawayStats = async () => {
     },
   ]);
 
-  return stats.length ? stats[0] : { totalWinners: 0, totalPrizeMoney: 0, totalParticipants: 0, totalGiveaways: 0 };
+  return stats.length
+    ? stats[0]
+    : {
+        totalWinners: 0,
+        totalPrizeMoney: 0,
+        totalParticipants: 0,
+        totalGiveaways: 0,
+      };
 };
 
 export const GiveawayServices = {

@@ -209,23 +209,36 @@ import { Participant } from "./participant.model";
 import { IUser } from "../user/user.interface";
 import mongoose from "mongoose";
 import { IParticipant } from "./participant.interface";
+import { paginationHelper } from "../../utils/paginationHelpers";
+import { IPaginationOptions } from "../../interface/pagination";
 
-const createParticipant = async (payload: IParticipant & { inviteCode: string }, user: IUser) => {
+const createParticipant = async (
+  payload: IParticipant & { inviteCode: string },
+  user: IUser
+) => {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
 
-    const giveaway = await Giveaway.findById(payload.giveawayId).session(session);
+    const giveaway = await Giveaway.findById(payload.giveawayId).session(
+      session
+    );
     if (!giveaway) {
       throw new AppError(status.NOT_FOUND, "Giveaway not found");
     }
     if (giveaway.status !== "ongoing") {
-      throw new AppError(status.BAD_REQUEST, "This giveaway is not accepting participants");
+      throw new AppError(
+        status.BAD_REQUEST,
+        "This giveaway is not accepting participants"
+      );
     }
 
     // Check participant limit
     if (giveaway.participants.length >= giveaway.maxParticipants) {
-      throw new AppError(status.BAD_REQUEST, "Maximum participant limit reached");
+      throw new AppError(
+        status.BAD_REQUEST,
+        "Maximum participant limit reached"
+      );
     }
 
     // Validate invite code for private giveaways
@@ -241,7 +254,10 @@ const createParticipant = async (payload: IParticipant & { inviteCode: string },
       userId: user?.id,
     }).session(session);
     if (existingParticipant) {
-      throw new AppError(status.BAD_REQUEST, "You have already participated in this giveaway");
+      throw new AppError(
+        status.BAD_REQUEST,
+        "You have already participated in this giveaway"
+      );
     }
 
     const result = await Participant.create(
@@ -272,21 +288,45 @@ const createParticipant = async (payload: IParticipant & { inviteCode: string },
   }
 };
 
-const getAllParticipants = async (giveawayId: string, userId: string) => {
+const getAllParticipants = async (giveawayId: string, user: IUser, options:IPaginationOptions) => {
+  const { role, id: userId } = user;
+
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
   const giveaway = await Giveaway.findById(giveawayId);
   if (!giveaway) {
     throw new AppError(status.NOT_FOUND, "Giveaway not found");
   }
 
-  if (giveaway.authorId.toString() !== userId) {
-    throw new AppError(status.FORBIDDEN, "You are not authorized to view participants");
+  // If not admin, check ownership
+  if (role !== "admin" && giveaway.authorId.toString() !== userId) {
+    throw new AppError(
+      status.FORBIDDEN,
+      "You are not authorized to view participants"
+    );
   }
 
-  return await Participant.find({ giveawayId }).populate("userId", "firstName lastName email role isActive");
+  const participants = await Participant.find({ giveawayId })
+    .skip(skip)
+    .limit(limit)
+    .sort({ [sortBy]: sortOrder })
+    .populate("userId", "firstName lastName email role isActive");
+
+  const total = await Participant.countDocuments({ giveawayId });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: participants,
+  };
 };
 
 const getParticipant = async (participantId: string, user: IUser) => {
-
   const participant = await Participant.findById(participantId);
   if (!participant) {
     throw new AppError(status.NOT_FOUND, "Participant not found");
@@ -319,12 +359,21 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
       throw new AppError(status.NOT_FOUND, "Giveaway not found");
     }
 
-    if (user.role !== "admin" && giveaway.authorId.toString() !== user?.id.toString()) {
-      throw new AppError(status.FORBIDDEN, "You are not authorized to pick a winner");
+    if (
+      user.role !== "admin" &&
+      giveaway.authorId.toString() !== user?.id.toString()
+    ) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "You are not authorized to pick a winner"
+      );
     }
 
     if (giveaway.status !== "ongoing") {
-      throw new AppError(status.BAD_REQUEST, "Winner can only be picked for ongoing giveaways");
+      throw new AppError(
+        status.BAD_REQUEST,
+        "Winner can only be picked for ongoing giveaways"
+      );
     }
 
     const participants = await Participant.aggregate([
@@ -346,7 +395,8 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
       throw new AppError(status.BAD_REQUEST, "No verified participants found");
     }
 
-    const winner = participants[Math.floor(Math.random() * participants.length)];
+    const winner =
+      participants[Math.floor(Math.random() * participants.length)];
 
     const updatedWinner = await Participant.findByIdAndUpdate(
       winner._id,
@@ -355,7 +405,10 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
     );
 
     if (!updatedWinner) {
-      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update winner");
+      throw new AppError(
+        status.INTERNAL_SERVER_ERROR,
+        "Failed to update winner"
+      );
     }
 
     const updatedGiveaway = await Giveaway.findByIdAndUpdate(

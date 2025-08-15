@@ -3,6 +3,7 @@ import status from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import { ParticipantServices } from "./participant.service";
 import { IUser } from "../user/user.interface";
+import pickOptions from "../../utils/pick";
 
 const createParticipant = catchAsync(async (req: Request, res: Response) => {
   const participantData = req.body;
@@ -20,10 +21,16 @@ const createParticipant = catchAsync(async (req: Request, res: Response) => {
 
 const getAllParticipants = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
-
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
   const result = await ParticipantServices.getAllParticipants(
     giveawayId,
-    req.user.id
+    req.user.id,
+    options
   );
 
   res.status(status.OK).json({

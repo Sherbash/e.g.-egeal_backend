@@ -84,6 +84,7 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
       page,
       limit,
       total,
+      totalPages: Math.ceil(total / limit),
     },
     data: campaigns,
   };
