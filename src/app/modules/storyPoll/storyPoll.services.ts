@@ -1,20 +1,25 @@
-import { Types } from "mongoose";
 import AppError from "../../errors/appError";
 import status from "http-status";
 import { StoryModel } from "./storyPoll.model";
 import { IStory } from "./storyPoll.interface";
+import UserModel from "../user/user.model";
 
 /**
  * Create a new story
  */
 const createStory = async (payload: IStory) => {
-  console.log("payload", payload);
-  // Validate authorId exists (optional, if not using ref/populate)
-  if (!payload.authorId) {
-    throw new AppError(status.BAD_REQUEST, "Author ID is required");
+  const story = await StoryModel.create(payload);
+
+  if (!story) {
+    throw new AppError(status.BAD_REQUEST, "Failed to create story");
   }
 
-  const story = await StoryModel.create(payload);
+  await UserModel.findByIdAndUpdate(
+    payload?.authorId,
+    { $inc: { points: 1 } },
+    { new: true }
+  );
+
   return story;
 };
 
@@ -107,30 +112,30 @@ const voteOnPoll = async (
   const story = await StoryModel.findById(storyId);
   if (!story) throw new Error("Story not found");
 
-  if (pollChoiceIndex < 0 || pollChoiceIndex >= story.pollChoices.length) {
-    throw new Error("Invalid poll choice index");
-  }
+  // if (pollChoiceIndex < 0 || pollChoiceIndex >= story.pollChoices.length) {
+  //   throw new Error("Invalid poll choice index");
+  // }
 
-  // Remove the user from any previous vote
-  story.pollChoices.forEach((choice) => {
-    choice.voters = choice.voters.filter(
-      (_id) => _id.toString() !== userId.toString()
-    );
-  });
+  // // Remove the user from any previous vote
+  // story.pollChoices.forEach((choice) => {
+  //   choice.voters = choice.voters.filter(
+  //     (_id) => _id.toString() !== userId.toString()
+  //   );
+  // });
 
-  // Add the user to the selected choice voters array
-  story.pollChoices[pollChoiceIndex].voters.push(
-    userId as unknown as Types.ObjectId
-  );
+  // // Add the user to the selected choice voters array
+  // story.pollChoices[pollChoiceIndex].voters.push(
+  //   userId as unknown as Types.ObjectId
+  // );
 
-  await story.save();
+  // await story.save();
 
-  console.log("story", story)
-  // Return with counts
-  return story.pollChoices.map((choice) => ({
-    text: choice.text,
-    votes: choice.voters.length,
-  }));
+  // console.log("story", story);
+  // // Return with counts
+  // return story.pollChoices.map((choice) => ({
+  //   text: choice.text,
+  //   votes: choice.voters.length,
+  // }));
 };
 
 export const StoryService = {

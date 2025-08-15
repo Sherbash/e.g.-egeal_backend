@@ -26,6 +26,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    points:{
+      type: Number,
+      default: 0
+    }
   },
   { timestamps: true }
 );

@@ -143,6 +143,9 @@ const getAllReviewForDb = async (
 
   const queryConditions: any = {};
 
+  if(filters.entityType) {
+    queryConditions.entityType = filters.entityType
+  }
   if (filters.rating) {
     queryConditions.rating = filters.rating;
   }

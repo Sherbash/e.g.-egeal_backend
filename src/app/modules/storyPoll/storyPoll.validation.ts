@@ -4,17 +4,16 @@ import { z } from "zod";
 const createStorySchema = z.object({
   body: z.object({
     title: z.string(),
-    link: z.string().url().optional(),
-    pollChoices: z
-      .array(
-        z.object({
-          text: z.string().min(1),
-        })
-      )
-      .max(4)
-      .optional(),
+    link: z.string().optional(),
   }),
 });
+
+const updateStorySchema = z.object({
+    body: z.object({
+    title: z.string().optional(),
+    link: z.string().optional(),
+  }),
+})
 
 // Vote validation
 const voteSchema = z.object({
@@ -26,4 +25,5 @@ const voteSchema = z.object({
 export const StoryValidation = {
   createStorySchema,
   voteSchema,
+  updateStorySchema
 };

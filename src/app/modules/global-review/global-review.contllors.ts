@@ -30,7 +30,8 @@ const getAllReview = catchAsync(async (req, res) => {
   ]);
   const filters = pickOptions(req.query, [
     "rating",
-    "isApproved"
+    "isApproved",
+    "entityType"
   ]);
   const result = await ReviewService.getAllReviewForDb(options, filters);
 
