@@ -3,7 +3,7 @@ import { UserRoutes } from "../modules/user/user.routes";
 import { AuthRoutes } from "../modules/auth/auth.route";
 import { CourseRoutes } from "../modules/course/course.route";
 import { AffiliateRoutes } from "../modules/affiliate/affiliate.route";
-import { ChatRoutes } from "../modules/chat/chat.route";
+// import { ChatRoutes } from "../modules/chat/chat.route";
 import { ToolRoutes } from "../modules/tool/tool.routes";
 import { PromotionRoutes } from "../modules/promotion/promotion.route";
 import { PaymentRoutes } from "../modules/payment/payment.route";
@@ -23,6 +23,7 @@ import { ReputationRoutes } from "../modules/influencer/Reputation/reputation.ro
 import { CampaignRoutes } from "../modules/campaign/campaign.route";
 import { TicketRoutes } from "../modules/ticket/ticket.route";
 import { LeaderboardRoutes } from "../modules/leaderboard/leaderboard.route";
+import { InvestorWaitlistRoutes } from "../modules/investorWaitlist/investorWaitlist.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -46,7 +47,7 @@ const moduleRoutes = [
     path: "/affiliates",
     route: AffiliateRoutes,
   },
-  { path: "/chat", route: ChatRoutes },
+  // { path: "/chat", route: ChatRoutes },
   { path: "/promotion", route: PromotionRoutes },
   {
     path: "/payment",
@@ -96,6 +97,10 @@ const moduleRoutes = [
   {
     path: "/waitlist",
     route: WaitlistRoutes,
+  },
+  {
+    path: "/investor-waitlist",
+    route: InvestorWaitlistRoutes,
   },
   {
     path: "/coupon",
