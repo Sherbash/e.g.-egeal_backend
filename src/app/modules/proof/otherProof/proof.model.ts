@@ -17,7 +17,7 @@ const ProofSchema = new mongoose.Schema<IProof>(
         "giveaway",
         "gig-submission",
         "referral",
-        "social-post",
+        "post",
         "testimonial",
         "payment",
       ],

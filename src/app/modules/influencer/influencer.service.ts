@@ -170,7 +170,7 @@ const getGigPageByUserId = async (userId: string) => {
   }
 
   const gigPage = await GigPage.findOne({
-    influencerId: influencer._id,
+    influencerId: influencer?._id,
   })
     .populate("influencerId")
     .lean();
@@ -179,9 +179,7 @@ const getGigPageByUserId = async (userId: string) => {
     throw new AppError(status.NOT_FOUND, "Gig page not found");
   }
 
-  return {
-    ...gigPage,
-  };
+  return gigPage
 };
 const getGigPageByInfluencerId = async (influencerId: string) => {
   const influencer = await Influencer.findOne({ _id: influencerId });

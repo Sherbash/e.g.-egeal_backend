@@ -3,14 +3,14 @@ import { z } from "zod";
 // Create story validation
 const createStorySchema = z.object({
   body: z.object({
-    title: z.string(),
+    description: z.string(),
     link: z.string().optional(),
   }),
 });
 
 const updateStorySchema = z.object({
     body: z.object({
-    title: z.string().optional(),
+    description: z.string().optional(),
     link: z.string().optional(),
   }),
 })
