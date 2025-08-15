@@ -222,6 +222,7 @@ const completeRegistration = async (email: string, otp: string) => {
 
     // 4. If there’s a referrer, create referral record
     if (tempUser.referredBy) {
+      console.log("tempUser.referredBy", tempUser.referredBy)
       await Referral.create(
         [
           {
@@ -231,6 +232,12 @@ const completeRegistration = async (email: string, otp: string) => {
             rewardAmount: null,
           },
         ],
+        { session }
+      );
+
+      await UserModel.updateOne(
+        { _id: tempUser.referredBy },
+        { $inc: { points: 1 , invitedUserCount: 1 } },
         { session }
       );
     }

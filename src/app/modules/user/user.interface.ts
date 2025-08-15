@@ -26,4 +26,6 @@ export interface IUser extends Document {
   referredBy?: Types.ObjectId; // Made optional as it's not required
   referralLink?: string;
   points: number; // Added to match schema
+  invitedUserCount: number;
+  freePackage: "free" | "paid" | "none";
 }

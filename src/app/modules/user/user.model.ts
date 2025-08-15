@@ -29,6 +29,15 @@ const userSchema = new Schema<IUser>(
     points:{
       type: Number,
       default: 0
+    },
+    invitedUserCount: {
+      type: Number,
+      default: 0
+    },
+     freePackage: {
+      type: String,
+      enum: ["free", "none"],
+      default: "none"
     }
   },
   { timestamps: true }

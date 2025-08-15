@@ -10,8 +10,8 @@ import { Types } from "mongoose";
 import { Influencer } from "../influencer/influencer.model";
 import UserModel from "../user/user.model";
 import { findProfileByRole } from "../../utils/findUser";
-import { IProof } from "../proof/proof.interface";
-import ProofModel from "../proof/proof.model";
+import { IProof } from "../proof/otherProof/proof.interface";
+import ProofModel from "../proof/otherProof/proof.model";
 
 const createCampaign = async (payload: ICampaign, user: IUser) => {
   const existingFounder = await findProfileByRole(user);
