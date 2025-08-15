@@ -8,7 +8,7 @@ import mongoose, { model, Schema } from "mongoose";
 const storySchema = new mongoose.Schema(
   {
     authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    title: { type: String, required: true },
+    description: { type: String, required: true },
     link: String,
     // pollChoices: [pollChoiceSchema],
   },

@@ -23,7 +23,10 @@ const getAllInfluencer = catchAsync(async (req, res) => {
 });
 
 const createGigPage = catchAsync(async (req, res) => {
-  const result = await InfluencerService.createGigPage(req.user as IUser, req.body);
+  const result = await InfluencerService.createGigPage(
+    req.user as IUser,
+    req.body
+  );
   sendResponse(res, {
     statusCode: status.CREATED,
     success: true,
@@ -52,8 +55,20 @@ const getGigPageById = catchAsync(async (req, res) => {
   });
 });
 
+const getGigPageByUserId = catchAsync(async (req, res) => {
+  const result = await InfluencerService.getGigPageByUserId(req.user.id);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Gig page retrieved successfully",
+    data: result,
+  });
+});
 const getGigPageByInfluencerId = catchAsync(async (req, res) => {
-  const result = await InfluencerService.getGigPageByInfluencerId(req.params.influencerId);
+  const result = await InfluencerService.getGigPageByInfluencerId(
+    req.params.influencerId
+  );
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
@@ -138,5 +153,6 @@ export const InfluencerController = {
   upsertBankDetails,
   getBankDetails,
   deleteBankDetails,
-  getGigPageByInfluencerId
+  getGigPageByInfluencerId,
+  getGigPageByUserId
 };

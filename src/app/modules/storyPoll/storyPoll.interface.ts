@@ -8,7 +8,7 @@ export interface IPollChoice {
 
 export interface IStory extends Document {
   authorId: Types.ObjectId | string;
-  title: string;
+  description: string;
   link?: string;
   // pollChoices?: IPollChoice[];
 }

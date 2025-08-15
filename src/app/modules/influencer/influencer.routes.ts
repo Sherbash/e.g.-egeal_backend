@@ -12,6 +12,7 @@ router.post(
   auth(UserRole.INFLUENCER),
   InfluencerController.createGigPage
 );
+router.get("/get-my-gig-info",auth(UserRole.INFLUENCER), InfluencerController.getGigPageByUserId);
 router.get("/get-gig-info/:id", InfluencerController.getGigPageById);
 router.get("/get-info-by-influencerId/:influencerId", InfluencerController.getGigPageByInfluencerId);
 router.get("/:username", InfluencerController.getGigPage);
