@@ -237,7 +237,7 @@ const completeRegistration = async (email: string, otp: string) => {
 
       await UserModel.updateOne(
         { _id: tempUser.referredBy },
-        { $inc: { points: 1 } },
+        { $inc: { points: 1 , invitedUserCount: 1 } },
         { session }
       );
     }
