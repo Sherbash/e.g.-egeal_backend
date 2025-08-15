@@ -125,20 +125,27 @@ const createGigPage = async (user: IUser, payload: IGigPage) => {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
+  const existingGigPage = await GigPage.findOne({ influencerId: influencer?._id, });
+  if (existingGigPage) {
+    throw new AppError(status.BAD_REQUEST, "Gig page already exists");
+  }
+
   // Get all affiliates for this influencer and extract their IDs
   const affiliates = await Affiliate.find({
     influencerId: influencer?.influencerId,
   }).lean();
-  const affiliateIds = affiliates.map((affiliate) => affiliate._id);
+
+  const affiliateLinks = affiliates.map((affiliate) => affiliate.affiliateUrl);
+
 
   // Create with normalized username
   const gigPage = await GigPage.create({
     ...payload,
     username: payload.username.toLowerCase(),
-    affiliates: affiliateIds, // Assign array of affiliate IDs
+    affiliateLinks: affiliateLinks,
     influencerId: influencer._id,
     isPublished: false,
-    customLink: `${process.env.CLIENT_URL}/${payload.username}`,
+    customLink: `${process.env.CLIENT_URL}/gig-info?username=${payload.username}&influencerId=${influencer?._id}`,
   });
   return gigPage;
 };

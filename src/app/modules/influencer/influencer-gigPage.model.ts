@@ -16,15 +16,14 @@ interface ISocialLink {
 //       },
 //     ],
 
-
-
 // Interface for Gig Page
 export interface IGigPage {
   username: string;
   title?: string;
   bio?: string;
+  customLink?: string;
   socialLinks: ISocialLink[];
-  affiliates: Types.ObjectId[];
+  affiliateLinks: String[];
   promoInfo?: string;
   layoutTemplate?: number;
   profileImage?: string;
@@ -40,6 +39,7 @@ const gigPageSchema = new Schema<IGigPage>(
       ref: "Influencer",
       required: true,
     },
+    customLink: String,
     username: { type: String, unique: true },
     title: String,
     bio: String,
@@ -51,7 +51,11 @@ const gigPageSchema = new Schema<IGigPage>(
         clickCount: { type: Number, default: 0 },
       },
     ],
-    affiliates: [{ type: Schema.Types.ObjectId, ref: "Affiliate" }],
+    affiliateLinks: [
+      {
+        type: String,
+      },
+    ],
     promoInfo: String,
     layoutTemplate: { type: Number, default: 1 },
     profileImage: String,

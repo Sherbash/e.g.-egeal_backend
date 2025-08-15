@@ -8,7 +8,7 @@ import pickOptions from "../../utils/pick";
 // Comment Controllers
 const CreateComment = catchAsync(async (req, res) => {
   const payload = req.body;
-  console.log("comment payload", payload)
+  // console.log("comment payload", payload)
   const result = await commentServices.createCommentForDb(payload, req.user.id as string);
 
   sendResponse(res, {
@@ -19,7 +19,7 @@ const CreateComment = catchAsync(async (req, res) => {
   });
 });
 
-const GetAllComments = catchAsync(async (req, res) => {
+const GetAllCommentsByEntityId = catchAsync(async (req, res) => {
   const options = pickOptions(req.query, [
     "limit",
     "page",
@@ -27,7 +27,9 @@ const GetAllComments = catchAsync(async (req, res) => {
     "sortOrder",
   ]);
 
-  const result = await commentServices.getAllCommentsForDb(options);
+  const entityId = req.params.entityId
+
+  const result = await commentServices.getAllCommentsForDb(options,entityId);
 
   sendResponse(res, {
     statusCode: status.OK,
@@ -75,7 +77,7 @@ const DeleteComment = catchAsync(async (req, res) => {
 
 export const CommentControllers = {
   CreateComment,
-  GetAllComments,
+  GetAllCommentsByEntityId,
   GetSingleComment,
   UpdateComment,
   DeleteComment,
