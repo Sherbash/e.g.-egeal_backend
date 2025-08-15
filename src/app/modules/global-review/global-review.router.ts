@@ -38,7 +38,7 @@ router.patch(
 // Update Review status
 router.patch(
   "/status/:id",
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
   ReviewController.updateReviewStatus
 );
 

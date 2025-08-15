@@ -79,7 +79,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 });
 
 const myProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const result = await UserServices.myProfile(req.user as IJwtPayload);
+  const result = await UserServices.myProfile(req.user as IJwtPayload );
 
   sendResponse(res, {
     statusCode: status.OK,

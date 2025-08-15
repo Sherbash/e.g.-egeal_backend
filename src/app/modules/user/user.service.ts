@@ -1,5 +1,3 @@
-
-
 import bcrypt from "bcrypt";
 import { IUser, UserRole } from "./user.interface";
 import mongoose from "mongoose";
@@ -222,7 +220,7 @@ const completeRegistration = async (email: string, otp: string) => {
 
     // 4. If there’s a referrer, create referral record
     if (tempUser.referredBy) {
-      console.log("tempUser.referredBy", tempUser.referredBy)
+      console.log("tempUser.referredBy", tempUser.referredBy);
       await Referral.create(
         [
           {
@@ -237,7 +235,7 @@ const completeRegistration = async (email: string, otp: string) => {
 
       await UserModel.updateOne(
         { _id: tempUser.referredBy },
-        { $inc: { points: 1 , invitedUserCount: 1 } },
+        { $inc: { points: 1, invitedUserCount: 1 } },
         { session }
       );
     }
@@ -552,22 +550,34 @@ const deleteUser = async (id: string) => {
 };
 
 const myProfile = async (authUser: IJwtPayload) => {
-  const isUserExists = await UserModel.findById(authUser.id)
+  const user = await UserModel.findById(authUser?.id)
     .populate("referralCount")
     .populate("referralStats")
-    .select("-password");
-  if (!isUserExists) {
+    .select("-password")
+    .lean();
+
+  if (!user) {
     throw new AppError(status.NOT_FOUND, "User not found!");
   }
-  if (!isUserExists.isActive) {
-    throw new AppError(status.BAD_REQUEST, "User is not active!");
+
+  // Fetch role-specific data
+  let roleData = null;
+
+  switch (user.role) {
+    case UserRole.INFLUENCER:
+      roleData = await Influencer.findOne({ userId: user._id }).lean();
+      break;
+    case UserRole.FOUNDER:
+      roleData = await Founder.findOne({ userId: user._id }).lean();
+      break;
+    case UserRole.INVESTOR:
+      roleData = await Investor.findOne({ userId: user._id }).lean();
+      break;
   }
 
-  const profile = await UserModel.findOne({ user: isUserExists._id });
-
   return {
-    ...isUserExists,
-    profile: profile || null,
+    ...user,
+    roleData,
   };
 };
 
