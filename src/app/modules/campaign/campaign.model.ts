@@ -8,6 +8,7 @@ export interface ICampaign extends Document {
     // Influencers participating
     influencerId: Types.ObjectId;
     status: "pending" | "approved" | "completed" | "rejected";
+    proofs?: Types.ObjectId[];
   }[];
   campaignName: string; // Campaign name
   description: string; // Campaign details
@@ -46,6 +47,7 @@ const CampaignSchema = new Schema<ICampaign>(
           enum: ["pending", "approved",  "rejected"],
           default: "pending",
         },
+        proofs: [{ type: Schema.Types.ObjectId, ref: "Proof" }], 
       },
     ],
     campaignName: {

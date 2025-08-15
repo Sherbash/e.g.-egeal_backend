@@ -10,6 +10,8 @@ import { Types } from "mongoose";
 import { Influencer } from "../influencer/influencer.model";
 import UserModel from "../user/user.model";
 import { findProfileByRole } from "../../utils/findUser";
+import { IProof } from "../proof/proof.interface";
+import ProofModel from "../proof/proof.model";
 
 const createCampaign = async (payload: ICampaign, user: IUser) => {
   const existingFounder = await findProfileByRole(user);
@@ -91,14 +93,16 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
 };
 
 const getCampaignById = async (campaignId: string) => {
-  const campaign = await Campaign.findById(campaignId).populate({
-    path: "founderId",
-    select: "userId",
-    populate: {
-      path: "userId",
-      select: "firstName lastName email",
-    },
-  });
+  const campaign = await Campaign.findById(campaignId)
+    .populate({
+      path: "founderId",
+      select: "userId",
+      populate: {
+        path: "userId",
+        select: "firstName lastName email",
+      },
+    })
+    .populate("Proof");
 
   if (!campaign) {
     throw new AppError(status.NOT_FOUND, "Campaign not found");
@@ -201,57 +205,78 @@ const addInfluencerToCampaign = async (
   campaign.influencers.push({
     influencerId: new Types.ObjectId(influencerId),
     status: "approved",
+    proofs: [],
   });
 
   await campaign.save();
   return campaign;
 };
 
-const requestToJoinCampaign = async (campaignId: string, user: IUser) => {
-  const existingInfluencer = await findProfileByRole(user);
-
-  const InfluencerId = existingInfluencer?._id;
-
-  if (!InfluencerId) {
-    throw new AppError(status.BAD_REQUEST, "Founder not found");
-  }
-
-  const campaign = await Campaign.findById(campaignId);
-  if (!campaign) throw new AppError(status.NOT_FOUND, "Campaign not found");
-
-  // Check if already requested/joined
-  const exists = campaign.influencers.some(
-    (inf) =>
-      inf.influencerId.toString() === (InfluencerId as string | Types.ObjectId)
-  );
-  if (exists) throw new AppError(status.CONFLICT, "Already requested/joined");
-
-  if (existingInfluencer?.userId?.verified === false) {
-    campaign.influencers.push({
-      influencerId: new Types.ObjectId(InfluencerId),
-      status: "pending",
-    });
-  } else if (existingInfluencer?.userId?.verified === true) {
-    campaign.influencers.push({
-      influencerId: new Types.ObjectId(InfluencerId),
-      status: "approved",
-    });
-  }
-
-  await campaign.save();
-  return campaign;
-};
-
-const updateInfluencerStatus = async (
+const requestToJoinCampaign = async (
   campaignId: string,
-  influencerId: string, // This is the Influencer profile ID
-  user: IUser
+  user: IUser,
+  payload: IProof
 ) => {
-  // 1. Validate campaign exists
+  // 1. Find influencer profile
+  const existingInfluencer = await findProfileByRole(user);
+  if (!existingInfluencer) {
+    throw new AppError(status.BAD_REQUEST, "Influencer profile not found");
+  }
+
+  // 2. Find campaign
   const campaign = await Campaign.findById(campaignId);
   if (!campaign) {
     throw new AppError(status.NOT_FOUND, "Campaign not found");
   }
+
+  // 3. Check for existing participation
+  const alreadyParticipating = campaign.influencers.some(
+    (inf) => inf.influencerId.toString() === existingInfluencer._id.toString()
+  );
+  if (alreadyParticipating) {
+    throw new AppError(status.CONFLICT, "Already requested/joined this campaign");
+  }
+
+  // 4. Create proof
+  const newProof = await ProofModel.create({
+    ...payload,
+    proofSubmittedBy: user?.id,
+    campaignId: campaign._id,
+    status: existingInfluencer.userId?.verified ? "approved" : "pending",
+  });
+
+  // 5. Add to campaign with proof reference
+  campaign.influencers.push({
+    influencerId: existingInfluencer._id,
+    status: existingInfluencer.userId?.verified ? "approved" : "pending",
+    proofs: [newProof._id], // Store reference to this proof
+  });
+
+  await campaign.save();
+  
+  // 6. Return populated data if needed
+  return await Campaign.findById(campaign._id)
+    .populate({
+      path: "influencers.influencerId",
+      select: "name socialMedia", // Customize fields as needed
+    })
+    .populate("influencers.proofs");
+};
+
+const updateInfluencerStatus = async (
+  campaignId: string,
+  influencerId: string,
+  user: IUser
+) => {
+  // 1. Validate campaign exists
+  const campaign = await Campaign.findById(campaignId).populate(
+    "influencers.proofs"
+  );
+  if (!campaign) {
+    throw new AppError(status.NOT_FOUND, "Campaign not found");
+  }
+
+  console.log("check campaign", campaign);
 
   // 2. Authorization check
   if (user.role !== "admin") {
@@ -271,7 +296,7 @@ const updateInfluencerStatus = async (
 
   // 3. Find the influencer in the campaign
   const influencerToUpdate = campaign.influencers.find(
-    (inf) => inf.influencerId.toString() === influencerId
+    (inf) => inf.influencerId.toString() === influencerId.toString()
   );
 
   if (!influencerToUpdate) {
