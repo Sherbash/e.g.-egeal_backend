@@ -17,11 +17,29 @@ router.get(
   ReviewController.getAllReview
 );
 
+// Get Review by ID
+router.get("/:id", ReviewController.getReviewById);
+
+// Get Reviews by User
+router.get("/user/:userId", ReviewController.getReviewsByUser);
+
+// Get Reviews by Entity (e.g., `/reviews/entity/65a1b2c3d4e5f6g7h8/story`)
+router.get(
+  "/entity/:entityId/:entityType",
+  ReviewController.getReviewsByEntity
+);
+
 // Update Review
 router.patch(
   "/:id",
   auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
   ReviewController.updateReview
+);
+// Update Review status
+router.patch(
+  "/status/:id",
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  ReviewController.updateReviewStatus
 );
 
 
@@ -39,16 +57,5 @@ router.delete(
   ReviewController.deleteReview
 );
 
-// Get Review by ID
-router.get("/:id", ReviewController.getReviewById);
-
-// Get Reviews by User
-router.get("/user/:userId", ReviewController.getReviewsByUser);
-
-// Get Reviews by Entity (e.g., `/reviews/entity/65a1b2c3d4e5f6g7h8/story`)
-router.get(
-  "/entity/:entityId/:entityType",
-  ReviewController.getReviewsByEntity
-);
 
 export const GlobalReviewRoutes = router;

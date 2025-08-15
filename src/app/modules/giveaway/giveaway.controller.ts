@@ -22,7 +22,13 @@ const createGiveaway = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllGiveaways = catchAsync(async (req: Request, res: Response) => {
-  const giveaways = await GiveawayServices.getAllGiveaways();
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
+  const giveaways = await GiveawayServices.getAllGiveaways(options);
 
   res.status(status.OK).json({
     success: true,
@@ -31,15 +37,26 @@ const getAllGiveaways = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllGiveawaysByRole = catchAsync(async (req: Request, res: Response) => {
-  const giveaways = await GiveawayServices.getAllGiveawaysByRole(req.user as IUser);
+const getAllGiveawaysByRole = catchAsync(
+  async (req: Request, res: Response) => {
+    const options = pickOptions(req.query, [
+      "limit",
+      "page",
+      "sortBy",
+      "sortOrder",
+    ]);
+    const giveaways = await GiveawayServices.getAllGiveawaysByRole(
+      req.user as IUser,
+      options
+    );
 
-  res.status(status.OK).json({
-    success: true,
-    message: "All giveaways retrieved successfully",
-    data: giveaways,
-  });
-});
+    res.status(status.OK).json({
+      success: true,
+      message: "All giveaways retrieved successfully",
+      data: giveaways,
+    });
+  }
+);
 
 const getGiveawayById = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
@@ -72,7 +89,10 @@ const updateGiveaway = catchAsync(async (req: Request, res: Response) => {
 const cancelGiveaway = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
 
-  const result = await GiveawayServices.cancelGiveaway(giveawayId, req.user as IUser);
+  const result = await GiveawayServices.cancelGiveaway(
+    giveawayId,
+    req.user as IUser
+  );
 
   res.status(status.OK).json({
     success: true,
@@ -91,15 +111,24 @@ const getGiveawayStats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getGiveawaysWithAtLeastOneParticipant = catchAsync(async (req: Request, res: Response) => {
-  const giveaways = await GiveawayServices.getGiveawaysWithAtLeastOneParticipant();
+const getGiveawaysWithAtLeastOneParticipant = catchAsync(
+  async (req: Request, res: Response) => {
+    const options = pickOptions(req.query, [
+      "limit",
+      "page",
+      "sortBy",
+      "sortOrder",
+    ]);
+    const giveaways =
+      await GiveawayServices.getGiveawaysWithAtLeastOneParticipant(options);
 
-  res.status(status.OK).json({
-    success: true,
-    message: "Current giveaways retrieved successfully",
-    data: giveaways,
-  });
-});
+    res.status(status.OK).json({
+      success: true,
+      message: "Current giveaways retrieved successfully",
+      data: giveaways,
+    });
+  }
+);
 
 const getAllOngoingGiveaways = catchAsync(
   async (req: Request, res: Response) => {
@@ -109,7 +138,6 @@ const getAllOngoingGiveaways = catchAsync(
       "sortBy",
       "sortOrder",
     ]);
-    
 
     const giveaways = await GiveawayServices.getAllOngoingGiveaways(options);
 
@@ -131,5 +159,4 @@ export const GiveawayController = {
   getGiveawaysWithAtLeastOneParticipant,
   getAllOngoingGiveaways,
   getAllGiveawaysByRole,
-
 };

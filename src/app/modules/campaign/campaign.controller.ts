@@ -88,7 +88,7 @@ const addInfluencer = catchAsync(async (req: Request, res: Response) => {
 
 const requestToJoinCampaign = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await CampaignServices.requestToJoinCampaign(req.params.campaignId, req.user as IUser);
+    const result = await CampaignServices.requestToJoinCampaign(req.params.campaignId, req.user as IUser, req.body);
 
     res.status(status.OK).json({
       success: true,

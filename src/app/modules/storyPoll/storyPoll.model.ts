@@ -1,16 +1,16 @@
-import mongoose, { model, Schema, Types } from "mongoose";
+import mongoose, { model, Schema } from "mongoose";
 
-const pollChoiceSchema = new mongoose.Schema({
-  text: { type: String, required: true },
-  voters: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-});
+// const pollChoiceSchema = new mongoose.Schema({
+//   text: { type: String, required: true },
+//   voters: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+// });
 
 const storySchema = new mongoose.Schema(
   {
-    title: String,
-    link: String,
     authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    pollChoices: [pollChoiceSchema],
+    title: { type: String, required: true },
+    link: String,
+    // pollChoices: [pollChoiceSchema],
   },
   { timestamps: true }
 );

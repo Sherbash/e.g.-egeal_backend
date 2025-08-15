@@ -10,5 +10,5 @@ export interface IStory extends Document {
   authorId: Types.ObjectId | string;
   title: string;
   link?: string;
-  pollChoices?: IPollChoice[];
+  // pollChoices?: IPollChoice[];
 }

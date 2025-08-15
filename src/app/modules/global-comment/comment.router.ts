@@ -11,7 +11,7 @@ router.post(
   CommentControllers.CreateComment
 );
 
-router.get("/", CommentControllers.GetAllComments);
+router.get("/get-entity-comments/:entityId", CommentControllers.GetAllCommentsByEntityId);
 
 router.get("/:id", CommentControllers.GetSingleComment);
 

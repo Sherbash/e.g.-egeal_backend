@@ -14,13 +14,14 @@ router.get("/:id", StoryController.getStory);
 // Protected routes (require authentication)
 router.post(
   "/",
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  auth(UserRole.FOUNDER, UserRole.INFLUENCER),
   validateRequest(StoryValidation.createStorySchema),
   StoryController.createStory
 );
 router.patch(
   "/:id",
   auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  validateRequest(StoryValidation.updateStorySchema),
   StoryController.updateStory
 );
 router.delete(

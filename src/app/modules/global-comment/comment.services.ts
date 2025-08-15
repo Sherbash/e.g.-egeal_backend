@@ -15,26 +15,29 @@ const createCommentForDb = async (payload: IComment, userId: string) => {
 
   // Update the review's comments array
   await ReviewModel.findByIdAndUpdate(
-    payload.reviewId,
-    { $push: { comments: result._id } },
+    payload?.feedbackId,
+    { $push: { comments: result?._id } },
     { new: true }
   );
 
   return result;
 };
 
-const getAllCommentsForDb = async (options: IPaginationOptions) => {
+const getAllCommentsForDb = async (
+  options: IPaginationOptions,
+  feedbackId: string
+) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
   const [comments, total] = await Promise.all([
-    CommentModel.find({})
+    CommentModel.find({ feedbackId })
       .populate("userId", "firstName lastName email role isActive")
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit)
       .lean(),
-    CommentModel.countDocuments({}),
+    CommentModel.countDocuments({ feedbackId }),
   ]);
 
   return {
@@ -65,7 +68,7 @@ const updateSingleCommentForDb = async (
   id: string,
   payload: Partial<IComment>
 ) => {
-  const findReview = await ReviewModel.findById(payload.reviewId);
+  const findReview = await ReviewModel.findById(payload.feedbackId);
 
   if (!findReview) {
     throw new AppError(status.NOT_FOUND, "Review not found");
@@ -98,7 +101,7 @@ const deleteCommentForDb = async (id: string) => {
 
   // Remove comment from review's comments array
   await ReviewModel.findByIdAndUpdate(
-    isExistingComment.reviewId,
+    isExistingComment.feedbackId,
     { $pull: { comments: id } },
     { new: true }
   );
