@@ -24,7 +24,7 @@ router.get(
 // Admin routes
 router.patch(
   "/review/:proofId",
-  auth(UserRole.ADMIN),
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
 //   validateRequest(ProofValidation.reviewProofSchema),
   ProofController.reviewProof
 );

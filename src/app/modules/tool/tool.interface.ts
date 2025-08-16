@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 export interface ITool {
   toolId: string;
   name: string;
-  logo: string;
+  logo?: string;
   description: string;
   price: number;
   imageUrl?: string; 

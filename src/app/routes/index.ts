@@ -26,6 +26,7 @@ import { LeaderboardRoutes } from "../modules/leaderboard/leaderboard.route";
 import { InvestorWaitlistRoutes } from "../modules/investorWaitlist/investorWaitlist.route";
 import { ProofUserInviteRoutes } from "../modules/proof/ProofUserInvite/proofUserInvite.route";
 import { ProofRoutes } from "../modules/proof/otherProof/proof.route";
+import { PostRoutes } from "../modules/post/post.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -131,6 +132,10 @@ const moduleRoutes = [
   {
     path: "/proof",
     route: ProofRoutes,
+  },
+  {
+    path: "/post",
+    route: PostRoutes,
   },
 ];
 
