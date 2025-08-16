@@ -4,6 +4,7 @@ import ProofModel from "./proof.model";
 import AppError from "../../../errors/appError";
 import UserModel from "../../user/user.model";
 import { FreePackage } from "../../gift/gift.model";
+import { IUser } from "../../user/user.interface";
 
 /**
  * Submit new proof
@@ -22,12 +23,23 @@ const submitProof = async (payload: IProof, userId: string) => {
  */
 const reviewProof = async (
   proofId: string,
-  adminId: string,
-  payload: Partial<IProof>,
+  user: IUser,
+  payload: Partial<IProof>
 ) => {
   const proof = await ProofModel.findById(proofId);
   if (!proof) {
     throw new AppError(status.NOT_FOUND, "Proof not found");
+  }
+
+  // 2. Authorization check - only author or admin can update
+  const isAuthor = proof?.proofSubmittedBy.toString() === user?.id?.toString();
+  const isAdmin = user.role === "admin";
+
+  if (!isAuthor && !isAdmin) {
+    throw new AppError(
+      status.FORBIDDEN,
+      "Only post author or admin can update this post"
+    );
   }
 
   if (payload?.status === "approved") {
@@ -36,27 +48,29 @@ const reviewProof = async (
       {
         $set: {
           ...payload,
-          proofApprovedBy: adminId,
+          proofApprovedBy: user?.id,
           status: "approved",
           rewardGiven: true,
         },
       }
     );
 
-    const freePackage = await FreePackage.create({
-      userId: payload?.proofSubmittedBy,
-      status: "paid",
-      type: "social-post",
-    });
+    if (proof?.proofType === "social-post") {
+      const freePackage = await FreePackage.create({
+        userId: payload?.proofSubmittedBy,
+        status: "paid",
+        type: "social-post",
+      });
 
-    await UserModel.findOneAndUpdate(
-      { _id: payload?.proofSubmittedBy },
-      { $push: { freePackages: freePackage?._id } },
-      { new: true }
-    );
+      await UserModel.findOneAndUpdate(
+        { _id: payload?.proofSubmittedBy },
+        { $push: { freePackages: freePackage?._id } },
+        { new: true }
+      );
+    }
   } else if (payload?.status === "rejected") {
     proof.status = payload.status;
-    proof.adminFeedback = payload.adminFeedback;
+    proof.adminFeedback = payload?.adminFeedback;
   }
 
   await proof.save();

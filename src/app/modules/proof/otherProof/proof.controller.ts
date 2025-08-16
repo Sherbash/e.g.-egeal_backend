@@ -3,6 +3,7 @@ import { ProofService } from "./proof.service";
 import status from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
+import { IUser } from "../../user/user.interface";
 
 // User submits proof
 const submitProof = catchAsync(async (req: Request, res: Response) => {
@@ -23,9 +24,9 @@ const submitProof = catchAsync(async (req: Request, res: Response) => {
 const reviewProof = catchAsync(async (req: Request, res: Response) => {
   const { proofId } = req.params;
   const payload = req.body;
-  const adminId = req.user?.id;
+  const user = req.user;
 
-  const result = await ProofService.reviewProof(proofId, adminId,payload);
+  const result = await ProofService.reviewProof(proofId, user as IUser,payload);
 
   sendResponse(res, {
     success: true,
