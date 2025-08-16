@@ -17,6 +17,7 @@ const userSchema = new Schema<IUser>(
       unique: true,
       index: true,
       default: null,
+      required: false
     },
     referralLink: { type: String, default: null },
     referredBy: {
