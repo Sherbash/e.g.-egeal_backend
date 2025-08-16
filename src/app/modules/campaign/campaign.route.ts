@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post(
   "/",
-  auth(UserRole.FOUNDER),
+  auth(UserRole.ADMIN),
   validateRequest(CampaignValidation.createCampaignSchema),
   CampaignController.createCampaign
 );
@@ -22,7 +22,7 @@ router.get("/:id", CampaignController.getCampaignById);
 // Update campaign - Founder or Admin
 router.patch(
   "/:id",
-  auth(UserRole.FOUNDER, UserRole.ADMIN),
+  auth(UserRole.ADMIN),
   validateRequest(CampaignValidation.updateCampaignSchema),
   CampaignController.updateCampaign
 );
@@ -53,7 +53,7 @@ router.post(
 // Update influencer status - Founder or Admin
 router.patch(
   "/:campaignId/influencers/:influencerId/status",
-  auth(UserRole.FOUNDER, UserRole.ADMIN),
+  auth(UserRole.ADMIN),
 
   // validateRequest(CampaignValidation.updateInfluencerStatusSchema),
   CampaignController.updateInfluencerStatus

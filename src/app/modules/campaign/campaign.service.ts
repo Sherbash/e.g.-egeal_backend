@@ -13,18 +13,17 @@ import { findProfileByRole } from "../../utils/findUser";
 import { IProof } from "../proof/otherProof/proof.interface";
 import ProofModel from "../proof/otherProof/proof.model";
 
-
 const createCampaign = async (payload: ICampaign, user: IUser) => {
-  const existingFounder = await findProfileByRole(user);
+  const existingauthor = await findProfileByRole(user);
 
-  const founderId = existingFounder?._id;
+  const authorId = existingauthor?._id;
 
-  if (!founderId) {
-    throw new AppError(status.BAD_REQUEST, "Founder not found");
+  if (!authorId) {
+    throw new AppError(status.BAD_REQUEST, "author not found");
   }
 
   const existingCampaign = await Campaign.findOne({
-    founderId,
+    authorId,
     toolId: payload?.toolId,
   });
 
@@ -36,7 +35,6 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
   }
 
   const isExistingTool = await ToolModel.findOne({
-    founderId,
     toolId: payload?.toolId,
     isActive: true,
   });
@@ -47,7 +45,7 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
 
   const campaignData = {
     ...payload,
-    founderId,
+    authorId,
     isActive: true,
   };
 
@@ -67,14 +65,11 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
     paginationHelper.calculatePagination(paginationOptions);
 
   const campaigns = await Campaign.find()
-    .populate({
-      path: "founderId",
-      select: "userId",
-      populate: {
-        path: "userId",
-        select: "firstName lastName email",
-      },
-    })
+    .populate(
+      "authorId",
+      "firstName lastName email role referralLink referralCode"
+    )
+    .select("-password")
     // .populate("influencers.userId", "firstName lastName email")
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
@@ -95,15 +90,14 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
 
 const getCampaignById = async (campaignId: string) => {
   const campaign = await Campaign.findById(campaignId)
+    .populate("authorId", "-password")
     .populate({
-      path: "founderId",
-      select: "userId",
+      path: "influencers",
       populate: {
-        path: "userId",
-        select: "firstName lastName email",
+        path: "proofs",
+        model: "Proof",
       },
-    })
-    .populate("Proof");
+    });
 
   if (!campaign) {
     throw new AppError(status.NOT_FOUND, "Campaign not found");
@@ -124,18 +118,18 @@ const updateCampaign = async (
   }
 
   // Only admin or founder can update
-  if (
-    user.role !== "admin" &&
-    campaign.founderId.toString() !== user?.id.toString()
-  ) {
-    throw new AppError(
-      status.FORBIDDEN,
-      "Not authorized to update this campaign"
-    );
-  }
+  // if (
+  //   user.role !== "admin" &&
+  //   campaign.authorId.toString() !== user?.id.toString()
+  // ) {
+  //   throw new AppError(
+  //     status.FORBIDDEN,
+  //     "Not authorized to update this campaign"
+  //   );
+  // }
 
   // Prevent changing certain fields
-  if (payload.founderId || payload.toolId) {
+  if (payload.authorId || payload.toolId) {
     throw new AppError(
       status.BAD_REQUEST,
       "Cannot change campaign ownership or tool"
@@ -160,7 +154,7 @@ const deleteCampaign = async (campaignId: string, user: IUser) => {
   // Only admin or founder can delete
   if (
     user.role !== "admin" &&
-    campaign.founderId.toString() !== user._id.toString()
+    campaign.authorId.toString() !== user._id.toString()
   ) {
     throw new AppError(
       status.FORBIDDEN,
@@ -186,7 +180,7 @@ const addInfluencerToCampaign = async (
   // Only admin or founder can add influencers
   if (
     user.role !== "admin" &&
-    campaign.founderId.toString() !== user?.id.toString()
+    campaign.authorId.toString() !== user?.id.toString()
   ) {
     throw new AppError(
       status.FORBIDDEN,
@@ -235,7 +229,10 @@ const requestToJoinCampaign = async (
     (inf) => inf.influencerId.toString() === existingInfluencer._id.toString()
   );
   if (alreadyParticipating) {
-    throw new AppError(status.CONFLICT, "Already requested/joined this campaign");
+    throw new AppError(
+      status.CONFLICT,
+      "Already requested/joined this campaign"
+    );
   }
 
   // 4. Create proof
@@ -254,12 +251,12 @@ const requestToJoinCampaign = async (
   });
 
   await campaign.save();
-  
+
   // 6. Return populated data if needed
   return await Campaign.findById(campaign._id)
     .populate({
       path: "influencers.influencerId",
-      select: "name socialMedia", // Customize fields as needed
+      select: "name socialMedia",
     })
     .populate("influencers.proofs");
 };
@@ -277,22 +274,20 @@ const updateInfluencerStatus = async (
     throw new AppError(status.NOT_FOUND, "Campaign not found");
   }
 
-
   // 2. Authorization check
-  if (user.role !== "admin") {
-    // For non-admins, verify they're the campaign founder
-    const founder = await Founder.findOne({ userId: user.id });
-    if (!founder) {
-      throw new AppError(status.FORBIDDEN, "Founder profile not found");
-    }
-
-    if (campaign.founderId.toString() !== founder._id.toString()) {
-      throw new AppError(
-        status.FORBIDDEN,
-        "Not authorized to modify this campaign"
-      );
-    }
+  // if (user.role !== "admin") {
+  const founder = await Founder.findOne({ userId: user.id });
+  if (!founder) {
+    throw new AppError(status.FORBIDDEN, "Founder profile not found");
   }
+
+  // if (campaign.authorId.toString() !== founder._id.toString()) {
+  //   throw new AppError(
+  //     status.FORBIDDEN,
+  //     "Not authorized to modify this campaign"
+  //   );
+  // }
+  // }
 
   // 3. Find the influencer in the campaign
   const influencerToUpdate = campaign.influencers.find(

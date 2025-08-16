@@ -6,7 +6,7 @@ const createCampaignSchema = z.object({
     description: z
       .string()
       .min(10, "Description must be at least 10 characters"),
-    budget: z.number().min(100, "Minimum budget is $100"),
+    budget: z.number().min(10, "Minimum budget is $10"),
     startDate: z.date().optional(),
     endDate: z.date().optional(),
   }),
