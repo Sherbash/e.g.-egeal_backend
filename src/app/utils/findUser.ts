@@ -9,17 +9,23 @@ export const findProfileByRole = async (user: IUser) => {
   let profile = null;
 
   if (user.role === UserRole.FOUNDER) {
-    profile = await Founder.findOne({ userId: user.id }).populate("userId") as any;
+    profile = (await Founder.findOne({ userId: user.id })
+      .populate("userId")
+      .select("-password")) as any;
     if (!profile) {
       throw new AppError(status.NOT_FOUND, "Founder profile not found");
     }
   } else if (user.role === UserRole.INFLUENCER) {
-    profile = await Influencer.findOne({ userId: user.id }).populate("userId");
+    profile = await Influencer.findOne({ userId: user.id })
+      .populate("userId")
+      .select("-password");
     if (!profile) {
       throw new AppError(status.NOT_FOUND, "Influencer profile not found");
     }
   } else if (user.role === UserRole.INVESTOR) {
-    profile = await Investor.findOne({ userId: user.id }).populate("userId");
+    profile = await Investor.findOne({ userId: user.id })
+      .populate("userId")
+      .select("-password");
     if (!profile) {
       throw new AppError(status.NOT_FOUND, "Investor profile not found");
     }

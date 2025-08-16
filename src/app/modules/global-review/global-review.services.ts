@@ -8,6 +8,7 @@ import { ReviewModel } from "./global-review.model";
 import { IGlobalReview } from "./global-review.interface";
 import { InfluencerReputationService } from "../influencer/Reputation/reputation.service";
 import { IUser } from "../user/user.interface";
+import { FreePackage } from "../gift/gift.model";
 
 /**
  * Create Review (Dynamic for any entity)
@@ -15,7 +16,9 @@ import { IUser } from "../user/user.interface";
 const createReview = async (payload: any, userId: string) => {
   // console.log("payload", payload)
   // 1. Validate Entity (Story, Tool, etc.)
-  await validateEntity("_id", payload.entityId, payload.entityType);
+  if (payload?.entityId && payload?.entityType) {
+    await validateEntity("_id", payload.entityId, payload.entityType);
+  }
 
   // 2. Prevent duplicate review by same user for same entity
   const alreadyReviewed = await ReviewModel.findOne({
@@ -27,11 +30,20 @@ const createReview = async (payload: any, userId: string) => {
     throw new AppError(status.CONFLICT, "You already reviewed this entity");
   }
 
-  // 3. Create Review
-  const review = await ReviewModel.create({
-    ...payload,
-    userId,
-  });
+  let review = null;
+  if (!payload?.entityId || !payload?.entityType) {
+    review = await ReviewModel.create({
+      ...payload,
+      entityType: "testimonialWall",
+      userId,
+    });
+  } else {
+    // 3. Create Review
+    review = await ReviewModel.create({
+      ...payload,
+      userId,
+    });
+  }
 
   // Update reputation if reviewing an influencer
   if (payload.entityType === "influencer") {
@@ -113,7 +125,7 @@ const updateReviewStatus = async (
   }
 
   if (user?.role !== "admin") {
-    if (review.userId.toString() !== user?.id) {
+    if (review.userId.toString() !== user?.id.toString()) {
       throw new AppError(
         status.FORBIDDEN,
         "Not authorized to update this review"
@@ -130,29 +142,53 @@ const updateReviewStatus = async (
     await InfluencerReputationService.updateInfluencerReputation(
       result?.entityId
     );
+  } else if (result?.entityType === "testimonialWall") {
+    // const freePackage = await FreePackage.findOneAndUpdate(
+    //   { _id: result?.userId },
+    //   { $set: { status: "paid", type: "testimonialWall" } },
+    //   { new: true }
+    // );
+
+    const freePackage = await FreePackage.create({
+      userId: result?.userId,
+      status: "paid",
+      type: "testimonialWall",
+    });
+
+    await UserModel.findOneAndUpdate(
+      { _id: result?.userId },
+      { $push: { freePackages: freePackage?._id } },
+      { new: true }
+    );
   }
   return result;
 };
 
 const getAllReviewForDb = async (
   options: IPaginationOptions,
-  filters: any = {}
+  filters: Record<string, any> = {}
 ) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
-  const queryConditions: any = {};
+  const queryConditions: Record<string, any> = {};
 
-  if(filters.entityType) {
-    queryConditions.entityType = filters.entityType
-  }
-  if (filters.rating) {
-    queryConditions.rating = filters.rating;
-  }
+  // allowed filter fields
+  const filterableFields = [
+    "entityType",
+    "rating",
+    "isApproved",
+    "entityId",
+    "status",
+    "bestReview"
+  ];
 
-  if (filters.isApproved) {
-    queryConditions.isApproved = filters.isApproved;
-  }
+  // Loop through allowed fields and add to query if present
+  filterableFields.forEach((field) => {
+    if (filters[field] !== undefined && filters[field] !== null && filters[field] !== "") {
+      queryConditions[field] = filters[field];
+    }
+  });
 
   const [reviews, total] = await Promise.all([
     ReviewModel.find(queryConditions)
@@ -173,6 +209,7 @@ const getAllReviewForDb = async (
     data: reviews,
   };
 };
+
 /**
  * Delete Review
  */
@@ -213,7 +250,7 @@ const getReviewById = async (reviewId: string) => {
 };
 
 const ToggleReviewEditorPick = async (reviewId: string) => {
-  const review = await ReviewModel.findById({ _id: reviewId});
+  const review = await ReviewModel.findById({ _id: reviewId });
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
   }

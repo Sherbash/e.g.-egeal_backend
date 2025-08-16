@@ -13,6 +13,7 @@ import { findProfileByRole } from "../../utils/findUser";
 import { IProof } from "../proof/otherProof/proof.interface";
 import ProofModel from "../proof/otherProof/proof.model";
 
+
 const createCampaign = async (payload: ICampaign, user: IUser) => {
   const existingFounder = await findProfileByRole(user);
 
@@ -276,7 +277,6 @@ const updateInfluencerStatus = async (
     throw new AppError(status.NOT_FOUND, "Campaign not found");
   }
 
-  console.log("check campaign", campaign);
 
   // 2. Authorization check
   if (user.role !== "admin") {

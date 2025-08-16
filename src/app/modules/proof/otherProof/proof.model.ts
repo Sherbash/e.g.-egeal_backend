@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import { IProof } from "./proof.interface";
 
 const ProofSchema = new mongoose.Schema<IProof>(
@@ -9,6 +9,10 @@ const ProofSchema = new mongoose.Schema<IProof>(
       ref: "User",
       required: true,
     },
+    proofApprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: "Campaign" },
     proofType: {
       type: String,
@@ -17,7 +21,7 @@ const ProofSchema = new mongoose.Schema<IProof>(
         "giveaway",
         "gig-submission",
         "referral",
-        "post",
+        "social-post",
         "testimonial",
         "payment",
       ],
@@ -35,7 +39,7 @@ const ProofSchema = new mongoose.Schema<IProof>(
     adminFeedback: { type: String },
 
     // Points/rewards
-    pointsEarned: { type: Number, default: 0 },
+    // pointsEarned: { type: Number, default: 0 },
     rewardGiven: { type: Boolean, default: false },
   },
   { timestamps: true }

@@ -117,7 +117,11 @@ const createGigPage = async (user: IUser, payload: IGigPage) => {
   const userId = user?.id;
 
   const fullName = `${user.firstName}${user.lastName}`;
-  const username = await generateUniqueId(fullName, GigPage, "username");
+  const username = await generateUniqueId(
+    fullName.toLocaleLowerCase(),
+    GigPage,
+    "username"
+  );
 
   payload.username = username;
   const influencer = await Influencer.findOne({ userId });
@@ -125,7 +129,9 @@ const createGigPage = async (user: IUser, payload: IGigPage) => {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
-  const existingGigPage = await GigPage.findOne({ influencerId: influencer?._id, });
+  const existingGigPage = await GigPage.findOne({
+    influencerId: influencer?._id,
+  });
   if (existingGigPage) {
     throw new AppError(status.BAD_REQUEST, "Gig page already exists");
   }
@@ -136,7 +142,6 @@ const createGigPage = async (user: IUser, payload: IGigPage) => {
   }).lean();
 
   const affiliateLinks = affiliates.map((affiliate) => affiliate.affiliateUrl);
-
 
   // Create with normalized username
   const gigPage = await GigPage.create({
@@ -179,7 +184,7 @@ const getGigPageByUserId = async (userId: string) => {
     throw new AppError(status.NOT_FOUND, "Gig page not found");
   }
 
-  return gigPage
+  return gigPage;
 };
 const getGigPageByInfluencerId = async (influencerId: string) => {
   const influencer = await Influencer.findOne({ _id: influencerId });
@@ -217,11 +222,17 @@ const updateGigPage = async (userId: string, payload: Partial<IGigPage>) => {
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
+  const username = await generateUniqueId(
+    payload.username as string,
+    GigPage,
+    "username"
+  );
 
+  payload.username = username;
   // Handle username change separately
   if (payload.username) {
     const existing = await GigPage.findOne({
-      username: payload.username.toLowerCase(),
+      username: payload.username.toLocaleLowerCase(),
       influencerId: { $ne: influencer._id }, // Exclude current user
     });
 
@@ -229,7 +240,7 @@ const updateGigPage = async (userId: string, payload: Partial<IGigPage>) => {
       throw new AppError(status.BAD_REQUEST, "Username already taken");
     }
 
-    payload.username = payload.username.toLowerCase();
+    payload.username = payload.username.toLocaleLowerCase();
   }
 
   const gigPage = await GigPage.findOneAndUpdate(
@@ -242,9 +253,7 @@ const updateGigPage = async (userId: string, payload: Partial<IGigPage>) => {
     throw new AppError(status.NOT_FOUND, "Gig page not found");
   }
 
-  return {
-    ...gigPage.toObject(),
-  };
+  return gigPage;
 };
 
 const deleteGigPage = async (userId: string) => {

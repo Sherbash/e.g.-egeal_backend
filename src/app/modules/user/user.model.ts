@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { IUser, UserRole } from "./user.interface";
 
+
 const userSchema = new Schema<IUser>(
   {
     firstName: { type: String, required: true },
@@ -26,19 +27,18 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
-    points:{
+    points: {
       type: Number,
-      default: 0
+      default: 0,
     },
     invitedUserCount: {
       type: Number,
-      default: 0
+      default: 0,
     },
-     freePackage: {
-      type: String,
-      enum: ["free", "none"],
-      default: "none"
-    }
+     freePackages: [{
+      type: Schema.Types.ObjectId,
+      ref: "FreePackage"
+    }]
   },
   { timestamps: true }
 );
