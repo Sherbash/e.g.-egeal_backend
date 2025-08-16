@@ -9,7 +9,7 @@ import { PromotionRoutes } from "../modules/promotion/promotion.route";
 import { PaymentRoutes } from "../modules/payment/payment.route";
 import { GiveawayRoutes } from "../modules/giveaway/giveaway.routes";
 import { ParticipantRoutes } from "../modules/participant/participant.routes";
-import { reviewRouter } from "../modules/reviews/review.router";
+// import { reviewRouter } from "../modules/reviews/review.router";
 import { FounderRoutes } from "../modules/founder/founder.routes";
 import { InfluencerRoutes } from "../modules/influencer/influencer.routes";
 import { PayoutRoutes } from "../modules/payout/payout.routes";
@@ -65,10 +65,10 @@ const moduleRoutes = [
     route: ParticipantRoutes,
   },
 
-  {
-    path: "/reviews",
-    route: reviewRouter,
-  },
+  // {
+  //   path: "/reviews",
+  //   route: reviewRouter,
+  // },
   {
     path: "/review",
     route: GlobalReviewRoutes,

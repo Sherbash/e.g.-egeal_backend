@@ -2,9 +2,10 @@ import { model, Schema, Types } from "mongoose";
 
 const commentSchema = new Schema(
   {
-    feedbackId: { type: Types.ObjectId, ref: "AllReview", required: true },
+    entityId: { type: Types.ObjectId, required: true },
+    entityType: { type: String, enum: ["story", "review"], required: true },
     userId: { type: Types.ObjectId, ref: "User", required: true },
-    text: { type: String, required: true },
+    comment: { type: String,  },
     parentId: { type: Types.ObjectId, ref: "Comment", default: null },
   },
   { timestamps: true }

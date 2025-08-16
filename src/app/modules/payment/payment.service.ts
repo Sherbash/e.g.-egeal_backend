@@ -124,6 +124,8 @@ const confirmPaymentAndSave = async (sessionId: string) => {
   // ✅ Prepare recipients
   const buyer = await UserModel.findById(userId);
 
+  await UserModel.findById(userId).updateOne({ isVerified: true });
+
   const founder = await Founder.findOne({
     userId: new Types.ObjectId(userId),
   }).populate("userId");

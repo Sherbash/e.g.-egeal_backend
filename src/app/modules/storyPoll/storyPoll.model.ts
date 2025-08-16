@@ -10,6 +10,7 @@ const storySchema = new mongoose.Schema(
     authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     description: { type: String, required: true },
     link: String,
+    comments: [{ type: Schema.Types.ObjectId, ref: "Comment", default: [] }], 
     // pollChoices: [pollChoiceSchema],
   },
   { timestamps: true }

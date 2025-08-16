@@ -91,10 +91,9 @@ const giveawaySchema = new mongoose.Schema(
     },
     isPrivate: { type: Boolean, default: false },
     inviteCode: { type: String }, 
-    // allowedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Pre-approved users
     maxParticipants: {
       type: Number,
-      default: 30, // Default to 30 for Micro Influencer Drop
+      default: 30, 
     },
     createdAt: {
       type: Date,

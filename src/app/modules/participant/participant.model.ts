@@ -6,7 +6,7 @@ const proofSchema = new mongoose.Schema({
   imageUrl: String,  // image URL 
   verified: {
     type: Boolean,
-    default: true,  // here the rules will be false by default
+    default: false,  // here the rules will be false by default
   },
 });
 
