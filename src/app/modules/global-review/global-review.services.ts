@@ -61,7 +61,6 @@ const updateReview = async (
   user: IUser,
   updateData: Partial<IGlobalReview>
 ) => {
-
   const review = await ReviewModel.findById(reviewId);
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
@@ -181,15 +180,19 @@ const getAllReviewForDb = async (
     "isApproved",
     "entityId",
     "status",
-    "bestReview"
+    "bestReview",
   ];
 
   filterableFields.forEach((field) => {
-    if (filters[field] !== undefined && filters[field] !== null && filters[field] !== "") {
+    if (
+      filters[field] !== undefined &&
+      filters[field] !== null &&
+      filters[field] !== ""
+    ) {
       queryConditions[field] = filters[field];
     }
   });
-  console.log("queryConditions", queryConditions)
+  console.log("queryConditions", queryConditions);
 
   const [reviews, total] = await Promise.all([
     ReviewModel.find(queryConditions)
@@ -290,10 +293,9 @@ const getReviewsByEntity = async (entityId: string, entityType: string) => {
 
 const getToolReviewForDb = async (id: string) => {
   // console.log("id", id)
-  const result = await ReviewModel.find({ entityId: id }).populate(
-    "userId",
-    "-password"
-  );
+  const result = await ReviewModel.find({ entityId: id })
+    .populate("userId", "-password")
+    .populate("comments");
 
   return {
     result,
