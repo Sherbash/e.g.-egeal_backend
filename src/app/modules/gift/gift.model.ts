@@ -22,7 +22,7 @@ const freePackageSchema = new Schema<IFreePackage>(
     },
     type:{
       type: String,
-      enum: ["testimonialWall", "socialpost"],
+      enum: ["testimonialWall", "social-post"],
       default: "",
     },
     // amount: {

@@ -25,6 +25,7 @@ import { TicketRoutes } from "../modules/ticket/ticket.route";
 import { LeaderboardRoutes } from "../modules/leaderboard/leaderboard.route";
 import { InvestorWaitlistRoutes } from "../modules/investorWaitlist/investorWaitlist.route";
 import { ProofUserInviteRoutes } from "../modules/proof/ProofUserInvite/proofUserInvite.route";
+import { ProofRoutes } from "../modules/proof/otherProof/proof.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -126,6 +127,10 @@ const moduleRoutes = [
   {
     path: "/user-invite-proof",
     route: ProofUserInviteRoutes,
+  },
+  {
+    path: "/proof",
+    route: ProofRoutes,
   },
 ];
 
