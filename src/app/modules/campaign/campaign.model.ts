@@ -1,7 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 
 export interface ICampaign extends Document {
-  founderId: Types.ObjectId; // Who created the campaign
+  authorId: Types.ObjectId; // Who created the campaign
   toolId: string; // The tool being promoted
   campaignType: "JOB";
   influencers: {
@@ -22,9 +22,9 @@ export interface ICampaign extends Document {
 
 const CampaignSchema = new Schema<ICampaign>(
   {
-    founderId: {
+    authorId: {
       type: Schema.Types.ObjectId,
-      ref: "Founder",
+      ref: "User",
       required: true,
     },
     toolId: {

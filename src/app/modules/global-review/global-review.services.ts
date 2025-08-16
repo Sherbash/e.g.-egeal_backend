@@ -61,6 +61,7 @@ const updateReview = async (
   user: IUser,
   updateData: Partial<IGlobalReview>
 ) => {
+
   const review = await ReviewModel.findById(reviewId);
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
@@ -183,12 +184,12 @@ const getAllReviewForDb = async (
     "bestReview"
   ];
 
-  // Loop through allowed fields and add to query if present
   filterableFields.forEach((field) => {
     if (filters[field] !== undefined && filters[field] !== null && filters[field] !== "") {
       queryConditions[field] = filters[field];
     }
   });
+  console.log("queryConditions", queryConditions)
 
   const [reviews, total] = await Promise.all([
     ReviewModel.find(queryConditions)
