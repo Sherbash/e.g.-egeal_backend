@@ -66,7 +66,8 @@ const UpdateComment = catchAsync(async (req, res) => {
 
 const DeleteComment = catchAsync(async (req, res) => {
   const { id } = req.params;
-  await commentServices.deleteCommentForDb(id);
+  const payload = req.body;
+  await commentServices.deleteCommentForDb(id, payload);
 
   sendResponse(res, {
     statusCode: status.OK,

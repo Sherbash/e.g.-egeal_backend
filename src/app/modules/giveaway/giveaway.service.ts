@@ -522,10 +522,10 @@ const updateGiveaway = async (
   }
 
   // Prevent updating critical fields
-  if (payload.priceMoney || payload.maxParticipants || payload.inviteCode) {
+  if ( payload.inviteCode) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot update prize money, participant limit, or invite code"
+      "Cannot update invite code"
     );
   }
 

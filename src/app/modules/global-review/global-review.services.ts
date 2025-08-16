@@ -289,7 +289,7 @@ const getReviewsByEntity = async (entityId: string, entityType: string) => {
 };
 
 const getToolReviewForDb = async (id: string) => {
-  console.log("id", id)
+  // console.log("id", id)
   const result = await ReviewModel.find({ entityId: id }).populate(
     "userId",
     "-password"
