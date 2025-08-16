@@ -166,23 +166,29 @@ const updateReviewStatus = async (
 
 const getAllReviewForDb = async (
   options: IPaginationOptions,
-  filters: any = {}
+  filters: Record<string, any> = {}
 ) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
-  const queryConditions: any = {};
+  const queryConditions: Record<string, any> = {};
 
-  if (filters.entityType) {
-    queryConditions.entityType = filters.entityType;
-  }
-  if (filters.rating) {
-    queryConditions.rating = filters.rating;
-  }
+  // allowed filter fields
+  const filterableFields = [
+    "entityType",
+    "rating",
+    "isApproved",
+    "entityId",
+    "status",
+    "bestReview"
+  ];
 
-  if (filters.isApproved) {
-    queryConditions.isApproved = filters.isApproved;
-  }
+  // Loop through allowed fields and add to query if present
+  filterableFields.forEach((field) => {
+    if (filters[field] !== undefined && filters[field] !== null && filters[field] !== "") {
+      queryConditions[field] = filters[field];
+    }
+  });
 
   const [reviews, total] = await Promise.all([
     ReviewModel.find(queryConditions)
@@ -203,6 +209,7 @@ const getAllReviewForDb = async (
     data: reviews,
   };
 };
+
 /**
  * Delete Review
  */
