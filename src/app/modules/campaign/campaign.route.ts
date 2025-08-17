@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post(
   "/",
-  auth(UserRole.ADMIN),
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
   validateRequest(CampaignValidation.createCampaignSchema),
   CampaignController.createCampaign
 );
