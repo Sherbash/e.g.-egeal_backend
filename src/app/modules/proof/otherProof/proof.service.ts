@@ -5,6 +5,8 @@ import AppError from "../../../errors/appError";
 import UserModel from "../../user/user.model";
 import { FreePackage } from "../../gift/gift.model";
 import { IUser } from "../../user/user.interface";
+import { IPaginationOptions } from "../../../interface/pagination";
+import { paginationHelper } from "../../../utils/paginationHelpers";
 
 /**
  * Submit new proof
@@ -56,23 +58,30 @@ const reviewProof = async (
     );
 
     if (proof?.proofType === "social-post") {
+      // ✅ Check if user already has freePackage for testimonialWall
+      // const alreadyHas = await FreePackage.findOne({
+      //   userId: proof?.proofSubmittedBy,
+      //   type: "social-post",
+      // });
+
+      // if (!alreadyHas) {
       const freePackage = await FreePackage.create({
-        userId: payload?.proofSubmittedBy,
+        userId: proof?.proofSubmittedBy,
         status: "paid",
         type: "social-post",
       });
 
       await UserModel.findOneAndUpdate(
-        { _id: payload?.proofSubmittedBy },
+        { _id: proof?.proofSubmittedBy },
         { $push: { freePackages: freePackage?._id } },
         { new: true }
       );
+      // }
     }
   } else if (payload?.status === "rejected") {
     proof.status = payload.status;
     proof.adminFeedback = payload?.adminFeedback;
   }
-
   await proof.save();
   return proof;
 };
@@ -91,15 +100,36 @@ const getUserProofs = async (userId: string, statusFilter?: string) => {
 /**
  * Get all proofs (admin)
  */
-const getAllProofs = async (filters: {
-  //   status?: string;
-  //   proofType?: string;
-  //   userId?: string;
-}) => {
-  //   return ProofModel.find(filters)
-  //     .populate("proofSubmittedBy", "firstName lastName email")
-  //     .populate("approvedBy", "firstName lastName")
-  //     .sort({ createdAt: -1 });
+// ProofService
+const getAllProofs = async (options: IPaginationOptions, filters: any) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
+  const queryConditions: Record<string, any> = {};
+
+  if (filters?.status) queryConditions.status = filters.status;
+  if (filters?.proofType) queryConditions.proofType = filters.proofType;
+  if (filters?.rewardGiven) queryConditions.rewardGiven = filters.rewardGiven;
+
+  const [proofs, total] = await Promise.all([
+    ProofModel.find(queryConditions)
+      .populate("proofSubmittedBy", "firstName lastName email")
+      .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    ProofModel.countDocuments(queryConditions),
+  ]);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: proofs,
+  };
 };
 
 export const ProofService = {

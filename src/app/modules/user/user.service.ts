@@ -220,7 +220,7 @@ const completeRegistration = async (email: string, otp: string) => {
 
     // 4. If there’s a referrer, create referral record
     if (tempUser.referredBy) {
-      console.log("tempUser.referredBy", tempUser.referredBy);
+      // console.log("tempUser.referredBy", tempUser.referredBy);
       await Referral.create(
         [
           {
@@ -389,6 +389,7 @@ const getSingleUser = async (id: string) => {
   const user = await UserModel.findById(id)
     .populate("referralCount")
     .populate("referralStats")
+    .populate("freePackages", "_id status type createdAt")
     .select("-password")
     .lean();
 
@@ -551,9 +552,10 @@ const deleteUser = async (id: string) => {
 
 const myProfile = async (authUser: IJwtPayload) => {
   const user = await UserModel.findById(authUser?.id)
+    .select("-password")
     .populate("referralCount")
     .populate("referralStats")
-    .select("-password")
+    .populate("freePackages", "_id status type createdAt")
     .lean();
 
   if (!user) {
