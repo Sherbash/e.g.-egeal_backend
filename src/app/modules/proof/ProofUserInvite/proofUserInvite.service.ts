@@ -22,7 +22,7 @@ const createProofUserInvite = async (
         throw new AppError(status.NOT_FOUND, "Invalid invited user list");
       }
 
-      console.log(user?.referredBy?.toString(), inviter.toString())
+      // console.log(user?.referredBy?.toString(), inviter.toString())
       if (user?.referredBy?.toString() !== inviter.toString()) {
         throw new AppError(status.BAD_REQUEST, "not match");
       }

@@ -10,6 +10,7 @@ const submitProofSchema = z.object({
       "giveaway",
       "gig-submission",
       "referral",
+      "post",
       "social-post",
       "testimonial",
       "payment",

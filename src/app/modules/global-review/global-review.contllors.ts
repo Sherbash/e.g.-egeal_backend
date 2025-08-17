@@ -46,6 +46,20 @@ const getAllReview = catchAsync(async (req, res) => {
   });
 });
 
+const GetToolReviews = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  console.log(id)
+  const result = await ReviewService.getToolReviewForDb(id);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Tool reviews successfully get !",
+    data: result,
+  });
+});
+
+
 // Update Review
 const updateReview = catchAsync(async (req: Request, res: Response) => {
   const reviewId = req.params.id;
@@ -166,4 +180,5 @@ export const ReviewController = {
   getReviewsByEntity,
   toggleReviewEditorPick,
   updateReviewStatus,
+  GetToolReviews
 };

@@ -17,8 +17,11 @@ router.get(
   ReviewController.getAllReview
 );
 
+router.get("/get-tool-reviews/:id", ReviewController.GetToolReviews);
 // Get Review by ID
 router.get("/:id", ReviewController.getReviewById);
+
+
 
 // Get Reviews by User
 router.get("/user/:userId", ReviewController.getReviewsByUser);

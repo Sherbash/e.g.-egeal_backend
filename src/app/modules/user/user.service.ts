@@ -61,7 +61,7 @@ const registerUser = async (payload: IUser) => {
     const newReferralCode = generateNumericNanoid(10);
 
     // 4. Create referral link
-    const newReferralLink = `${process.env.CLIENT_URL}/signup?referralCode=${newReferralCode}`;
+    const newReferralLink = `${process.env.CLIENT_URL}/register?referralCode=${newReferralCode}`;
 
     // 5. Hash password
     const hashedPassword = await bcrypt.hash(
@@ -135,7 +135,7 @@ const completeRegistration = async (email: string, otp: string) => {
 
     // 4. If there’s a referrer, create referral record
     if (tempUser.referredBy) {
-      console.log("tempUser.referredBy", tempUser.referredBy);
+      // console.log("tempUser.referredBy", tempUser.referredBy);
       await Referral.create(
         [
           {
@@ -305,7 +305,11 @@ const getSingleUser = async (id: string) => {
   const user = await UserModel.findById(id)
     .populate("referralCount")
     .populate("referralStats")
+<<<<<<< HEAD
     .populate("referredUsers")
+=======
+    .populate("freePackages", "_id status type createdAt")
+>>>>>>> 94849573abaadd77e49ac7f017c8decf60dd4003
     .select("-password")
     .lean();
 
@@ -468,10 +472,15 @@ const deleteUser = async (id: string) => {
 
 const myProfile = async (authUser: IJwtPayload) => {
   const user = await UserModel.findById(authUser?.id)
+    .select("-password")
     .populate("referralCount")
     .populate("referralStats")
+<<<<<<< HEAD
     .populate("referredUsers")
     .select("-password")
+=======
+    .populate("freePackages", "_id status type createdAt")
+>>>>>>> 94849573abaadd77e49ac7f017c8decf60dd4003
     .lean();
 
   if (!user) {

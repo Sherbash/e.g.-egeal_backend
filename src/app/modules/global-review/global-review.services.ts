@@ -9,6 +9,7 @@ import { IGlobalReview } from "./global-review.interface";
 import { InfluencerReputationService } from "../influencer/Reputation/reputation.service";
 import { IUser } from "../user/user.interface";
 import { FreePackage } from "../gift/gift.model";
+import mongoose from "mongoose";
 
 /**
  * Create Review (Dynamic for any entity)
@@ -61,7 +62,6 @@ const updateReview = async (
   user: IUser,
   updateData: Partial<IGlobalReview>
 ) => {
-
   const review = await ReviewModel.findById(reviewId);
   if (!review) {
     throw new AppError(status.NOT_FOUND, "Review not found");
@@ -106,64 +106,104 @@ const updateReview = async (
     throw new AppError(status.BAD_REQUEST, "Rating must be between 1 and 5");
   }
 
+  const excludeStatusData = {
+    ...updateData,
+    status: undefined,
+  };
+
   const result = await ReviewModel.findOneAndUpdate(
     { _id: reviewId },
-    { $set: updateData },
+    { $set: excludeStatusData },
     { new: true }
   );
 
   return result;
 };
+
 
 const updateReviewStatus = async (
   reviewId: string,
   user: IUser,
-  reviewStatus: boolean
+  reviewStatus: string
 ) => {
-  const review = await ReviewModel.findById(reviewId);
-  if (!review) {
-    throw new AppError(status.NOT_FOUND, "Review not found");
-  }
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (user?.role !== "admin") {
-    if (review.userId.toString() !== user?.id.toString()) {
-      throw new AppError(
-        status.FORBIDDEN,
-        "Not authorized to update this review"
-      );
+  try {
+    const review = await ReviewModel.findById(reviewId).session(session);
+    if (!review) {
+      throw new AppError(status.NOT_FOUND, "Review not found");
     }
-  }
-  const result = await ReviewModel.findOneAndUpdate(
-    { _id: reviewId },
-    { $set: { status: reviewStatus } },
-    { new: true }
-  );
 
-  if (result?.entityType === "influencer") {
-    await InfluencerReputationService.updateInfluencerReputation(
-      result?.entityId
+    // Authorization check
+    if (user?.role !== "admin") {
+      if (review.userId.toString() !== user?.id.toString()) {
+        throw new AppError(
+          status.FORBIDDEN,
+          "Not authorized to update this review"
+        );
+      }
+    }
+
+    // Prevent unnecessary updates
+    if (review.status === reviewStatus) {
+      await session.abortTransaction();
+      session.endSession();
+      return review; // No change
+    }
+
+    // Update review
+    const result = await ReviewModel.findOneAndUpdate(
+      { _id: reviewId },
+      { $set: { status: reviewStatus } },
+      { new: true, session }
     );
-  } else if (result?.entityType === "testimonialWall") {
-    // const freePackage = await FreePackage.findOneAndUpdate(
-    //   { _id: result?.userId },
-    //   { $set: { status: "paid", type: "testimonialWall" } },
-    //   { new: true }
-    // );
 
-    const freePackage = await FreePackage.create({
-      userId: result?.userId,
-      status: "paid",
-      type: "testimonialWall",
-    });
+    if (result?.entityType === "influencer") {
+      await InfluencerReputationService.updateInfluencerReputation(
+        result?.entityId
+      );
+    } else if (
+      result?.entityType === "testimonialWall" &&
+      reviewStatus === "approved"
+    ) {
+      // ✅ Check if user already has freePackage for testimonialWall
+      const alreadyHas = await FreePackage.findOne({
+        userId: result?.userId,
+        type: "testimonialWall",
+      }).session(session);
 
-    await UserModel.findOneAndUpdate(
-      { _id: result?.userId },
-      { $push: { freePackages: freePackage?._id } },
-      { new: true }
-    );
+      if (!alreadyHas) {
+        const freePackage = await FreePackage.create(
+          [
+            {
+              userId: result?.userId,
+              status: "paid",
+              type: "testimonialWall",
+            },
+          ],
+          { session }
+        );
+
+        await UserModel.findOneAndUpdate(
+          { _id: result?.userId },
+          { $push: { freePackages: freePackage[0]?._id } },
+          { new: true, session }
+        );
+      }
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return result;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-  return result;
 };
+
 
 const getAllReviewForDb = async (
   options: IPaginationOptions,
@@ -181,15 +221,19 @@ const getAllReviewForDb = async (
     "isApproved",
     "entityId",
     "status",
-    "bestReview"
+    "bestReview",
   ];
 
   filterableFields.forEach((field) => {
-    if (filters[field] !== undefined && filters[field] !== null && filters[field] !== "") {
+    if (
+      filters[field] !== undefined &&
+      filters[field] !== null &&
+      filters[field] !== ""
+    ) {
       queryConditions[field] = filters[field];
     }
   });
-  console.log("queryConditions", queryConditions)
+  // console.log("queryConditions", queryConditions);
 
   const [reviews, total] = await Promise.all([
     ReviewModel.find(queryConditions)
@@ -288,11 +332,23 @@ const getReviewsByEntity = async (entityId: string, entityType: string) => {
   return reviews;
 };
 
+const getToolReviewForDb = async (id: string) => {
+  // console.log("id", id)
+  const result = await ReviewModel.find({ entityId: id })
+    .populate("userId", "-password")
+    .populate("comments");
+
+  return {
+    result,
+  };
+};
+
 export const ReviewService = {
   createReview,
   updateReview,
   deleteReview,
   getReviewById,
+  getToolReviewForDb,
   getReviewsByUser,
   getReviewsByEntity,
   getAllReviewForDb,

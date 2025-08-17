@@ -247,7 +247,7 @@ const requestToJoinCampaign = async (
   campaign.influencers.push({
     influencerId: existingInfluencer._id,
     status: existingInfluencer.userId?.verified ? "approved" : "pending",
-    proofs: [newProof._id], // Store reference to this proof
+    proofs: [newProof?._id], // Store reference to this proof
   });
 
   await campaign.save();
