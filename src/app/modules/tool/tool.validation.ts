@@ -3,6 +3,7 @@ import z from "zod";
 const createToolZodSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Name is required"),
+    logo: z.string().url("Logo must be a valid URL").optional(),
     description: z.string().min(1, "Description is required"),
     price: z.number().min(0, "Price must be non-negative"),
     commissionRate: z.number().min(0, "Commission rate must be non-negative"),
@@ -14,6 +15,7 @@ const updateToolZodSchema = z.object({
   body: z
     .object({
       name: z.string().min(1, "Name is required").optional(),
+      logo: z.string().url("Logo must be a valid URL").optional(),
       description: z.string().min(1, "Description is required").optional(),
       price: z.number().min(0, "Price must be non-negative").optional(),
       commissionRate: z.number().min(0, "Commission rate must be non-negative").optional(),

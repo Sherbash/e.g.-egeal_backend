@@ -23,6 +23,9 @@ const userValidationSchema = z.object({
       required_error: "Role is required",
     }),
     isActive: z.boolean().optional(),
+    additionalNotes: z.string().optional(),
+    referredBy: z.string().optional(),
+    referralCode: z.string().optional(),
   }),
 });
 
@@ -39,10 +42,27 @@ const userUpdateValidationSchema = z.object({
       .enum([...(Object.values(UserRole) as [string, ...string[]])])
       .optional(),
     isActive: z.boolean().optional(),
+    additionalNotes: z.string().optional(),
+  }),
+});
+
+const verifyOtpValidationSchema = z.object({
+  body: z.object({
+    email: z
+      .string({
+        required_error: "Email is required",
+      })
+      .email("Invalid email format"),
+    otp: z
+      .string({
+        required_error: "OTP is required",
+      })
+      .length(6, "OTP must be 6 digits"),
   }),
 });
 
 export const UserValidation = {
   userValidationSchema,
   userUpdateValidationSchema,
+  verifyOtpValidationSchema,
 };

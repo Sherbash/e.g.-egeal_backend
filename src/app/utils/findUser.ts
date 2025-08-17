@@ -4,24 +4,49 @@ import { Founder } from "../modules/founder/founder.model";
 import AppError from "../errors/appError";
 import { Influencer } from "../modules/influencer/influencer.model";
 import { Investor } from "../modules/investor/investor.model";
+import UserModel from "../modules/user/user.model";
 
 export const findProfileByRole = async (user: IUser) => {
   let profile = null;
 
   if (user.role === UserRole.FOUNDER) {
-    profile = await Founder.findOne({ userId: user.id }).populate("userId");
+    profile = (await Founder.findOne({ userId: user.id }).populate(
+      "userId",
+      "-password"
+    )) as any;
+
     if (!profile) {
       throw new AppError(status.NOT_FOUND, "Founder profile not found");
     }
   } else if (user.role === UserRole.INFLUENCER) {
-    profile = await Influencer.findOne({ userId: user.id }).populate("userId");
+    profile = (await Influencer.findOne({ userId: user.id }).populate(
+      "userId",
+      "-password"
+    )) as any;
+
     if (!profile) {
       throw new AppError(status.NOT_FOUND, "Influencer profile not found");
     }
   } else if (user.role === UserRole.INVESTOR) {
-    profile = await Investor.findOne({ userId: user.id }).populate("userId");
+    profile = (await Investor.findOne({ userId: user.id }).populate(
+      "userId",
+      "-password"
+    )) as any;
+
     if (!profile) {
       throw new AppError(status.NOT_FOUND, "Investor profile not found");
+    }
+  } else if (user.role === UserRole.ADMIN) {
+    profile = await UserModel.findOne({ _id: user.id }).select("-password");
+
+    if (!profile) {
+      throw new AppError(status.NOT_FOUND, "Admin profile not found");
+    }
+  } else if (user.role === UserRole.USER) {
+    profile = await UserModel.findOne({ _id: user.id }).select("-password");
+
+    if (!profile) {
+      throw new AppError(status.NOT_FOUND, "User profile not found");
     }
   } else {
     throw new AppError(

@@ -8,11 +8,11 @@ const ProofSchema = z.object({
 
 const CreateParticipantSchema = z.object({
   body: z.object({
-    giveawayId: z.string({ required_error: "Giveaway ID is required" }),
-    socialUsername: z.string().optional(),
-    videoLink: z.string().url("Video must be a valid URL").optional(),
-    proofs: z.array(ProofSchema).min(1, "At least one proof is required"),
-    isWinner: z.boolean().optional(),
+    giveawayId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid giveaway ID"),
+    socialUsername: z.string().min(1, "Social username is required"),
+    videoLink: z.string().url("Invalid video URL").optional(),
+    inviteCode: z.string().min(1, "Invite code is required").optional(),
+    proofs: z.array(ProofSchema).optional(),
   }),
 });
 

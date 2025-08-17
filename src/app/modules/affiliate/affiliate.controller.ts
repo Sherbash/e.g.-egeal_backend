@@ -16,27 +16,18 @@ const createAffiliate = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// In affiliate.controller.ts
-// const handleAffiliateUrl = catchAsync(async (req: Request, res: Response) => {
-//   const { toolId } = req.params;
-//   const { ref: influencerId } = req.query;
-
-//   if (typeof influencerId !== "string") {
-//     return res.redirect(`${config.client_url}/tool/${toolId}`);
-//   }
-
-//   await AffiliateServices.incrementClickCount(influencerId, toolId);
-
-//   res.redirect(`${config.client_url}/tool/${toolId}`);
-// });
-
-
 const incrementClickApi = catchAsync(async (req: Request, res: Response) => {
   const { influencerId, toolId, source } = req.body;
   if (!influencerId || !toolId) {
-    return res.status(400).json({ success: false, message: "Missing influencerId or toolId" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing influencerId or toolId" });
   }
-  const result = await AffiliateServices.incrementClickCount(influencerId, toolId, source);
+  const result = await AffiliateServices.incrementClickCount(
+    influencerId,
+    toolId,
+    source
+  );
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
@@ -45,24 +36,28 @@ const incrementClickApi = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAffiliatesByInfluencerId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { influencerId } = req.params;
 
-const getAffiliatesByInfluencerId = catchAsync(async (req: Request, res: Response) => {
-  const { influencerId } = req.params;
-  
-  const result = await AffiliateServices.getAffiliatesByInfluencerId(influencerId);
+    const result = await AffiliateServices.getAffiliatesByInfluencerId(
+      influencerId
+    );
 
-  sendResponse(res, {
-    success: true,
-    statusCode: status.OK,
-    message: "Affiliate data retrieved successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Affiliate data retrieved successfully",
+      data: result,
+    });
+  }
+);
+
 
 
 export const AffiliateControllers = {
   createAffiliate,
   // handleAffiliateUrl,
   incrementClickApi,
-  getAffiliatesByInfluencerId
+  getAffiliatesByInfluencerId,
 };

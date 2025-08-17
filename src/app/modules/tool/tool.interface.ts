@@ -3,16 +3,19 @@ import { Types } from "mongoose";
 export interface ITool {
   toolId: string;
   name: string;
+  logo?: string;
   description: string;
   price: number;
   imageUrl?: string; 
   commissionRate: number;
   isActive?: boolean;
+  launched?: boolean;
   founderId: Types.ObjectId;
 }
 
 export interface IToolUpdate {
   name?: string;
+  logo?: string;
   description?: string;
   imageUrl?: string;
   price?: number;

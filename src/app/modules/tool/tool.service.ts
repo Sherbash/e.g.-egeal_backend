@@ -5,46 +5,26 @@ import { ITool, IToolUpdate } from "./tool.interface";
 import { generateUniqueId } from "../../utils/generateUniqueSlug";
 import { Founder } from "../founder/founder.model";
 import mongoose from "mongoose";
+import { IUser } from "../user/user.interface";
+import { IPaginationOptions } from "../../interface/pagination";
+import { paginationHelper } from "../../utils/paginationHelpers";
 
-// const createToolIntoDB = async (payload: ITool) => {
-//   const toolId = await generateUniqueId(payload.name, ToolModel, "toolId");
-
-//   const toolData = {
-//     toolId,
-//     name: payload.name,
-//     description: payload.description,
-//     price: payload.price,
-//     commissionRate: payload.commissionRate,
-//     isActive: payload.isActive ?? true,
-//     founderId: payload.founderId,
-//   };
-
-//   const existingTool = await ToolModel.findOne({
-//     name: toolData.name,
-//     isActive: true,
-//   });
-//   if (existingTool) {
-//     throw new AppError(
-//       status.BAD_REQUEST,
-//       "A tool with this name already exists"
-//     );
-//   }
-
-//   const createdTool = await ToolModel.create(toolData);
-//   return createdTool;
-// };
-
-const createToolIntoDB = async (payload: ITool) => {
+const createToolIntoDB = async (payload: ITool, user: IUser) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
+    const founder = await Founder.findOne({ userId: user?.id }).session(
+      session
+    );
     // 1. Generate unique toolId
     const toolId = await generateUniqueId(payload.name, ToolModel, "toolId");
 
+    // console.log("founder", founder)
     // 2. Prepare tool data
     const toolData = {
       ...payload,
+      founderId: founder?._id,
       toolId,
       isActive: payload.isActive ?? true,
     };
@@ -70,12 +50,12 @@ const createToolIntoDB = async (payload: ITool) => {
       payload.founderId,
       {
         $addToSet: { tools: createdTool[0].toolId }, // Add toolId string
-        $setOnInsert: { additionalNotes: "empty" } // Set default if creating new
+        $setOnInsert: { additionalNotes: "empty" }, // Set default if creating new
       },
-      { 
+      {
         session,
         upsert: true, // Create founder if doesn't exist
-        new: true 
+        new: true,
       }
     );
 
@@ -89,9 +69,51 @@ const createToolIntoDB = async (payload: ITool) => {
   }
 };
 
-const getAllToolsFromDB = async () => {
-  const tools = await ToolModel.find({ isActive: true }).lean();
-  return tools;
+const getAllToolsFromDB = async (
+  paginationOptions: IPaginationOptions,
+  filters: { searchTerm?: string; isActive?: boolean; launched?: boolean }
+) => {
+  const { limit, page, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(paginationOptions);
+
+  // Base query for active tools
+  const query: any = {};
+
+  // Search functionality
+  if (filters.searchTerm) {
+    query.$or = [
+      { name: { $regex: filters.searchTerm, $options: "i" } },
+      { description: { $regex: filters.searchTerm, $options: "i" } },
+      { toolId: { $regex: filters.searchTerm, $options: "i" } },
+    ];
+  }
+
+  // Price filter
+  if (filters.isActive) {
+    query.isActive = filters.isActive;
+  }
+
+  // Price filter
+  if (filters.launched) {
+    query.launched = filters.launched;
+  }
+
+  const tools = await ToolModel.find(query)
+    .lean()
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await ToolModel.countDocuments(query);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: tools,
+  };
 };
 
 const getSingleToolFromDB = async (id: string) => {
@@ -104,17 +126,18 @@ const getSingleToolFromDB = async (id: string) => {
 
 const getSingleToolByToolIdFromDB = async (toolId: string) => {
   const tool = await ToolModel.findOne({ toolId }).lean();
-  
+
   if (!tool || !tool.isActive) {
     throw new AppError(status.NOT_FOUND, "Tool not found or inactive");
   }
-  
+
   return tool;
 };
 
 const updateToolIntoDB = async (id: string, payload: IToolUpdate) => {
   const updateData = {
     name: payload.name,
+    logo: payload?.logo,
     description: payload.description,
     price: payload.price,
     commissionRate: payload.commissionRate,
@@ -154,5 +177,5 @@ export const ToolServices = {
   getSingleToolFromDB,
   updateToolIntoDB,
   deleteToolIntoDB,
-  getSingleToolByToolIdFromDB
+  getSingleToolByToolIdFromDB,
 };
