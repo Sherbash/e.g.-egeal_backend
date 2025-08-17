@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post(
   "/create",
-  auth(UserRole.USER, UserRole.INFLUENCER),
+  auth(UserRole.USER, UserRole.INFLUENCER ),
   validateRequest(ProofUserInviteValidation.createProofUserInviteSchema),
   ProofUserInviteController.createProof
 );
