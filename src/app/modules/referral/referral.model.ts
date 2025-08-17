@@ -70,6 +70,7 @@ const referralSchema = new Schema<IReferral>(
 // Indexes for faster queries
 referralSchema.index({ referrer: 1, status: 1 });
 referralSchema.index({ referredUser: 1, status: 1 });
+referralSchema.index({ referredUser: 1, status: 1 });
 
 
 export const Referral = model<IReferral>("Referral", referralSchema);

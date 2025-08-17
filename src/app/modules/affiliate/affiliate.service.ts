@@ -51,7 +51,7 @@ const createAffiliateIntoDB = async (payload: IAffiliate) => {
     }
 
     // 5. Create affiliate URL
-    const affiliateUrl = `${config.client_url}/tool/${payload.toolId}?ref=${payload.influencerId}`;
+    const affiliateUrl = `${config.client_url}/tool/${payload.toolId}?ref=${payload.influencerId}&id=${tool?._id}`;
 
     // 6. Prepare affiliate data
     const affiliateData = {

@@ -4,6 +4,7 @@ import status from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { IUser } from "../../user/user.interface";
+import pickOptions from "../../../utils/pick";
 
 // User submits proof
 const submitProof = catchAsync(async (req: Request, res: Response) => {
@@ -53,8 +54,19 @@ const getMyProofs = catchAsync(async (req: Request, res: Response) => {
 
 // Admin gets all proofs
 const getAllProofs = catchAsync(async (req: Request, res: Response) => {
-  const filters = req.query;
-  const result = await ProofService.getAllProofs(filters);
+
+   const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
+  const filters = pickOptions(req.query, [
+    "proofType",
+    "status",
+    "rewardGiven"
+  ]);
+  const result = await ProofService.getAllProofs(options, filters);
 
   sendResponse(res, {
     success: true,
