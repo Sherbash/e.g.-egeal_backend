@@ -1,7 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { IUser, UserRole } from "./user.interface";
 
-
 const userSchema = new Schema<IUser>(
   {
     firstName: { type: String, required: true },
@@ -10,7 +9,6 @@ const userSchema = new Schema<IUser>(
     password: { type: String, required: true },
     role: { type: String, enum: Object.values(UserRole), required: true },
     isActive: { type: Boolean, default: true },
-
     // Simplified Referral System
     referralCode: {
       type: String,
@@ -36,13 +34,18 @@ const userSchema = new Schema<IUser>(
       type: Number,
       default: 0,
     },
-     freePackages: [{
+    freePackages: [{
       type: Schema.Types.ObjectId,
       ref: "FreePackage"
     }]
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+
 // Virtual for referral stats (computed on demand)
 userSchema.virtual("referralStats", {
   ref: "Referral",
@@ -58,14 +61,34 @@ userSchema.virtual("referralStats", {
   },
 });
 
-// In user.model.ts
+// Virtual for referral count
 userSchema.virtual("referralCount", {
   ref: "Referral",
   localField: "_id",
   foreignField: "referrer",
   count: true,
 });
-// Password hashing
+
+// Virtual for referred users (list of users who used this user's referral code)
+userSchema.virtual("referredUsers", {
+  ref: "Referral",
+  localField: "_id",
+  foreignField: "referrer",
+  justOne: false,
+  options: {
+    populate: {
+      path: "referredUser",
+      select: "firstName lastName email role createdAt",
+    },
+    projection: {
+      referredUser: 1,
+      status: 1,
+      verifiedAt: 1,
+    },
+  },
+});
+
+// Password hashing (commented out as in original)
 // userSchema.pre("save", async function (next) {
 //   if (this.isModified("password")) {
 //     this.password = await bcrypt.hash(

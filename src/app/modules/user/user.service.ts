@@ -16,89 +16,6 @@ import { Investor } from "../investor/investor.model";
 import { IJwtPayload } from "../auth/auth.interface";
 import { findProfileByRole } from "../../utils/findUser";
 
-// const registerUser = async (payload: IUser) => {
-//   const {
-//     email,
-//     role,
-//     password,
-//     firstName,
-//     lastName,
-//     additionalNotes,
-//     referredBy,
-//     referralCode,
-//   } = payload;
-
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     // 1. Check if user exists in User or TempUser
-//     const existingUser = await UserModel.findOne({ email }).session(session);
-//     if (existingUser) {
-//       throw new AppError(status.BAD_REQUEST, "Email already registered");
-//     }
-//     const existingTempUser = await TempUserModel.findOne({ email }).session(
-//       session
-//     );
-//     if (existingTempUser) {
-//       throw new AppError(status.BAD_REQUEST, "Email awaiting OTP verification");
-//     }
-
-//     // 2. Validate referrer
-//     let referrerUser = null;
-//     if (referredBy) {
-//       referrerUser = await UserModel.findById(referredBy).session(session);
-//       if (!referrerUser)
-//         throw new AppError(status.BAD_REQUEST, "Referrer user not found");
-//     } else if (referralCode) {
-//       referrerUser = await UserModel.findOne({ referralCode }).session(session);
-//       // if (!referrerUser)
-//       //   throw new AppError(status.BAD_REQUEST, "Invalid referral code");
-//     }
-
-//     // 3. Generate new referral code for this user
-//     const newReferralCode = generateNumericNanoid(10);
-
-//     // 4. Create referral link for this user
-//     const newReferralLink = `${process.env.CLIENT_URL}/register?referralCode=${newReferralCode}`;
-
-//     // 5. Hash password
-//     const hashedPassword = await bcrypt.hash(
-//       password,
-//       Number(config.bcrypt_salt_rounds)
-//     );
-
-//     // 6. Store temporary user data
-//     const tempUserData = {
-//       firstName,
-//       lastName,
-//       email,
-//       password: hashedPassword,
-//       role,
-//       additionalNotes,
-//       referredBy: referrerUser?._id || undefined,
-//       referralCode: newReferralCode,
-//       referralLink: newReferralLink,
-//     };
-
-//     await TempUserModel.create([tempUserData], { session });
-
-//     // 7. Send OTP
-//     await createAndSendOtp(email, firstName);
-
-//     await session.commitTransaction();
-
-//     return {
-//       message: "OTP sent to your email. Please verify to complete signup.",
-//     };
-//   } catch (error) {
-//     await session.abortTransaction();
-//     throw error;
-//   } finally {
-//     session.endSession();
-//   }
-// };
-
 const registerUser = async (payload: IUser) => {
   const {
     email,
@@ -182,10 +99,8 @@ const registerUser = async (payload: IUser) => {
     session.endSession();
   }
 };
+
 const completeRegistration = async (email: string, otp: string) => {
-  // if (!email || !otp) {
-  //   throw new AppError(status.BAD_REQUEST, "Email and OTP required!");
-  // }
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -333,6 +248,7 @@ const getAllUsers = async (filters: any) => {
   const users = await UserModel.find(query)
     .populate("referralCount")
     .populate("referralStats")
+    .populate("referredUsers")
     .select("-password")
     .sort(sortOptions)
     .skip(skip)
@@ -389,6 +305,7 @@ const getSingleUser = async (id: string) => {
   const user = await UserModel.findById(id)
     .populate("referralCount")
     .populate("referralStats")
+    .populate("referredUsers")
     .select("-password")
     .lean();
 
@@ -467,7 +384,7 @@ const updateUser = async (id: string, payload: any) => {
           });
           break;
         case UserRole.FOUNDER:
-          await Founder.findOneAndUpdate({ userId: id }, roleData, {
+          await Influencer.findOneAndUpdate({ userId: id }, roleData, {
             new: true,
             runValidators: true,
             session,
@@ -553,6 +470,7 @@ const myProfile = async (authUser: IJwtPayload) => {
   const user = await UserModel.findById(authUser?.id)
     .populate("referralCount")
     .populate("referralStats")
+    .populate("referredUsers")
     .select("-password")
     .lean();
 
