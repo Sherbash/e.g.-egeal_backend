@@ -12,4 +12,9 @@ router.post(
   PayoutControllers.createPayoutRequest
 );
 
+router.get(
+  "/requests",
+  PayoutControllers.getAllPayoutRequests
+);
+
 export const PayoutRoutes = router;

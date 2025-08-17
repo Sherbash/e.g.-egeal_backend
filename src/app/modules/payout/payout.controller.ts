@@ -18,6 +18,19 @@ const createPayoutRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const getAllPayoutRequests = catchAsync(async (req: Request, res: Response) => {
+  const result = await PayoutServices.getAllPayoutRequests();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Payout requests retrieved successfully",
+    data: result,
+  });
+});
+
 export const PayoutControllers = {
   createPayoutRequest,
+  getAllPayoutRequests
 };

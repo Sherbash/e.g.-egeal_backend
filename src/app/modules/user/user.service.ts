@@ -305,11 +305,7 @@ const getSingleUser = async (id: string) => {
   const user = await UserModel.findById(id)
     .populate("referralCount")
     .populate("referralStats")
-<<<<<<< HEAD
-    .populate("referredUsers")
-=======
     .populate("freePackages", "_id status type createdAt")
->>>>>>> 94849573abaadd77e49ac7f017c8decf60dd4003
     .select("-password")
     .lean();
 
@@ -475,12 +471,7 @@ const myProfile = async (authUser: IJwtPayload) => {
     .select("-password")
     .populate("referralCount")
     .populate("referralStats")
-<<<<<<< HEAD
-    .populate("referredUsers")
-    .select("-password")
-=======
     .populate("freePackages", "_id status type createdAt")
->>>>>>> 94849573abaadd77e49ac7f017c8decf60dd4003
     .lean();
 
   if (!user) {

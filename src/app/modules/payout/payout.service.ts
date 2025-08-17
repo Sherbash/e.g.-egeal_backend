@@ -78,6 +78,44 @@ const createPayoutRequest = async (payload: IPayoutRequest) => {
   };
 };
 
+const getAllPayoutRequests = async () => {
+  try {
+    const res = await axios.get(`${STEINHQ_URL}/${SHEET_NAME}`);
+
+    if (res.status !== 200) {
+      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to fetch payout requests");
+    }
+
+    const payoutRequests = res.data;
+
+    // Validate and transform the response data to match IPayoutRequest
+    const validatedPayouts: IPayoutRequest[] = payoutRequests.map((item: any) => ({
+      name: item.name,
+      email: item.email,
+      influencerId: item.influencerId,
+      amount: parseFloat(item.amount),
+      date: item.date,
+      paymentMethod: item.paymentMethod,
+      accountDetails: {
+        bankName: item.bankName || undefined,
+        accountNumber: item.accountNumber || undefined,
+        accountHolderName: item.accountHolderName || undefined,
+        routingNumber: item.routingNumber || undefined,
+        paypalEmail: item.paypalEmail || undefined,
+        cryptoAddress: item.cryptoAddress || undefined,
+        cryptoNetwork: item.cryptoNetwork || undefined,
+      },
+      note: item.note || undefined,
+      status: item.status || "pending",
+    }));
+
+    return validatedPayouts;
+  } catch (error) {
+    throw new AppError(status.INTERNAL_SERVER_ERROR, "Error fetching payout requests");
+  }
+};
+
 export const PayoutServices = {
   createPayoutRequest,
+  getAllPayoutRequests
 };
