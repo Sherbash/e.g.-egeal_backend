@@ -12,4 +12,9 @@ router.post(
   WaitlistController.joinWaitlist
 );
 
+router.get(
+  "/entries",
+  WaitlistController.getAllWaitlistEntries
+);
+
 export const WaitlistRoutes = router;
