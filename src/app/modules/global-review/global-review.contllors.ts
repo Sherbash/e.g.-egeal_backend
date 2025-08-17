@@ -48,7 +48,7 @@ const getAllReview = catchAsync(async (req, res) => {
 
 const GetToolReviews = catchAsync(async (req, res) => {
   const { id } = req.params;
-  console.log(id)
+  console.log(id);
   const result = await ReviewService.getToolReviewForDb(id);
 
   sendResponse(res, {
@@ -58,7 +58,6 @@ const GetToolReviews = catchAsync(async (req, res) => {
     data: result,
   });
 });
-
 
 // Update Review
 const updateReview = catchAsync(async (req: Request, res: Response) => {
@@ -144,6 +143,20 @@ const getReviewById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getReviewByInfulencerId = catchAsync(
+  async (req: Request, res: Response) => {
+    const influencerId = req.params.id;
+    const result = await ReviewService.getReviewByInfulencerId(influencerId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Review fetched by influencer successfully",
+      data: result,
+    });
+  }
+);
+
 // Get Reviews by User
 const getReviewsByUser = catchAsync(async (req: Request, res: Response) => {
   const userId = req.params.userId;
@@ -180,5 +193,6 @@ export const ReviewController = {
   getReviewsByEntity,
   toggleReviewEditorPick,
   updateReviewStatus,
-  GetToolReviews
+  GetToolReviews,
+  getReviewByInfulencerId
 };

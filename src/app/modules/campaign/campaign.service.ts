@@ -69,6 +69,23 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
       "authorId",
       "firstName lastName email role referralLink referralCode"
     )
+    .populate({
+      path: "influencers",
+      populate: [
+        {
+          path: "influencerId",
+          select: "userId",
+          populate: {
+            path: "userId",
+            select: "firstName lastName email",
+          },
+        },
+        {
+          path: "proofs",
+          model: "Proof",
+        },
+      ],
+    })
     .select("-password")
     // .populate("influencers.userId", "firstName lastName email")
     .sort({ [sortBy]: sortOrder })
@@ -98,8 +115,8 @@ const getCampaignById = async (campaignId: string) => {
           path: "influencerId",
           select: "userId",
           populate: {
-            path: "userId", 
-            select: "firstName lastName email", 
+            path: "userId",
+            select: "firstName lastName email",
           },
         },
         {

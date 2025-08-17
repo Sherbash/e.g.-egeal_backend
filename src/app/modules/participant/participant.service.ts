@@ -439,17 +439,16 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
 
 const verifyParticipantProof = async (
   participantId: string,
-  payload: IParticipant,
+  payload: any,
   user: IUser
 ) => {
-  console.log(participantId);
+  console.log(payload);
 
   const session = await mongoose.startSession();
+  session.startTransaction(); 
   try {
     // 1. Find the giveaway
-    const giveaway = await Giveaway.findById(payload?.giveawayId).session(
-      session
-    );
+    const giveaway = await Giveaway.findById(payload?.giveawayId).session(session);
     if (!giveaway) {
       throw new AppError(status.NOT_FOUND, "Giveaway not found");
     }
@@ -465,43 +464,30 @@ const verifyParticipantProof = async (
       );
     }
 
-    const findParticipant = await Participant.findById(participantId).session(
-      session
-    );
-
-    if (!findParticipant) {
+    // 3. Find participant
+    const participant = await Participant.findById(participantId).session(session);
+    if (!participant) {
       throw new AppError(status.NOT_FOUND, "Participant not found");
     }
 
-    const findProofs = findParticipant.proofs; // proofs is array inside participant
-    console.log("findProofs", findProofs);
+    // 4. Find the proof
+    const proof = participant.proofs.find(
+      (p) => p._id.toString() === payload?.proofId.toString()
+    );
+    if (!proof) {
+      throw new AppError(status.NOT_FOUND, "Proof not found");
+    }
 
-    // // 3. Find and update the participant's proof status
-    // const participant = giveaway?.participants?.find(
-    //   (p) => p._id.toString() === participantId?.toString()
-    // );
+    // 5. Update proof verified status
+    proof.verified = payload?.verified; // true or false
 
-    // if (!participant) {
-    //   throw new AppError(status.NOT_FOUND, "Participant not found");
-    // }
+    // 6. Save participant
+    await participant.save({ session });
 
-    // const proof = participant.proofs.find(
-    //   (p) => p._id.toString() === proofId.toString()
-    // );
-
-    // if (!proof) {
-    //   throw new AppError(status.NOT_FOUND, "Proof not found");
-    // }
-
-    // // 4. Update the proof status
-    // proof.verified = payload?.verified;
-    // giveaway.markModified("participants");
-
-    // // 5. Save the updated giveaway
-    // const updatedGiveaway = await giveaway.save({ session });
-    // await session.commitTransaction();
-
-    return null;
+    // 7. Commit transaction
+    await session.commitTransaction();
+console.log("participant", participant)
+    return participant;
   } catch (error) {
     if (session.inTransaction()) {
       await session.abortTransaction();
