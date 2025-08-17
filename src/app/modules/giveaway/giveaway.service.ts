@@ -483,10 +483,14 @@ const getGiveawayById = async (giveawayId: string) => {
   const giveaway = await Giveaway.findById(giveawayId)
     .populate("authorId", "-password")
     .populate("winnerId", "-password")
-    .populate(
-      "participants",
-      "_id userId socialUsername videoLink proofs isWinner submittedAt"
-    );
+    .populate({
+      path: "participants",
+      select: "_id userId socialUsername videoLink proofs isWinner submittedAt",
+      populate: {
+        path: "userId", 
+        select: "firstName lastName email", 
+      },
+    });
 
   if (!giveaway) {
     throw new AppError(status.NOT_FOUND, "Giveaway not found");

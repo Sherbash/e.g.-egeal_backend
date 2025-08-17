@@ -93,10 +93,20 @@ const getCampaignById = async (campaignId: string) => {
     .populate("authorId", "-password")
     .populate({
       path: "influencers",
-      populate: {
-        path: "proofs",
-        model: "Proof",
-      },
+      populate: [
+        {
+          path: "influencerId",
+          select: "userId",
+          populate: {
+            path: "userId", 
+            select: "firstName lastName email", 
+          },
+        },
+        {
+          path: "proofs",
+          model: "Proof",
+        },
+      ],
     });
 
   if (!campaign) {

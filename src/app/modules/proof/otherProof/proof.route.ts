@@ -31,7 +31,7 @@ router.patch(
 
 router.get(
   "/",
-  auth(UserRole.ADMIN),
+  // auth(UserRole.ADMIN, UserRole.FOUNDER),
   ProofController.getAllProofs
 );
 

@@ -55,6 +55,23 @@ const getParticipant = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const verifyProof = catchAsync(async (req: Request, res: Response) => {
+  const {participantId} = req.params;
+  const payload = req.body;
+
+  const result = await ParticipantServices.verifyParticipantProof(
+    participantId,
+    payload,
+    req.user as IUser
+  );
+
+  res.status(status.OK).json({
+    success: true,
+    message: "Proof verified successfully",
+    data: result,
+  });
+});
+
 const pickWinner = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
 
@@ -75,4 +92,5 @@ export const ParticipantController = {
   getAllParticipants,
   getParticipant,
   pickWinner,
+  verifyProof,
 };

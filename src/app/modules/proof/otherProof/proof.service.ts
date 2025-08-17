@@ -101,7 +101,9 @@ const getUserProofs = async (userId: string, statusFilter?: string) => {
  * Get all proofs (admin)
  */
 // ProofService
-const getAllProofs = async (options: IPaginationOptions, filters: any) => {
+const getAllProofs = async (options: IPaginationOptions, filters: any, user: IUser) => {
+
+  
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
