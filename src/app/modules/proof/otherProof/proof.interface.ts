@@ -5,7 +5,7 @@ export interface IProof extends Document {
   proofSubmittedBy: mongoose.Types.ObjectId;
   proofApprovedBy: mongoose.Types.ObjectId;
   campaignId: mongoose.Types.ObjectId;
-  proofType: "giveaway" | "gig-submission" | "referral" | "social-post" | "testimonial" | "payment" | "post";
+  proofType: "giveaway" | "gig-submission" | "referral" | "social-post" | "testimonial" | "payment" | "post" | "campaign";
   proofLink: string;
   proofAbout: string;
   status: "pending" | "approved" | "rejected";
