@@ -486,7 +486,7 @@ const verifyParticipantProof = async (
 
     // 7. Commit transaction
     await session.commitTransaction();
-console.log("participant", participant)
+// console.log("participant", participant)
     return participant;
   } catch (error) {
     if (session.inTransaction()) {
