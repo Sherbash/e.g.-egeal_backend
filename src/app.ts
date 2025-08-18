@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1", router);
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Marshall app running!");
+  res.send("Marshall app running now!");
 });
 
 app.use(globalErrorHandler);

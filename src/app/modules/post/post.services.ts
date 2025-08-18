@@ -54,12 +54,15 @@ const submitProofToPost = async (
 
   // 2. Create new proof document
   const proof = await ProofModel.create({
+    PostId: new Types.ObjectId(post?._id),
     proofSubmittedBy: userId,
     proofType: payload.proofType,
     proofLink: payload.proofLink,
     proofAbout: payload.proofAbout,
     status: "pending",
   });
+
+  console.log("proof", proof)
 
   const checkProofAlreaySubmitted = post.proofs.includes(proof?._id);
   if (checkProofAlreaySubmitted) {

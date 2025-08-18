@@ -11,7 +11,7 @@ const router = express.Router();
 router.post(
   "/submit",
   auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
-  validateRequest(ProofValidation.submitProofSchema),
+  // validateRequest(ProofValidation.submitProofSchema),
   ProofController.submitProof
 );
 
