@@ -208,7 +208,7 @@ import { Types } from "mongoose";
 import { Participant } from "./participant.model";
 import { IUser } from "../user/user.interface";
 import mongoose from "mongoose";
-import { IParticipant } from "./participant.interface";
+import { IParticipant, IProof } from "./participant.interface";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { IPaginationOptions } from "../../interface/pagination";
 
@@ -288,7 +288,11 @@ const createParticipant = async (
   }
 };
 
-const getAllParticipants = async (giveawayId: string, user: IUser, options:IPaginationOptions) => {
+const getAllParticipants = async (
+  giveawayId: string,
+  user: IUser,
+  options: IPaginationOptions
+) => {
   const { role, id: userId } = user;
 
   const { page, limit, skip, sortBy, sortOrder } =
@@ -433,8 +437,70 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
   }
 };
 
+const verifyParticipantProof = async (
+  participantId: string,
+  payload: any,
+  user: IUser
+) => {
+  console.log(payload);
+
+  const session = await mongoose.startSession();
+  session.startTransaction(); 
+  try {
+    // 1. Find the giveaway
+    const giveaway = await Giveaway.findById(payload?.giveawayId).session(session);
+    if (!giveaway) {
+      throw new AppError(status.NOT_FOUND, "Giveaway not found");
+    }
+
+    // 2. Authorization check
+    if (
+      user.role !== "admin" &&
+      giveaway.authorId.toString() !== user.id.toString()
+    ) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "You are not authorized to verify proofs"
+      );
+    }
+
+    // 3. Find participant
+    const participant = await Participant.findById(participantId).session(session);
+    if (!participant) {
+      throw new AppError(status.NOT_FOUND, "Participant not found");
+    }
+
+    // 4. Find the proof
+    const proof = participant.proofs.find(
+      (p) => p._id.toString() === payload?.proofId.toString()
+    );
+    if (!proof) {
+      throw new AppError(status.NOT_FOUND, "Proof not found");
+    }
+
+    // 5. Update proof verified status
+    proof.verified = payload?.verified; // true or false
+
+    // 6. Save participant
+    await participant.save({ session });
+
+    // 7. Commit transaction
+    await session.commitTransaction();
+console.log("participant", participant)
+    return participant;
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
 export const ParticipantServices = {
   createParticipant,
+  verifyParticipantProof,
   getAllParticipants,
   getParticipant,
   pickWinner,

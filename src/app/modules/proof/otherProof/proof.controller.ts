@@ -66,7 +66,7 @@ const getAllProofs = catchAsync(async (req: Request, res: Response) => {
     "status",
     "rewardGiven"
   ]);
-  const result = await ProofService.getAllProofs(options, filters);
+  const result = await ProofService.getAllProofs(options, filters, req.user as IUser);
 
   sendResponse(res, {
     success: true,
