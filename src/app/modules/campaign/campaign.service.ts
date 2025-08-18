@@ -59,15 +59,58 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
   return result;
 };
 
+// const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
+//   const { limit, page, skip, sortBy, sortOrder } =
+//     paginationHelper.calculatePagination(paginationOptions);
+
+//   const campaigns = await Campaign.find()
+//     .populate(
+//       "authorId",
+//       "firstName lastName email role referralLink referralCode"
+//     )
+//     .populate({
+//       path: "influencers",
+//       populate: [
+//         {
+//           path: "influencerId",
+//           select: "userId",
+//           populate: {
+//             path: "userId",
+//             select: "firstName lastName email",
+//           },
+//         },
+//         {
+//           path: "proofs",
+//           model: "Proof",
+//         },
+//       ],
+//     })
+//     .select("-password")
+//     // .populate("influencers.userId", "firstName lastName email")
+//     .sort({ [sortBy]: sortOrder })
+//     .skip(skip)
+//     .limit(limit);
+
+//   const total = await Campaign.countDocuments();
+
+//   return {
+//     meta: {
+//       page,
+//       limit,
+//       total,
+//       totalPages: Math.ceil(total / limit),
+//     },
+//     data: campaigns,
+//   };
+// };
+
 const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
   const { limit, page, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(paginationOptions);
 
+  // First get the campaigns with all other populated fields
   const campaigns = await Campaign.find()
-    .populate(
-      "authorId",
-      "firstName lastName email role referralLink referralCode"
-    )
+    .populate("authorId", "firstName lastName email role referralLink referralCode")
     .populate({
       path: "influencers",
       populate: [
@@ -86,10 +129,27 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
       ],
     })
     .select("-password")
-    // .populate("influencers.userId", "firstName lastName email")
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .lean(); // Convert to plain JS object
+
+  // Get all unique toolIds from the campaigns
+  const toolIds = [...new Set(campaigns.map(c => c.toolId))];
+
+  // Find all tools that match these toolIds
+  const tools = await ToolModel.find({ toolId: { $in: toolIds } })
+    .select('_id name logo description price commissionRate toolId isActive launched imageUrl')
+    .lean();
+
+  // Create a map for quick lookup: toolId -> tool document
+  const toolMap = new Map(tools.map(tool => [tool.toolId, tool]));
+
+  // Combine the data
+  const campaignsWithTools = campaigns.map(campaign => ({
+    ...campaign,
+    tool: toolMap.get(campaign.toolId) || null, // Add the full tool document
+  }));
 
   const total = await Campaign.countDocuments();
 
@@ -100,10 +160,9 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
       total,
       totalPages: Math.ceil(total / limit),
     },
-    data: campaigns,
+    data: campaignsWithTools,
   };
 };
-
 const getCampaignById = async (campaignId: string) => {
   const campaign = await Campaign.findById(campaignId)
     .populate("authorId", "-password")
