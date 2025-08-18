@@ -293,6 +293,16 @@ const getReviewById = async (reviewId: string) => {
   }
   return review;
 };
+const getReviewByInfulencerId = async (influencerId: string) => {
+  const review = await ReviewModel.findOne({ entityId: influencerId })
+    .populate("userId", "firstName lastName email")
+    .populate("entityId", "title")
+    .populate("comments");
+  if (!review) {
+    throw new AppError(status.NOT_FOUND, "Review not found");
+  }
+  return review;
+};
 
 const ToggleReviewEditorPick = async (reviewId: string) => {
   const review = await ReviewModel.findById({ _id: reviewId });
@@ -354,4 +364,5 @@ export const ReviewService = {
   getAllReviewForDb,
   ToggleReviewEditorPick,
   updateReviewStatus,
+  getReviewByInfulencerId
 };

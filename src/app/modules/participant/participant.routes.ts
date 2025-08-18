@@ -36,4 +36,10 @@ router.post(
   ParticipantController.pickWinner
 );
 
+router.patch(
+  "/proof-verify/:participantId",
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
+  ParticipantController.verifyProof
+)
+
 export const ParticipantRoutes = router;
