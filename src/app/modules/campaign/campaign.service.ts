@@ -266,6 +266,7 @@ const requestToJoinCampaign = async (
     ...payload,
     proofSubmittedBy: user?.id,
     campaignId: campaign._id,
+    proofType: "campaign",
     status: existingInfluencer.userId?.verified ? "approved" : "pending",
   });
 

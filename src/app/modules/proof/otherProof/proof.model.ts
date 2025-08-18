@@ -22,6 +22,7 @@ const ProofSchema = new mongoose.Schema<IProof>(
         "giveaway",
         "gig-submission",
         "referral",
+        "campaign",
         "post", // our egalehub post
         "social-post", // social media post and its related proof
         "testimonial",

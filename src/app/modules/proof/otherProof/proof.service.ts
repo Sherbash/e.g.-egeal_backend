@@ -12,7 +12,16 @@ import { paginationHelper } from "../../../utils/paginationHelpers";
  * Submit new proof
  */
 const submitProof = async (payload: IProof, userId: string) => {
-  console.log("payload", payload)
+  
+  const isAlreadyExists = await ProofModel.findOne({
+    proofSubmittedBy: userId,
+    proofType: "post"
+  })
+
+  if (isAlreadyExists) {
+    throw new AppError(status.CONFLICT, "You have already submitted a proof");
+  }
+
   const proof = await ProofModel.create({
     ...payload,
     PostId: payload.PostId,
