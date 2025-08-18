@@ -20,6 +20,7 @@ router.get(
 router.get("/get-tool-reviews/:id", ReviewController.GetToolReviews);
 // Get Review by ID
 router.get("/:id", ReviewController.getReviewById);
+router.get("/influencer/:id", ReviewController.getReviewByInfulencerId);
 
 
 

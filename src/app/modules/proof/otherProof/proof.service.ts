@@ -32,17 +32,18 @@ const reviewProof = async (
   if (!proof) {
     throw new AppError(status.NOT_FOUND, "Proof not found");
   }
-
+console.log(user)
+  console.log("proof", proof)
   // 2. Authorization check - only author or admin can update
-  const isAuthor = proof?.proofSubmittedBy.toString() === user?.id?.toString();
-  const isAdmin = user.role === "admin";
+  // const isAuthor = proof?.proofApprovedBy.toString() === user?.id?.toString();
+  // const isAdmin = user.role === "admin";
 
-  if (!isAuthor && !isAdmin) {
-    throw new AppError(
-      status.FORBIDDEN,
-      "Only post author or admin can update this post"
-    );
-  }
+  // if (!isAuthor && !isAdmin) {
+  //   throw new AppError(
+  //     status.FORBIDDEN,
+  //     "Only post author or admin can update this post"
+  //   );
+  // }
 
   if (payload?.status === "approved") {
     await ProofModel.findOneAndUpdate(
@@ -101,7 +102,9 @@ const getUserProofs = async (userId: string, statusFilter?: string) => {
  * Get all proofs (admin)
  */
 // ProofService
-const getAllProofs = async (options: IPaginationOptions, filters: any) => {
+const getAllProofs = async (options: IPaginationOptions, filters: any, user: IUser) => {
+
+  
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 

@@ -24,14 +24,14 @@ router.get(
 // Admin routes
 router.patch(
   "/review/:proofId",
-  // auth(UserRole.ADMIN, UserRole.FOUNDER),
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
 //   validateRequest(ProofValidation.reviewProofSchema),
   ProofController.reviewProof
 );
 
 router.get(
   "/",
-  auth(UserRole.ADMIN),
+  // auth(UserRole.ADMIN, UserRole.FOUNDER),
   ProofController.getAllProofs
 );
 
