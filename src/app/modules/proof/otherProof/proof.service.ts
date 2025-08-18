@@ -12,8 +12,10 @@ import { paginationHelper } from "../../../utils/paginationHelpers";
  * Submit new proof
  */
 const submitProof = async (payload: IProof, userId: string) => {
+  console.log("payload", payload)
   const proof = await ProofModel.create({
     ...payload,
+    PostId: payload.PostId,
     proofSubmittedBy: userId,
   });
 
@@ -32,8 +34,8 @@ const reviewProof = async (
   if (!proof) {
     throw new AppError(status.NOT_FOUND, "Proof not found");
   }
-console.log(user)
-  console.log("proof", proof)
+// console.log(user)
+//   console.log("proof", proof)
   // 2. Authorization check - only author or admin can update
   // const isAuthor = proof?.proofApprovedBy.toString() === user?.id?.toString();
   // const isAdmin = user.role === "admin";

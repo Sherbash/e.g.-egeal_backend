@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IProof extends Document {
+  PostId: mongoose.Types.ObjectId;
   proofSubmittedBy: mongoose.Types.ObjectId;
   proofApprovedBy: mongoose.Types.ObjectId;
   campaignId: mongoose.Types.ObjectId;

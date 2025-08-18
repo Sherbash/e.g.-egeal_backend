@@ -6,6 +6,7 @@ const submitProofSchema = z.object({
       .string()
       .regex(/^[0-9a-fA-F]{24}$/, "Invalid campaignId")
       .optional(),
+    
     proofType: z.enum([
       "giveaway",
       "gig-submission",

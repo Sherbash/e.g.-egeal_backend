@@ -3,6 +3,7 @@ import { IProof } from "./proof.interface";
 
 const ProofSchema = new mongoose.Schema<IProof>(
   {
+    PostId: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
     // Who submitted this proof?
     proofSubmittedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +22,7 @@ const ProofSchema = new mongoose.Schema<IProof>(
         "giveaway",
         "gig-submission",
         "referral",
-        "post",  // our egalehub post
+        "post", // our egalehub post
         "social-post", // social media post and its related proof
         "testimonial",
         "payment",
