@@ -11,7 +11,7 @@ const CreateParticipantSchema = z.object({
     giveawayId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid giveaway ID"),
     socialUsername: z.string().min(1, "Social username is required"),
     videoLink: z.string().url("Invalid video URL").optional(),
-    inviteCode: z.string().min(1, "Invite code is required").optional(),
+    // inviteCode: z.string().min(1, "Invite code is required").optional(),
     proofs: z.array(ProofSchema).optional(),
   }),
 });
