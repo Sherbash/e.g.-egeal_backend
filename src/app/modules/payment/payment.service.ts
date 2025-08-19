@@ -170,7 +170,7 @@ const confirmPaymentAndSave = async (sessionId: string) => {
 
   // 🔔 Send to admin
   await sendEmail(
-    "smhasanjamil14@gmail.com",
+    config.admin_email || "smhasanjamil14@gmail.com",
     subject,
     `<p>Admin notice: A tool was purchased.</p>${message}`
   );
