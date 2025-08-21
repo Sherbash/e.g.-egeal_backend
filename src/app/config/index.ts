@@ -30,4 +30,8 @@ export default {
   stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
   gmail: process.env.GMAIL_USER,
   gmail_pass: process.env.GMAIL_PASS,
+  super_admin_email: process.env.SUPER_ADMIN_EMAIL,
+  super_admin_password: process.env.SUPER_ADMIN_PASSWORD,
+  super_admin_first_name: process.env.SUPER_ADMIN_FIRST_NAME,
+  super_admin_last_name: process.env.SUPER_ADMIN_LAST_NAME,
 };

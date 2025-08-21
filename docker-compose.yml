@@ -8,7 +8,7 @@ services:
     image: marshall-server  
     container_name: marshall-backend_neuro_night_ai
     ports:
-      - "5300:5300"
+      - "5606:5606"
     env_file:
       - .env
     restart: unless-stopped

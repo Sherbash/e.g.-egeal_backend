@@ -61,7 +61,7 @@ const registerUser = async (payload: IUser) => {
     const newReferralCode = generateNumericNanoid(10);
 
     // 4. Create referral link
-    const newReferralLink = `${process.env.CLIENT_URL}/register?referralCode=${newReferralCode}`;
+    const newReferralLink = `${process.env.CLIENT_URL}/pre-register?referralCode=${newReferralCode}`;
 
     // 5. Hash password
     const hashedPassword = await bcrypt.hash(
