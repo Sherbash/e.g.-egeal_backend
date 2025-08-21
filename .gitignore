@@ -6,6 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 
 .env
+# But keep the example env file
+!.env.example
 
 # Runtime data
 pids
