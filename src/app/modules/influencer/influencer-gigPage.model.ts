@@ -23,7 +23,7 @@ export interface IGigPage {
   bio?: string;
   customLink?: string;
   socialLinks: ISocialLink[];
-  affiliateLinks: String[];
+  // affiliateLinks: String[];
   promoInfo?: string;
   layoutTemplate?: number;
   profileImage?: string;
@@ -51,11 +51,11 @@ const gigPageSchema = new Schema<IGigPage>(
         clickCount: { type: Number, default: 0 },
       },
     ],
-    affiliateLinks: [
-      {
-        type: String,
-      },
-    ],
+    // affiliateLinks: [
+    //   {
+    //     type: String,
+    //   },
+    // ],
     promoInfo: String,
     layoutTemplate: { type: Number, default: 1 },
     profileImage: String,
