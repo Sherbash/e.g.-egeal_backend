@@ -136,18 +136,18 @@ const createGigPage = async (user: IUser, payload: IGigPage) => {
     throw new AppError(status.BAD_REQUEST, "Gig page already exists");
   }
 
-  // Get all affiliates for this influencer and extract their IDs
-  const affiliates = await Affiliate.find({
-    influencerId: influencer?.influencerId,
-  }).lean();
+  // // Get all affiliates for this influencer and extract their IDs
+  // const affiliates = await Affiliate.find({
+  //   influencerId: influencer?.influencerId,
+  // }).lean();
 
-  const affiliateLinks = affiliates.map((affiliate) => affiliate.affiliateUrl);
+  // const affiliateLinks = affiliates.map((affiliate) => affiliate.affiliateUrl);
 
   // Create with normalized username
   const gigPage = await GigPage.create({
     ...payload,
     username: payload.username.toLowerCase(),
-    affiliateLinks: affiliateLinks,
+    // affiliateLinks: affiliateLinks,
     influencerId: influencer._id,
     // isPublished: false,
     customLink: `${process.env.CLIENT_URL}/gig-info?username=${payload.username}&influencerId=${influencer?._id}`,
@@ -174,6 +174,13 @@ const getGigPageByUserId = async (userId: string) => {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
 
+  // Get all affiliates for this influencer and extract their IDs
+  const affiliates = await Affiliate.find({
+    influencerId: influencer?.influencerId,
+  }).lean();
+
+  const affiliateLinks = affiliates.map((affiliate) => affiliate.affiliateUrl);
+
   const gigPage = await GigPage.findOne({
     influencerId: influencer?._id,
   })
@@ -184,13 +191,25 @@ const getGigPageByUserId = async (userId: string) => {
     throw new AppError(status.NOT_FOUND, "Gig page not found");
   }
 
-  return gigPage;
+ const updatedGigPage = {
+    ...gigPage,
+    affiliateLinks: affiliateLinks,
+  };
+
+  return updatedGigPage;
 };
 const getGigPageByInfluencerId = async (influencerId: string) => {
   const influencer = await Influencer.findOne({ _id: influencerId });
   if (!influencer) {
     throw new AppError(status.NOT_FOUND, "Influencer not found");
   }
+
+  // Get all affiliates for this influencer and extract their IDs
+  const affiliates = await Affiliate.find({
+    influencerId: influencer?.influencerId,
+  }).lean();
+
+  const affiliateLinks = affiliates.map((affiliate) => affiliate.affiliateUrl);
 
   const gigPage = await GigPage.findOne({
     influencerId: influencer._id,
@@ -202,7 +221,12 @@ const getGigPageByInfluencerId = async (influencerId: string) => {
     throw new AppError(status.NOT_FOUND, "Gig page not found");
   }
 
-  return gigPage;
+  const updatedGigPage = {
+    ...gigPage,
+    affiliateLinks: affiliateLinks,
+  };
+
+  return updatedGigPage;
 };
 
 const getGigPageById = async (gigId: string) => {
