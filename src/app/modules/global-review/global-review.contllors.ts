@@ -157,6 +157,20 @@ const getReviewByInfulencerId = catchAsync(
   }
 );
 
+const getAllReviewByInfulencerId = catchAsync(
+  async (req: Request, res: Response) => {
+    const {influencerId} = req.params;
+    const result = await ReviewService.getAllReviewByInfulencerId(influencerId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "All Review fetched by influencer successfully",
+      data: result,
+    });
+  }
+);
+
 // Get Reviews by User
 const getReviewsByUser = catchAsync(async (req: Request, res: Response) => {
   const userId = req.params.userId;
@@ -189,6 +203,7 @@ export const ReviewController = {
   updateReview,
   deleteReview,
   getReviewById,
+  getAllReviewByInfulencerId,
   getReviewsByUser,
   getReviewsByEntity,
   toggleReviewEditorPick,
