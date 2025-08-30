@@ -149,7 +149,7 @@ const createGigPage = async (user: IUser, payload: IGigPage) => {
     username: payload.username.toLowerCase(),
     // affiliateLinks: affiliateLinks,
     influencerId: influencer._id,
-    isPublished: false,
+    // isPublished: false,
     customLink: `${process.env.CLIENT_URL}/gig-info?username=${payload.username}&influencerId=${influencer?._id}`,
   });
   return gigPage;
