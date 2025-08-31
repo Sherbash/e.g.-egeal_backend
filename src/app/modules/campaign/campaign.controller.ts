@@ -25,7 +25,7 @@ const getAllCampaigns = catchAsync(async (req: Request, res: Response) => {
     "sortBy",
     "sortOrder",
   ]);
-  const result = await CampaignServices.getAllCampaigns(options);
+  const result = await CampaignServices.getAllCampaigns(options, req.user as IUser);
 
   res.status(status.OK).json({
     success: true,

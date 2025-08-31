@@ -302,6 +302,7 @@ const generateInviteCode = () => {
 const createGiveaway = async (payload: IGiveaway, user: IUser) => {
   const giveawayPayload = {
     ...payload,
+    rules: ["Egale: Follow equally across all social media.", ...payload.rules],
     authorId: user.id,
     priceMoney: payload.priceMoney,
     isPrivate: payload.isPrivate,
@@ -487,8 +488,8 @@ const getGiveawayById = async (giveawayId: string) => {
       path: "participants",
       select: "_id userId socialUsername videoLink proofs isWinner submittedAt",
       populate: {
-        path: "userId", 
-        select: "firstName lastName email", 
+        path: "userId",
+        select: "firstName lastName email",
       },
     });
 
@@ -526,14 +527,23 @@ const updateGiveaway = async (
   }
 
   // Prevent updating critical fields
-  if ( payload.inviteCode) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "Cannot update invite code"
-    );
+  if (payload.inviteCode) {
+    throw new AppError(status.BAD_REQUEST, "Cannot update invite code");
   }
 
-  const result = await Giveaway.findByIdAndUpdate(giveawayId, payload, {
+  // Always add Egale rule if not present
+  const baseRule = "Egale: Follow equally across all social media.";
+  const existingRules = payload.rules ?? giveaway.rules ?? [];
+
+  const updatedRules = existingRules.includes(baseRule)
+    ? existingRules
+    : [baseRule, ...existingRules];
+
+  const updatedPayload = {
+    ...payload,
+    rules: updatedRules,
+  };
+  const result = await Giveaway.findByIdAndUpdate(giveawayId, updatedPayload, {
     new: true,
   });
   return result;

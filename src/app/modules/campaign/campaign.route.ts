@@ -14,7 +14,7 @@ router.post(
 );
 
 // Get all campaigns - Public
-router.get("/", CampaignController.getAllCampaigns);
+router.get("/", auth(UserRole.ADMIN, UserRole.FOUNDER), CampaignController.getAllCampaigns);
 
 // Get single campaign - Public
 router.get("/:id", CampaignController.getCampaignById);
