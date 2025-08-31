@@ -15,7 +15,7 @@ const loginUser = async (payload: IAuth) => {
     throw new AppError(status.BAD_REQUEST, "Email and password are required!");
   }
 
-  // Check existing user
+  console.log("email", email)
   const user = await User.findOne({ email });
   if (!user) {
     throw new AppError(

@@ -8,13 +8,14 @@ import AppError from "../../../errors/appError";
 const calculateReputation = async (
   influencerId: string | mongoose.Types.ObjectId
 ): Promise<{ score: number; badges: string[] }> => {
-  const influencerObjectId = new mongoose.Types.ObjectId(influencerId);
 
+  // console.log("influencerId", influencerId)
   const reviews = await ReviewModel.find({
     entityType: "influencer",
-    entityId: influencerObjectId,
+    entityId: influencerId,
     status: "approved",
   });
+  // console.log("reviews 345", reviews)
 
   const reviewCount = reviews.length;
 
@@ -25,6 +26,7 @@ const calculateReputation = async (
   const averageRating =
     reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount;
 
+    // console.log("averageRating", averageRating)
   const score = Math.min(100, Math.floor(averageRating * 20));
 
   const badges: string[] = [];

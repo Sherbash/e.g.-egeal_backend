@@ -49,9 +49,13 @@ const registerUser = async (payload: IUser) => {
       if (!referrerUser)
         throw new AppError(status.BAD_REQUEST, "Referrer user not found");
     } else if (referralCode) {
-      referrerUser = await UserModel.findOne({ referralCode }).session(session);
-      // if (!referrerUser)
-      //   throw new AppError(status.BAD_REQUEST, "Invalid referral code");
+      const findReferrerUser = await UserModel.findOne({
+        referralCode,
+      }).session(session);
+      if (!findReferrerUser) {
+        throw new AppError(status.BAD_REQUEST, "Invalid referral code");
+      }
+      referrerUser = findReferrerUser;
     }
 
     // 4. Generate new referral code for this user
