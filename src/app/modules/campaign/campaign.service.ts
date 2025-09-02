@@ -104,10 +104,14 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
 //   };
 // };
 
-const getAllCampaigns = async (paginationOptions: IPaginationOptions) => {
+const getAllCampaigns = async (paginationOptions: IPaginationOptions, user: IUser) => {
   const { limit, page, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(paginationOptions);
 
+    
+    if(user?.role === "founder") {
+      
+    }
   // First get the campaigns with all other populated fields
   const campaigns = await Campaign.find()
     .populate("authorId", "firstName lastName email role referralLink referralCode")

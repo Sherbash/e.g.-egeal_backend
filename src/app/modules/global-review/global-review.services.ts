@@ -304,6 +304,18 @@ const getReviewByInfulencerId = async (influencerId: string) => {
   return review;
 };
 
+const getAllReviewByInfulencerId = async (influencerId: string) => {
+  console.log("influencerId", influencerId)
+  const review = await ReviewModel.find({ entityId: influencerId })
+    .populate("userId", "firstName lastName email")
+    .populate("entityId", "title")
+    .populate("comments");
+  if (!review) {
+    throw new AppError(status.NOT_FOUND, "Review not found");
+  }
+  return review;
+};
+
 const ToggleReviewEditorPick = async (reviewId: string) => {
   const review = await ReviewModel.findById({ _id: reviewId });
   if (!review) {
@@ -328,6 +340,8 @@ const getReviewsByUser = async (userId: string) => {
     .populate("comments");
   return reviews;
 };
+
+
 
 /**
  * Get Reviews by Entity (Story, Tool, etc.)
@@ -362,6 +376,7 @@ export const ReviewService = {
   getReviewsByUser,
   getReviewsByEntity,
   getAllReviewForDb,
+  getAllReviewByInfulencerId,
   ToggleReviewEditorPick,
   updateReviewStatus,
   getReviewByInfulencerId
