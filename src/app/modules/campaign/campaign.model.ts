@@ -80,6 +80,11 @@ const RejectProfSchema = new Schema(
       ref: "Proof",
       required: true,
     },
+    founderId: {
+      type: Schema.Types.ObjectId,
+      ref: "Founder",
+      required: true,
+    },
     message: {
       type: String,
       required: true,

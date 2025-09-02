@@ -117,8 +117,10 @@ const proofRejectRequest = catchAsync(
   async (req: Request, res: Response) => {
     console.log(req.body)
    const {proofId}=req.params
+   const founder=req.user
     const result = await CampaignServices.proofRejectRequest(
       proofId,
+   founder?.id,
       req.body
     );
 

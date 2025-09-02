@@ -14,7 +14,6 @@ import { IProof } from "../proof/otherProof/proof.interface";
 import ProofModel from "../proof/otherProof/proof.model";
 
 const createCampaign = async (payload: ICampaign, user: IUser) => {
-
   const authorId = user?.id;
 
   if (!authorId) {
@@ -104,17 +103,21 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
 //   };
 // };
 
-const getAllCampaigns = async (paginationOptions: IPaginationOptions, user: IUser) => {
+const getAllCampaigns = async (
+  paginationOptions: IPaginationOptions,
+  user: IUser
+) => {
   const { limit, page, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(paginationOptions);
 
-    
-    if(user?.role === "founder") {
-      
-    }
+  if (user?.role === "founder") {
+  }
   // First get the campaigns with all other populated fields
   const campaigns = await Campaign.find()
-    .populate("authorId", "firstName lastName email role referralLink referralCode")
+    .populate(
+      "authorId",
+      "firstName lastName email role referralLink referralCode"
+    )
     .populate({
       path: "influencers",
       populate: [
@@ -139,18 +142,20 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions, user: IUse
     .lean(); // Convert to plain JS object
 
   // Get all unique toolIds from the campaigns
-  const toolIds = [...new Set(campaigns.map(c => c.toolId))];
+  const toolIds = [...new Set(campaigns.map((c) => c.toolId))];
 
   // Find all tools that match these toolIds
   const tools = await ToolModel.find({ toolId: { $in: toolIds } })
-    .select('_id name logo description price commissionRate toolId isActive launched imageUrl')
+    .select(
+      "_id name logo description price commissionRate toolId isActive launched imageUrl"
+    )
     .lean();
 
   // Create a map for quick lookup: toolId -> tool document
-  const toolMap = new Map(tools.map(tool => [tool.toolId, tool]));
+  const toolMap = new Map(tools.map((tool) => [tool.toolId, tool]));
 
   // Combine the data
-  const campaignsWithTools = campaigns.map(campaign => ({
+  const campaignsWithTools = campaigns.map((campaign) => ({
     ...campaign,
     tool: toolMap.get(campaign.toolId) || null, // Add the full tool document
   }));
@@ -417,24 +422,34 @@ const updateInfluencerStatus = async (
   return campaign;
 };
 
-const proofRejectRequest=async(proofId:string,payload:{message:string})=>{
+const proofRejectRequest = async (
+  proofId: string,
+  founderId: string,
+  payload: { message: string }
+) => {
+  if (!proofId) {
+    throw new Error("prof id is not found ");
+  }
+  if (!payload) {
+    throw new Error("prof reject payload  is not found ");
+  }
 
-if(!proofId){
-  throw new Error("prof id is not found ")
-}
-if(!payload){
-  throw new Error("prof reject payload  is not found ")
-}
+  const founder=await Founder.findOne({userId:founderId})
+  const result = await rejectedProfModel.create({
+    ...payload,
+    proofId: new mongoose.Types.ObjectId(proofId),
+    founderId: new mongoose.Types.ObjectId(founder?._id),
+  });
 
-
-const result=await rejectedProfModel.create({...payload, proofId: new mongoose.Types.ObjectId(proofId)})
-
-return result
-}
-
+  return result;
+};
 
 const getAllProofRejectRequests = async () => {
-    const result = await rejectedProfModel.find().populate("proofId").exec();
+  const result = await rejectedProfModel
+    .find()
+    .populate("proofId")
+    .populate("founderId")
+    .exec();
   return result;
 };
 
@@ -444,7 +459,11 @@ const getSingleProofRejectRequest = async (id: string) => {
     throw new Error("Proof reject ID is required");
   }
 
-  const result = await rejectedProfModel.findById(id).populate("proofId").exec();;
+  const result = await rejectedProfModel
+    .findById(id)
+    .populate("proofId")
+    .populate("founderId")
+    .exec();
   if (!result) {
     throw new Error("Proof reject request not found");
   }
@@ -452,7 +471,10 @@ const getSingleProofRejectRequest = async (id: string) => {
   return result;
 };
 
-const updateProofRejectRequest = async (id: string,status:"approved" | "rejected") => {
+const updateProofRejectRequest = async (
+  id: string,
+  payload:{ status:"approved" | "rejected"}
+) => {
   if (!id) {
     throw new Error("Proof reject ID is required");
   }
@@ -463,17 +485,21 @@ const updateProofRejectRequest = async (id: string,status:"approved" | "rejected
     throw new Error("Proof reject request not found");
   }
 
+
+
+  if(!payload.status){
+      throw new Error("status is required");
+  }
   // যদি status দেওয়া থাকে, update করা হবে
-  if (result.status) {
-    result.status = status; // schema তে status field থাকতে হবে
+  if (status) {
+    result.status = payload.status; // schema তে status field থাকতে হবে
     await result.save();
   }
 
-  await rejectedProfModel.findOneAndDelete({proofId:id})
+  await rejectedProfModel.findOneAndDelete({ proofId: id });
 
   return result;
 };
-
 
 export const CampaignServices = {
   createCampaign,
@@ -487,5 +513,5 @@ export const CampaignServices = {
   proofRejectRequest,
   getAllProofRejectRequests,
   getSingleProofRejectRequest,
-  updateProofRejectRequest
+  updateProofRejectRequest,
 };
