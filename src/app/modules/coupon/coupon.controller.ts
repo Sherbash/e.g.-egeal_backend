@@ -32,8 +32,7 @@ const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyCoupons = catchAsync(async (req: Request, res: Response) => {
-  
-const { id } = req.params; // Extract user ID from URL
+  const { id } = req.params; // Extract user ID from URL
   const result = await CouponServices.getMyCouponsFromDB(id);
 
   sendResponse(res, {
@@ -48,7 +47,10 @@ const { id } = req.params; // Extract user ID from URL
 const applyCoupon = catchAsync(async (req: Request, res: Response) => {
   const { code, toolPrice, toolId, usedBy } = req.body;
   if (!code || toolPrice == null || !usedBy) {
-    throw new AppError(status.BAD_REQUEST, "code, toolPrice, and usedBy are required");
+    throw new AppError(
+      status.BAD_REQUEST,
+      "code, toolPrice, and usedBy are required"
+    );
   }
 
   const result = await CouponServices.applyCoupon(
@@ -66,11 +68,9 @@ const applyCoupon = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
-
 export const CouponControllers = {
   createCoupon,
   getAllCoupons,
   applyCoupon,
-  getMyCoupons
+  getMyCoupons,
 };

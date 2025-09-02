@@ -28,7 +28,7 @@ router.get(
 // Apply coupon (User applies at checkout)
 router.post(
   "/apply",
-//   auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER),
+  //   auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER),
   CouponControllers.applyCoupon
 );
 
