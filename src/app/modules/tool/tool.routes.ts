@@ -12,7 +12,7 @@ router.post(
   auth(UserRole.ADMIN, UserRole.FOUNDER),
   validateRequest(toolValidation.createToolZodSchema),
   ToolControllers.createTool
-);
+); 
 router.get(
   "/",
 
@@ -29,6 +29,13 @@ router.get(
 
   ToolControllers.getSingleTool
 );
+
+router.get(
+  "/by-founder/:founderId",
+  auth(UserRole.FOUNDER, UserRole.ADMIN),
+  ToolControllers.getAllToolsByFounderId
+);
+
 router.patch(
   "/:id",
   auth(UserRole.FOUNDER, UserRole.ADMIN),

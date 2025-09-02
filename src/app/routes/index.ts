@@ -107,7 +107,7 @@ const moduleRoutes = [
   },
   {
     path: "/coupon",
-    route: CouponRoutes,
+    route: CouponRoutes, 
   },
   {
     path: "/reputation",

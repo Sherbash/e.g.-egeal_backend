@@ -9,12 +9,12 @@ const router = Router();
 
 // Create coupon (Admin & Founder)
 router.post(
-  "/",
+  "/create-coupon",
   auth(UserRole.ADMIN, UserRole.FOUNDER),
 
   validateRequest(CouponValidations.createCouponSchema),
   CouponControllers.createCoupon
-);
+); 
 
 // Get all coupons (Admin)
 router.get("/", auth(UserRole.ADMIN), CouponControllers.getAllCoupons);

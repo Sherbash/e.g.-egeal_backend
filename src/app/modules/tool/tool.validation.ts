@@ -9,7 +9,7 @@ const createToolZodSchema = z.object({
     commissionRate: z.number().min(0, "Commission rate must be non-negative"),
     isActive: z.boolean().optional().default(true),
   }),
-});
+}); 
 
 const updateToolZodSchema = z.object({
   body: z
