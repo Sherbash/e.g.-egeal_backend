@@ -135,7 +135,6 @@ const deleteCouponIntoDB = async (id: string) => {
 //   };
 // };
 
-
 const getMyCouponsFromDB = async (id: string) => {
   const coupons = await CouponModel.find({ createdBy: id })
     .populate("createdBy", "name email")
@@ -145,7 +144,6 @@ const getMyCouponsFromDB = async (id: string) => {
   }
   return coupons;
 };
-
 
 // coupon.service.ts
 const applyCoupon = async (
@@ -216,7 +214,10 @@ const applyCoupon = async (
   ).lean();
 
   if (!updatedCoupon) {
-    throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update coupon usage");
+    throw new AppError(
+      status.INTERNAL_SERVER_ERROR,
+      "Failed to update coupon usage"
+    );
   }
 
   return {
@@ -226,9 +227,6 @@ const applyCoupon = async (
   };
 };
 
-
-
-
 export const CouponServices = {
   createCouponIntoDB,
   getAllCouponsFromDB,
@@ -236,5 +234,5 @@ export const CouponServices = {
   updateCouponIntoDB,
   deleteCouponIntoDB,
   applyCoupon,
-  getMyCouponsFromDB
+  getMyCouponsFromDB,
 };
