@@ -1,12 +1,12 @@
 import status from "http-status";
-import { Campaign, ICampaign } from "./campaign.model";
+import { Campaign, ICampaign, rejectedProfModel } from "./campaign.model";
 import AppError from "../../errors/appError";
 import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { Founder } from "../founder/founder.model";
 import { ToolModel } from "../tool/tool.model";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { Influencer } from "../influencer/influencer.model";
 import UserModel from "../user/user.model";
 import { findProfileByRole } from "../../utils/findUser";
@@ -417,6 +417,64 @@ const updateInfluencerStatus = async (
   return campaign;
 };
 
+const proofRejectRequest=async(proofId:string,payload:{message:string})=>{
+
+if(!proofId){
+  throw new Error("prof id is not found ")
+}
+if(!payload){
+  throw new Error("prof reject payload  is not found ")
+}
+
+
+const result=await rejectedProfModel.create({...payload, proofId: new mongoose.Types.ObjectId(proofId)})
+
+return result
+}
+
+
+const getAllProofRejectRequests = async () => {
+    const result = await rejectedProfModel.find().populate("proofId").exec();
+  return result;
+};
+
+// Get Single Proof Reject Request by ID
+const getSingleProofRejectRequest = async (id: string) => {
+  if (!id) {
+    throw new Error("Proof reject ID is required");
+  }
+
+  const result = await rejectedProfModel.findById(id).populate("proofId").exec();;
+  if (!result) {
+    throw new Error("Proof reject request not found");
+  }
+
+  return result;
+};
+
+const updateProofRejectRequest = async (id: string,status:"approved" | "rejected") => {
+  if (!id) {
+    throw new Error("Proof reject ID is required");
+  }
+
+  // findById
+  const result = await ProofModel.findById(id);
+  if (!result) {
+    throw new Error("Proof reject request not found");
+  }
+
+  // যদি status দেওয়া থাকে, update করা হবে
+  if (result.status) {
+    result.status = status; // schema তে status field থাকতে হবে
+    await result.save();
+  }
+
+  await rejectedProfModel.findOneAndDelete({proofId:id})
+
+  return result;
+};
+
+
 export const CampaignServices = {
   createCampaign,
   getAllCampaigns,
@@ -426,4 +484,8 @@ export const CampaignServices = {
   addInfluencerToCampaign,
   updateInfluencerStatus,
   requestToJoinCampaign,
+  proofRejectRequest,
+  getAllProofRejectRequests,
+  getSingleProofRejectRequest,
+  updateProofRejectRequest
 };

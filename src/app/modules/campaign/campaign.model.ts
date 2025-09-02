@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from "mongoose";
+import mongoose, { Schema, model, Document, Types } from "mongoose";
 
 export interface ICampaign extends Document {
   authorId: Types.ObjectId; // Who created the campaign
@@ -44,10 +44,10 @@ const CampaignSchema = new Schema<ICampaign>(
         },
         status: {
           type: String,
-          enum: ["pending", "approved",  "rejected"],
+          enum: ["pending", "approved", "rejected"],
           default: "pending",
         },
-        proofs: [{ type: Schema.Types.ObjectId, ref: "Proof" }], 
+        proofs: [{ type: Schema.Types.ObjectId, ref: "Proof" }],
       },
     ],
     campaignName: {
@@ -72,3 +72,21 @@ const CampaignSchema = new Schema<ICampaign>(
 );
 
 export const Campaign = model<ICampaign>("Campaign", CampaignSchema);
+
+const RejectProfSchema = new Schema(
+  {
+    proofId: {
+      type: Schema.Types.ObjectId,
+      ref: "Proof",
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+export const rejectedProfModel=model("reject-prof",RejectProfSchema)
+
