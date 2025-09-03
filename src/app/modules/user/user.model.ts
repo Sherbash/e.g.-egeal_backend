@@ -62,7 +62,6 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Virtual for referral stats (computed on demand)
 userSchema.virtual("referralStats", {
   ref: "Referral",
   localField: "_id",
@@ -82,7 +81,6 @@ userSchema.virtual("referralStats", {
   },
 });
 
-// Virtual for referral count
 userSchema.virtual("referralCount", {
   ref: "Referral",
   localField: "_id",
@@ -90,7 +88,6 @@ userSchema.virtual("referralCount", {
   count: true,
 });
 
-// Virtual for referred users
 userSchema.virtual("referredUsers", {
   ref: "Referral",
   localField: "_id",
@@ -108,17 +105,6 @@ userSchema.virtual("referredUsers", {
     },
   },
 });
-
-// Password hashing (commented out as in original)
-// userSchema.pre("save", async function (next) {
-//   if (this.isModified("password")) {
-//     this.password = await bcrypt.hash(
-//       this.password,
-//       Number(config.bcrypt_salt_rounds)
-//     );
-//   }
-//   next();
-// });
 
 const UserModel = mongoose.model<IUser>("User", userSchema);
 export default UserModel;

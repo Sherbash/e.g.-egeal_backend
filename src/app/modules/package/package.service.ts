@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { IPackage } from "./package.interface";
+import { IPackage, PackageType } from "./package.interface";
 import { stripe } from "../../utils/stripe";
 import { PackageModel } from "./package.model";
 import AppError from "../../errors/appError";
@@ -18,18 +18,22 @@ const createPackage = async (payload: IPackage) => {
     });
 
     // Step 2: Create Price in Stripe
-    const recurringData: any = {
-      interval: payload.interval,
-      interval_count: payload.intervalCount,
-    };
-
-    const price = await stripe.prices.create({
+    const priceConfig: any = {
       currency: payload.currency,
       unit_amount: Math.round(payload.amount * 100),
       active: true,
-      recurring: recurringData,
       product: product.id,
-    });
+    };
+
+    // Add recurring data based on packageType
+    if (payload.packageType === PackageType.MONTHLY || payload.packageType === PackageType.YEARLY) {
+      priceConfig.recurring = {
+        interval: payload.interval,
+        interval_count: payload.intervalCount,
+      };
+    } // No recurring data for lifetime packages
+
+    const price = await stripe.prices.create(priceConfig);
 
     // Step 3: Create Package Record in Database
     const dbPackage = await PackageModel.create(
@@ -38,16 +42,19 @@ const createPackage = async (payload: IPackage) => {
           packageName: payload.packageName,
           amount: payload.amount || 0,
           currency: payload.currency,
-          interval: payload.interval,
-          intervalCount: payload.intervalCount,
+          packageType: payload.packageType,
+          interval: payload.interval || null,
+          intervalCount: payload.intervalCount || null,
           freeTrialDays: payload.freeTrialDays || 0,
           productId: product.id,
           priceId: price.id,
           active: payload.active ?? true,
           description: payload.description,
           features: payload.features || [],
-          promotionalMessage: payload.promotionalMessage || null, // Handle new field
-          whyThisPackage: payload.whyThisPackage || null, // Handle new field
+          promotionalMessage: payload.promotionalMessage || null,
+          whyThisPackage: payload.whyThisPackage || null,
+          isForHome: payload.isForHome ?? false,
+          roles: payload.roles || [],
         },
       ],
       { session }
@@ -57,9 +64,7 @@ const createPackage = async (payload: IPackage) => {
     return dbPackage[0];
   } catch (error) {
     await session.abortTransaction();
-    throw error instanceof AppError
-      ? error
-      : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create package");
+    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create package");
   } finally {
     session.endSession();
   }
@@ -73,10 +78,7 @@ const getAllPackages = async () => {
 const getPackageById = async (packageId: string) => {
   const pkg = await PackageModel.findById(packageId).lean();
   if (!pkg) {
-    throw new AppError(
-      status.NOT_FOUND,
-      `Package with ID ${packageId} not found`
-    );
+    throw new AppError(status.NOT_FOUND, `Package with ID ${packageId} not found`);
   }
   return pkg;
 };
@@ -89,10 +91,7 @@ const deletePackage = async (packageId: string) => {
     // Step 1: Find the package record in the database
     const pkg = await PackageModel.findById(packageId).session(session);
     if (!pkg) {
-      throw new AppError(
-        status.NOT_FOUND,
-        `Package with ID ${packageId} not found`
-      );
+      throw new AppError(status.NOT_FOUND, `Package with ID ${packageId} not found`);
     }
 
     // Step 2: Deactivate the price in Stripe
@@ -110,9 +109,7 @@ const deletePackage = async (packageId: string) => {
     };
   } catch (error) {
     await session.abortTransaction();
-    throw error instanceof AppError
-      ? error
-      : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to delete package");
+    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to delete package");
   } finally {
     session.endSession();
   }

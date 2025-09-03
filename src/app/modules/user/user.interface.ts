@@ -1,6 +1,5 @@
 import { Document, Types } from "mongoose";
 
-// Enum for User Roles
 export enum UserRole {
   INFLUENCER = "influencer",
   FOUNDER = "founder",
@@ -9,7 +8,6 @@ export enum UserRole {
   ADMIN = "admin",
 }
 
-// User Schema Definition
 export interface IUser extends Document {
   _id: Types.ObjectId;
   firstName: string;

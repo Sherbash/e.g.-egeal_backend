@@ -1,10 +1,17 @@
 import { Document, Types } from "mongoose";
+import { UserRole } from "../user/user.interface";
 
 export enum Interval {
   DAY = "day",
   WEEK = "week",
   MONTH = "month",
   YEAR = "year",
+}
+
+export enum PackageType {
+  MONTHLY = "monthly",
+  YEARLY = "yearly",
+  LIFETIME = "lifetime",
 }
 
 export enum PaymentStatus {
@@ -24,16 +31,19 @@ export interface IPackage extends Document {
   packageName: string;
   amount: number;
   currency: string;
-  interval: Interval;
-  intervalCount: number;
+  packageType: PackageType; // New required field
+  interval?: Interval; // Optional for lifetime packages
+  intervalCount?: number; // Optional for lifetime packages
   freeTrialDays?: number;
   productId: string;
   priceId: string;
   active: boolean;
   description?: string;
-  features?: any; // JSON-like object for features
-  promotionalMessage?: string; // New optional field
-  whyThisPackage?: IWhyThisPackage; // New optional field
+  features?: any;
+  promotionalMessage?: string;
+  whyThisPackage?: IWhyThisPackage;
+  isForHome?: boolean;
+  roles?: UserRole[];
   createdAt: Date;
   updatedAt: Date;
 }

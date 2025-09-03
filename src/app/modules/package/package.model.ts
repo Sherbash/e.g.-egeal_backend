@@ -1,20 +1,22 @@
 import mongoose, { Schema } from "mongoose";
-import { Interval, IPackage, ISubscription, PaymentStatus } from "./package.interface";
+import { IPackage, ISubscription, Interval, PaymentStatus, PackageType } from "./package.interface";
+import { UserRole } from "../user/user.interface";
 
 const packageSchema = new Schema<IPackage>(
   {
     packageName: { type: String, required: true },
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, required: true, length: 3 },
-    interval: { type: String, enum: Object.values(Interval), default: Interval.MONTH },
-    intervalCount: { type: Number, required: true, min: 1 },
+    packageType: { type: String, enum: Object.values(PackageType), required: true }, // New required field
+    interval: { type: String, enum: Object.values(Interval), required: false },
+    intervalCount: { type: Number, min: 1, required: false },
     freeTrialDays: { type: Number, min: 0, default: 0 },
     productId: { type: String, required: true },
     priceId: { type: String, required: true },
     active: { type: Boolean, default: true },
     description: { type: String, maxLength: 500, default: null },
     features: { type: Schema.Types.Mixed, default: [] },
-    promotionalMessage: { type: String, maxLength: 1000, default: null }, // New optional field
+    promotionalMessage: { type: String, maxLength: 1000, default: null },
     whyThisPackage: {
       type: {
         title: { type: String, required: true },
@@ -22,7 +24,9 @@ const packageSchema = new Schema<IPackage>(
       },
       required: false,
       default: null,
-    }, // New optional field
+    },
+    isForHome: { type: Boolean, default: false },
+    roles: [{ type: String, enum: Object.values(UserRole), default: [] }],
   },
   {
     timestamps: true,
