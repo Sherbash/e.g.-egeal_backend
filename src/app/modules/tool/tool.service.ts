@@ -60,8 +60,6 @@ const createToolIntoDB = async (payload: ITool, user: IUser) => {
       }
     );
 
-    
-
     if(createdTool.length){
       await sendEmail(
   user.email,

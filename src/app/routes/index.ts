@@ -28,6 +28,7 @@ import { ProofUserInviteRoutes } from "../modules/proof/ProofUserInvite/proofUse
 import { ProofRoutes } from "../modules/proof/otherProof/proof.route";
 import { PostRoutes } from "../modules/post/post.route";
 import { BadgeRoutes } from "../modules/badge/badge.routes";
+import { ContactPackageRoutes } from "../modules/contact-package/contact-package.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -142,6 +143,10 @@ const moduleRoutes = [
     path: "/badge",
     route: BadgeRoutes,
   },
+  {
+    path: "/contact-package",
+    route: ContactPackageRoutes,
+  }
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

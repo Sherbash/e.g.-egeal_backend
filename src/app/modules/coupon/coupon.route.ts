@@ -52,10 +52,10 @@ router.get(
 );
 
 // Apply coupon (User applies at checkout)
-router.post(
-  "/apply",
-  auth(UserRole.USER, UserRole.INFLUENCER, UserRole.FOUNDER),
-  CouponControllers.applyCoupon
-);
+// router.post(
+//   "/apply",
+//   auth(UserRole.USER, UserRole.INFLUENCER, UserRole.FOUNDER),
+//   CouponControllers.applyCoupon
+// );
 
 export const CouponRoutes = router;

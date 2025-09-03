@@ -360,102 +360,103 @@ const getMyCouponsFromDB = async (id: string) => {
   return coupons;
 };
 
-// coupon.service.ts
-const applyCoupon = async (
-  code: string,
-  toolPrice: number,
-  usedBy: string, // Changed parameter name to match req.body.usedBy
-  toolId?: string
-) => {
-  if (!code) throw new AppError(status.BAD_REQUEST, "Coupon code is required");
-  if (!mongoose.Types.ObjectId.isValid(usedBy)) {
-    throw new AppError(status.BAD_REQUEST, "Invalid user ID in usedBy");
-  }
+//! coupon.service.ts
 
-  const coupon = await CouponModel.findOne({
-    code: code.toUpperCase(),
-    isActive: true,
-  });
-  if (!coupon) throw new AppError(status.BAD_REQUEST, "Invalid coupon code");
+// const applyCoupon = async (
+//   code: string,
+//   toolPrice: number,
+//   usedBy: string, // Changed parameter name to match req.body.usedBy
+//   toolId?: string
+// ) => {
+//   if (!code) throw new AppError(status.BAD_REQUEST, "Coupon code is required");
+//   if (!mongoose.Types.ObjectId.isValid(usedBy)) {
+//     throw new AppError(status.BAD_REQUEST, "Invalid user ID in usedBy");
+//   }
 
-  //! Checked active status
-  if(!coupon.isActive || coupon.isDeleted){
-    throw new AppError(status.BAD_REQUEST, "Coupon is inactive");
-  }
+//   const coupon = await CouponModel.findOne({
+//     code: code.toUpperCase(),
+//     isActive: true,
+//   });
+//   if (!coupon) throw new AppError(status.BAD_REQUEST, "Invalid coupon code");
 
-  // Check usage
-  if (coupon.usedBy.includes(usedBy)) {
-    throw new AppError(status.BAD_REQUEST, "Coupon already used by this user");
-  }
+//   //! Checked active status
+//   if(!coupon.isActive || coupon.isDeleted){
+//     throw new AppError(status.BAD_REQUEST, "Coupon is inactive");
+//   }
 
-  // Check if coupon is deleted
-  if (coupon.isDeleted) {
-    throw new AppError(status.BAD_REQUEST, "Coupon is deleted");
-  }
+//   // Check usage
+//   if (coupon.usedBy.includes(usedBy)) {
+//     throw new AppError(status.BAD_REQUEST, "Coupon already used by this user");
+//   }
 
-  // Check expiry
-  if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-    throw new AppError(status.BAD_REQUEST, "Coupon has expired");
-  }
+//   // Check if coupon is deleted
+//   if (coupon.isDeleted) {
+//     throw new AppError(status.BAD_REQUEST, "Coupon is deleted");
+//   }
 
-  // Check max usage (if set)
-  if (
-    typeof coupon.maxUsage === "number" &&
-    coupon.usageCount >= coupon.maxUsage
-  ) {
-    throw new AppError(status.BAD_REQUEST, "Coupon usage limit reached");
-  }
+//   // Check expiry
+//   if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+//     throw new AppError(status.BAD_REQUEST, "Coupon has expired");
+//   }
 
-  // If coupon is restricted to a tool, ensure toolId matches
-  if (coupon.toolId) {
-    if (!toolId) {
-      throw new AppError(
-        status.BAD_REQUEST,
-        "This coupon is valid only for a specific tool"
-      );
-    }
-    if (coupon.toolId !== toolId) {
-      throw new AppError(status.BAD_REQUEST, "Coupon not valid for this tool");
-    }
-  }
+//   // Check max usage (if set)
+//   if (
+//     typeof coupon.maxUsage === "number" &&
+//     coupon.usageCount >= coupon.maxUsage
+//   ) {
+//     throw new AppError(status.BAD_REQUEST, "Coupon usage limit reached");
+//   }
 
-  // Calculate discount
-  let discountAmount = 0;
-  if (coupon.discountType === "PERCENTAGE") {
-    discountAmount = (toolPrice * coupon.discountValue) / 100;
-  } else {
-    discountAmount = coupon.discountValue;
-  }
+//   // If coupon is restricted to a tool, ensure toolId matches
+//   if (coupon.toolId) {
+//     if (!toolId) {
+//       throw new AppError(
+//         status.BAD_REQUEST,
+//         "This coupon is valid only for a specific tool"
+//       );
+//     }
+//     if (coupon.toolId !== toolId) {
+//       throw new AppError(status.BAD_REQUEST, "Coupon not valid for this tool");
+//     }
+//   }
 
-  const finalPrice = Math.max(toolPrice - discountAmount, 0);
+//   // Calculate discount
+//   let discountAmount = 0;
+//   if (coupon.discountType === "PERCENTAGE") {
+//     discountAmount = (toolPrice * coupon.discountValue) / 100;
+//   } else {
+//     discountAmount = coupon.discountValue;
+//   }
 
-  // Atomically update usageCount and usedBy
-  const update: any = {
-    $inc: { usageCount: 1 },
-  };
-  if (!coupon.usedBy.some((u) => u.toString() === usedBy)) {
-    update.$push = { usedBy: new mongoose.Types.ObjectId(usedBy) };
-  }
+//   const finalPrice = Math.max(toolPrice - discountAmount, 0);
 
-  const updatedCoupon = await CouponModel.findOneAndUpdate(
-    { _id: coupon._id, isActive: true },
-    update,
-    { new: true }
-  ).lean();
+//   // Atomically update usageCount and usedBy
+//   const update: any = {
+//     $inc: { usageCount: 1 },
+//   };
+//   if (!coupon.usedBy.some((u) => u.toString() === usedBy)) {
+//     update.$push = { usedBy: new mongoose.Types.ObjectId(usedBy) };
+//   }
 
-  if (!updatedCoupon) {
-    throw new AppError(
-      status.INTERNAL_SERVER_ERROR,
-      "Failed to update coupon usage"
-    );
-  }
+//   const updatedCoupon = await CouponModel.findOneAndUpdate(
+//     { _id: coupon._id, isActive: true },
+//     update,
+//     { new: true }
+//   ).lean();
 
-  return {
-    finalPrice,
-    discountAmount,
-    coupon: updatedCoupon,
-  };
-};
+//   if (!updatedCoupon) {
+//     throw new AppError(
+//       status.INTERNAL_SERVER_ERROR,
+//       "Failed to update coupon usage"
+//     );
+//   }
+
+//   return {
+//     finalPrice,
+//     discountAmount,
+//     coupon: updatedCoupon,
+//   };
+// };
 
 export const CouponServices = {
   createCouponIntoDB,
@@ -465,6 +466,6 @@ export const CouponServices = {
   softDeleteSingleCouponByIdWithUserIdIntoDB,
 
   deleteCouponIntoDB,
-  applyCoupon,
+  // applyCoupon,
   getMyCouponsFromDB,
 };
