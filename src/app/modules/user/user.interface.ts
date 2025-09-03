@@ -30,4 +30,5 @@ export interface IUser extends Document {
   freePackages: Types.ObjectId[];
   currentBadge?: Types.ObjectId; // Made optional as it can be null
   autoAssignBadge?: boolean;
+  subscriptions: Types.ObjectId[];
 }

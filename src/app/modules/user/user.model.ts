@@ -152,6 +152,12 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    subscriptions: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Subscription",
+      },
+    ],
   },
   {
     timestamps: true,
