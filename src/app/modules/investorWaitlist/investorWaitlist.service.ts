@@ -67,7 +67,7 @@ const STEINHQ_URL =
 const SHEET_NAME = "InvestorWaitlist";
 
 const addToInvestorWaitlist = async (
-  name: string,
+  name: string, 
   company: string,
   email: string,
   aboutYou: string,

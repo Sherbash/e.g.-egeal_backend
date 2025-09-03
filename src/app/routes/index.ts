@@ -29,6 +29,7 @@ import { ProofRoutes } from "../modules/proof/otherProof/proof.route";
 import { PostRoutes } from "../modules/post/post.route";
 import { BadgeRoutes } from "../modules/badge/badge.routes";
 import { ContactPackageRoutes } from "../modules/contact-package/contact-package.route";
+import { FreeToolsLeadRoutes } from "../modules/free-tools-lead/free-tools-lead.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -146,7 +147,12 @@ const moduleRoutes = [
   {
     path: "/contact-package",
     route: ContactPackageRoutes,
+  },
+  {
+    path: "/free-tools",
+    route: FreeToolsLeadRoutes,
   }
+
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
