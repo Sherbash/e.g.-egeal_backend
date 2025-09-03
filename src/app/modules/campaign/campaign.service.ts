@@ -12,6 +12,7 @@ import UserModel from "../user/user.model";
 import { findProfileByRole } from "../../utils/findUser";
 import { IProof } from "../proof/otherProof/proof.interface";
 import ProofModel from "../proof/otherProof/proof.model";
+import { sendEmail } from "../../utils/emailHelper";
 
 const createCampaign = async (payload: ICampaign, user: IUser) => {
   const authorId = user?.id;
@@ -55,6 +56,44 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
     { new: true }
   );
 
+  if(result.createdAt){
+    await sendEmail(
+  user.email,
+  "🚀 Campaign Created Successfully",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #4CAF50; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">🚀 Campaign Created Successfully</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            Your campaign has been successfully created!  
+            You can now manage and track its performance directly from your dashboard.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/campaigns" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Your Campaigns
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
+
+  }
   return result;
 };
 
@@ -346,6 +385,41 @@ const requestToJoinCampaign = async (
   });
 
   await campaign.save();
+await sendEmail(
+  user.email,
+  "✅ Successfully Campaign Joined request send ",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #3F51B5; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">✅ Successfully Joined Campaign</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            You have successfully send the request joined the campaign!  
+            You can now track your progress and view campaign details from your dashboard.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/influencer/promote-to-earn" style="background-color: #3F51B5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Your Campaigns
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
 
   // 6. Return populated data if needed
   return await Campaign.findById(campaign._id)
