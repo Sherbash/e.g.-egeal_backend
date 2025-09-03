@@ -18,7 +18,7 @@ const createToolIntoDB = async (payload: ITool, user: IUser) => {
     const founder = await Founder.findOne({ userId: user?.id }).session(
       session
     );
-    // 1. Generate unique toolId
+    // 1. Generate unique toolId 
     const toolId = await generateUniqueId(payload.name, ToolModel, "toolId");
 
     // console.log("founder", founder)
@@ -59,8 +59,6 @@ const createToolIntoDB = async (payload: ITool, user: IUser) => {
         new: true,
       }
     );
-
-    
 
     if(createdTool.length){
       await sendEmail(
@@ -159,6 +157,53 @@ const getAllToolsFromDB = async (
   };
 };
 
+const getAllToolsByFounderId = async (
+  founderId: string,
+  paginationOptions: IPaginationOptions,
+  filters: { searchTerm?: string; isActive?: boolean; launched?: boolean }
+) => {
+  const { limit, page, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(paginationOptions);
+
+  const query: any = { founderId };
+
+  // Search filter
+  if (filters.searchTerm) {
+    query.$or = [
+      { name: { $regex: filters.searchTerm, $options: "i" } },
+      { description: { $regex: filters.searchTerm, $options: "i" } },
+      { toolId: { $regex: filters.searchTerm, $options: "i" } },
+    ];
+  }
+
+  // isActive filter
+  if (filters.isActive !== undefined) {
+    query.isActive = filters.isActive;
+  }
+
+  // launched filter
+  if (filters.launched !== undefined) {
+    query.launched = filters.launched;
+  }
+
+  const tools = await ToolModel.find(query)
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await ToolModel.countDocuments(query);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: tools,
+  };
+};
+
 const getSingleToolFromDB = async (id: string) => {
   const tool = await ToolModel.findById(id).lean();
   if (!tool || !tool.isActive) {
@@ -176,6 +221,8 @@ const getSingleToolByToolIdFromDB = async (toolId: string) => {
 
   return tool;
 };
+
+
 
 const updateToolIntoDB = async (id: string, payload: IToolUpdate) => {
   const updateData = {
@@ -218,6 +265,7 @@ export const ToolServices = {
   createToolIntoDB,
   getAllToolsFromDB,
   getSingleToolFromDB,
+  getAllToolsByFounderId,
   updateToolIntoDB,
   deleteToolIntoDB,
   getSingleToolByToolIdFromDB,
