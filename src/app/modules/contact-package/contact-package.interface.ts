@@ -3,3 +3,8 @@ export interface IContactPackage {
   email: string;
   message: string;
 }
+
+export interface IStoreInfoFromPackagePopup {
+  name: string;
+  email: string;
+}

@@ -8,6 +8,13 @@ const createContactPackageSchema = z.object({
   }),
 });
 
+const storeInfoFromPackagePopupSchema = z.object({
+  body: z.object({
+    name: z.string().nonempty("Name is required"),
+    email: z.string().email("Invalid email address"),
+  }),
+})
+
 export const contactPackageValidation = {
-  createContactPackageSchema,
+  createContactPackageSchema, storeInfoFromPackagePopupSchema
 };

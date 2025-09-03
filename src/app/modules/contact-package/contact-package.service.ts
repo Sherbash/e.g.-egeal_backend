@@ -1,5 +1,6 @@
 import { sendEmail } from "../../utils/emailHelper";
-import { IContactPackage } from "./contact-package.interface";
+import { IContactPackage, IStoreInfoFromPackagePopup } from "./contact-package.interface";
+import { StoreInfoFromPackagePopup } from "./contact-package.model";
 
 const sendContactPackageEmail = async (payload: IContactPackage) => {
   await sendEmail(
@@ -20,6 +21,19 @@ const sendContactPackageEmail = async (payload: IContactPackage) => {
   return { message: "Email sent successfully" };
 };
 
+const storeInfoFromPackagePopup = async (
+  payload: IStoreInfoFromPackagePopup
+) => {
+  const result = await StoreInfoFromPackagePopup.create(payload);
+  if(!result){
+    throw new Error("Email does not stored")
+  }
+  return result;
+}
+
+
+
 export const ContactPackageServices = {
   sendContactPackageEmail,
+  storeInfoFromPackagePopup,
 };
