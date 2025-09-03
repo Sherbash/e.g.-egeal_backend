@@ -39,7 +39,7 @@
 //       ref: "FreePackage"
 //     }]
 //   },
-//   { 
+//   {
 //     timestamps: true,
 //     toJSON: { virtuals: true },
 //     toObject: { virtuals: true }
@@ -102,7 +102,6 @@
 // const UserModel = mongoose.model<IUser>("User", userSchema);
 // export default UserModel;
 
-
 import mongoose, { Schema } from "mongoose";
 import { IUser, UserRole } from "./user.interface";
 
@@ -144,6 +143,15 @@ const userSchema = new Schema<IUser>(
         ref: "FreePackage",
       },
     ],
+    currentBadge: {
+      type: Schema.Types.ObjectId,
+      ref: "Badge",
+      default: undefined,
+    },
+    autoAssignBadge: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
