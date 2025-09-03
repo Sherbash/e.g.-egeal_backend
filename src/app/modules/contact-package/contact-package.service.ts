@@ -1,6 +1,6 @@
 import axios from "axios";
 import { sendEmail } from "../../utils/emailHelper";
-import { IContactPackage, IStoreInfoFromPackagePopup } from "./contact-package.interface";
+import { IContactPackage } from "./contact-package.interface";
 
 const STEINHQ_URL =
   "https://api.steinhq.com/v1/storages/6899386bc088333365ca37f4";

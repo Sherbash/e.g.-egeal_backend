@@ -10,7 +10,7 @@
 //   validateRequest(investorWaitlistValidation.investorWaitlistSchema),
 //   InvestorWaitlistController.joinInvestorWaitlist
 // );
-
+ 
 // export const InvestorWaitlistRoutes = router;
 
 
