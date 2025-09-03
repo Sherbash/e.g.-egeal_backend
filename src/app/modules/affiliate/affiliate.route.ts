@@ -9,7 +9,7 @@ const router = Router();
 
 router.post(
   "/",
-  // auth(UserRole.ADMIN, UserRole.INFLUENCER),
+  auth(UserRole.ADMIN, UserRole.INFLUENCER),
   validateRequest(affiliateValidation.createAffiliateZodSchema),
   AffiliateControllers.createAffiliate
 );

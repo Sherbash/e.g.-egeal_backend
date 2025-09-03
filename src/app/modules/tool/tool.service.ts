@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
+import { sendEmail } from "../../utils/emailHelper";
 
 const createToolIntoDB = async (payload: ITool, user: IUser) => {
   const session = await mongoose.startSession();
@@ -58,6 +59,48 @@ const createToolIntoDB = async (payload: ITool, user: IUser) => {
         new: true,
       }
     );
+
+    
+
+    if(createdTool.length){
+      await sendEmail(
+  user.email,
+  "🛠️ Tool Created Successfully",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #2196F3; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">🛠️ Tool Created Successfully</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            Your new tool has been successfully created in our system!  
+            You can now access and manage it from your dashboard.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/add-tools" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Your Tools
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
+
+    }
+
 
     await session.commitTransaction();
     return createdTool[0];

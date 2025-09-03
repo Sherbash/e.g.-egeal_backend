@@ -7,11 +7,13 @@ import { Affiliate } from "./affiliate.model";
 import { Influencer } from "../influencer/influencer.model";
 import mongoose from "mongoose";
 import { IUser } from "../user/user.interface";
+import { sendEmail } from "../../utils/emailHelper";
 
-const createAffiliateIntoDB = async (payload: IAffiliate) => {
+const createAffiliateIntoDB = async (payload: IAffiliate,user:any) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
+  console.log(user)
   try {
     // 1. Check the tool exists and is active
     const tool = await ToolModel.findOne({ toolId: payload.toolId }).session(
@@ -74,6 +76,47 @@ const createAffiliateIntoDB = async (payload: IAffiliate) => {
       { $addToSet: { affiliations: payload.toolId } },
       { session, new: true }
     );
+
+    if(createdAffiliate.length){
+
+      await sendEmail(
+  user.email,
+  "🔗 Affiliate Link Generated Successfully",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #673AB7; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">🔗 Affiliate Link Generated</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            Your affiliate link has been successfully generated!  
+            You can now share it with others to earn rewards and commissions.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/influencer/explore-tools" style="background-color: #673AB7; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Affiliate Dashboard
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
+    }
+
+
 
     await session.commitTransaction();
     return createdAffiliate[0];

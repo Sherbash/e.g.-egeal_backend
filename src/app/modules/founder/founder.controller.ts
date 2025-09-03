@@ -1,7 +1,7 @@
 import status from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { FounderService } from "./founder.service";
+import { FounderService, sendCouponCode } from "./founder.service";
 import pickOptions from "../../utils/pick";
 
 const getAllFounder = catchAsync(async (req, res) => {
@@ -23,6 +23,29 @@ const options = pickOptions(req.query, [
   });
 });
 
+const getAllFoundersByRefer = catchAsync(async (req, res) => {
+  const result = await FounderService.getAllFoundersByRefer();
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Retrieved all founders successfully!",
+    data: result,
+  });
+});
+const sendCouponCodeController = catchAsync(async (req, res) => {
+
+  const result = await sendCouponCode(req.body);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Coupon code sent successfully!",
+    data: result,
+  });
+});
+
 export const FounderController = {
   getAllFounder,
+  getAllFoundersByRefer,
+  sendCouponCodeController
 };
