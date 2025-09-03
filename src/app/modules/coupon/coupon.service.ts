@@ -360,7 +360,6 @@ const getMyCouponsFromDB = async (id: string) => {
   return coupons;
 };
 
-
 // coupon.service.ts
 const applyCoupon = async (
   code: string,
@@ -445,7 +444,10 @@ const applyCoupon = async (
   ).lean();
 
   if (!updatedCoupon) {
-    throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update coupon usage");
+    throw new AppError(
+      status.INTERNAL_SERVER_ERROR,
+      "Failed to update coupon usage"
+    );
   }
 
   return {
@@ -454,9 +456,6 @@ const applyCoupon = async (
     coupon: updatedCoupon,
   };
 };
-
-
-
 
 export const CouponServices = {
   createCouponIntoDB,
@@ -467,5 +466,5 @@ export const CouponServices = {
 
   deleteCouponIntoDB,
   applyCoupon,
-  getMyCouponsFromDB
+  getMyCouponsFromDB,
 };

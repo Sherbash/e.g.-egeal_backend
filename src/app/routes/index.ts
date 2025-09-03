@@ -27,6 +27,7 @@ import { InvestorWaitlistRoutes } from "../modules/investorWaitlist/investorWait
 import { ProofUserInviteRoutes } from "../modules/proof/ProofUserInvite/proofUserInvite.route";
 import { ProofRoutes } from "../modules/proof/otherProof/proof.route";
 import { PostRoutes } from "../modules/post/post.route";
+import { BadgeRoutes } from "../modules/badge/badge.routes";
 const router = Router();
 
 const moduleRoutes = [
@@ -136,6 +137,10 @@ const moduleRoutes = [
   {
     path: "/post",
     route: PostRoutes,
+  },
+  {
+    path: "/badge",
+    route: BadgeRoutes,
   },
 ];
 

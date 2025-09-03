@@ -58,5 +58,29 @@ router.patch(
   // validateRequest(CampaignValidation.updateInfluencerStatusSchema),
   CampaignController.updateInfluencerStatus
 );
+// Update influencer status - Founder or Admin
+router.post(
+  "/:proofId/proof-reject-request",
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
+  CampaignController.proofRejectRequest
+);
+router.get(
+  "/proof/reject-requests",
+  auth(UserRole.ADMIN),
+  CampaignController.getAllProofRejectRequests
+);
+
+// Get single proof reject request
+router.get(
+  "/proof-reject-requests/:id",
+  auth(UserRole.ADMIN),
+  CampaignController.getSingleProofRejectRequest
+);
+// Get single proof reject request
+router.patch(
+  "/proof-reject-requests/:id",
+  auth(UserRole.ADMIN),
+  CampaignController.updateProofRejectRequest
+);
 
 export const CampaignRoutes = router;

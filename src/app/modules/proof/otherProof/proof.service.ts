@@ -90,10 +90,7 @@ const reviewProof = async (
       );
       // }
     }
-  } else if (payload?.status === "rejected") {
-    proof.status = payload.status;
-    proof.adminFeedback = payload?.adminFeedback;
-  }
+  } 
   await proof.save();
   return proof;
 };

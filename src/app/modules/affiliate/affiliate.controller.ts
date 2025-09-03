@@ -6,7 +6,8 @@ import sendResponse from "../../utils/sendResponse";
 // import config from "../../config";
 
 const createAffiliate = catchAsync(async (req: Request, res: Response) => {
-  const result = await AffiliateServices.createAffiliateIntoDB(req.body);
+
+  const result = await AffiliateServices.createAffiliateIntoDB(req.body,req.user);
 
   sendResponse(res, {
     success: true,

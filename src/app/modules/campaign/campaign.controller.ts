@@ -113,6 +113,62 @@ const updateInfluencerStatus = catchAsync(
     });
   }
 );
+const proofRejectRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    console.log(req.body)
+   const {proofId}=req.params
+   const founder=req.user
+    const result = await CampaignServices.proofRejectRequest(
+      proofId,
+   founder?.id,
+      req.body
+    );
+
+    res.status(status.OK).json({
+      success: true,
+      message: "proof reject request send successfully",
+      data: result,
+    });
+  }
+);
+// Get All Proof Reject Requests
+const getAllProofRejectRequests = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await CampaignServices.getAllProofRejectRequests();
+console.log(result)
+    res.status(status.OK).json({
+      success: true,
+      message: "All proof reject requests retrieved successfully",
+      data: result,
+    });
+  }
+);
+
+// Get Single Proof Reject Request by ID
+const getSingleProofRejectRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await CampaignServices.getSingleProofRejectRequest(id);
+
+    res.status(status.OK).json({
+      success: true,
+      message: "Proof reject request retrieved successfully",
+      data: result,
+    });
+  }
+);
+const updateProofRejectRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await CampaignServices.updateProofRejectRequest(id,req.body);
+
+    res.status(status.OK).json({
+      success: true,
+      message: "Proof status update  successfully",
+      data: result,
+    });
+  }
+);
 
 export const CampaignController = {
   createCampaign,
@@ -122,5 +178,9 @@ export const CampaignController = {
   deleteCampaign,
   addInfluencer,
   updateInfluencerStatus,
-  requestToJoinCampaign
+  requestToJoinCampaign,
+  proofRejectRequest,
+  getAllProofRejectRequests,
+  getSingleProofRejectRequest,
+  updateProofRejectRequest
 };
