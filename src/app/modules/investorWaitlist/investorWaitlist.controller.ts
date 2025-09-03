@@ -14,7 +14,7 @@
 //     statusCode: 200,
 //     message: "Added to investor waitlist successfully",
 //     data: result,
-//   });
+//   }); 
 // });
 
 // export const InvestorWaitlistController = {

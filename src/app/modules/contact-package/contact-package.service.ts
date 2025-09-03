@@ -1,6 +1,10 @@
+import axios from "axios";
 import { sendEmail } from "../../utils/emailHelper";
 import { IContactPackage, IStoreInfoFromPackagePopup } from "./contact-package.interface";
-import { StoreInfoFromPackagePopup } from "./contact-package.model";
+
+const STEINHQ_URL =
+  "https://api.steinhq.com/v1/storages/6899386bc088333365ca37f4";
+const SHEET_NAME = "EmailPackagePopup";
 
 const sendContactPackageEmail = async (payload: IContactPackage) => {
   await sendEmail(
@@ -22,13 +26,30 @@ const sendContactPackageEmail = async (payload: IContactPackage) => {
 };
 
 const storeInfoFromPackagePopup = async (
-  payload: IStoreInfoFromPackagePopup
+  name: string,
+  email: string
 ) => {
-  const result = await StoreInfoFromPackagePopup.create(payload);
-  if(!result){
-    throw new Error("Email does not stored")
+  if(!name || !email){
+    throw new Error("Name and email are required");
   }
-  return result;
+
+  const joinedAt = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const payload = { name, email, joinedAt };
+  const response = await axios.post(`${STEINHQ_URL}/${SHEET_NAME}`, [payload]);
+
+  if (response.status !== 200) {
+    throw new Error("Failed to add to email and name");
+  }
+
+  return {
+    success: true,
+    message: "Email and name added successfully",
+  }
 }
 
 

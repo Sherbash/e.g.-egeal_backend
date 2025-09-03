@@ -3,7 +3,7 @@
 //   toolId: string;
 //   investmentAmount: number;
 //   joinedAt: string;
-// }
+// } 
 
 
 export interface IInvestorWaitlist {
