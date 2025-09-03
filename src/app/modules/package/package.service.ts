@@ -1,10 +1,3 @@
-// import { IPackage } from "./package.interface";
-// import mongoose from "mongoose";
-// import { PackageModel, SubscriptionModel } from "./package.model";
-// import AppError from "../../errors/appError";
-// import status from "http-status";
-// import { stripe } from "../../utils/stripe";
-
 import mongoose from "mongoose";
 import { IPackage } from "./package.interface";
 import { stripe } from "../../utils/stripe";
@@ -53,6 +46,8 @@ const createPackage = async (payload: IPackage) => {
           active: payload.active ?? true,
           description: payload.description,
           features: payload.features || [],
+          promotionalMessage: payload.promotionalMessage || null, // Handle new field
+          whyThisPackage: payload.whyThisPackage || null, // Handle new field
         },
       ],
       { session }

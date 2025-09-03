@@ -14,6 +14,11 @@ export enum PaymentStatus {
   REFUNDED = "REFUNDED",
 }
 
+export interface IWhyThisPackage {
+  title: string;
+  answer: string;
+}
+
 export interface IPackage extends Document {
   _id: Types.ObjectId;
   packageName: string;
@@ -27,6 +32,8 @@ export interface IPackage extends Document {
   active: boolean;
   description?: string;
   features?: any; // JSON-like object for features
+  promotionalMessage?: string; // New optional field
+  whyThisPackage?: IWhyThisPackage; // New optional field
   createdAt: Date;
   updatedAt: Date;
 }
