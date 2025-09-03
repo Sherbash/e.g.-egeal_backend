@@ -28,4 +28,6 @@ export interface IUser extends Document {
   points: number; // Added to match schema
   invitedUserCount: number;
   freePackages: Types.ObjectId[];
+  currentBadge?: Types.ObjectId; // Made optional as it can be null
+  autoAssignBadge?: boolean;
 }
