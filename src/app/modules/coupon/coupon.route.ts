@@ -7,7 +7,7 @@ import { CouponValidations } from "./coupon.validation";
 
 const router = Router();
 
-// Create coupon (Admin & Founder)
+//! Create coupon (Admin & Founder)
 router.post(
   "/create-coupon",
   auth(UserRole.ADMIN, UserRole.FOUNDER),
@@ -16,8 +16,34 @@ router.post(
   CouponControllers.createCoupon
 ); 
 
-// Get all coupons (Admin)
-router.get("/", auth(UserRole.ADMIN), CouponControllers.getAllCoupons);
+//! Get all coupons by Admin or Founder
+router.get(
+  "/get-all-coupons/:userId",
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
+  CouponControllers.getAllCouponsByUserIdFromDB
+);
+
+//! Get Single Coupon by Id with AdminId or FounderId
+router.get(
+  "/get-single-coupon/:couponId/:userId",
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
+  CouponControllers.getSingleCouponByIdWithUserIdFromDB
+);
+
+//! Update coupon (Admin or Founder)
+router.patch(
+  "/update-single-coupon/:couponId/:userId",
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
+  CouponControllers.updateSingleCouponByIdWithUserIdIntoDB
+);
+
+//! Soft Delete coupon (Admin or Founder)
+router.patch(
+  "/soft-delete-single-coupon/:couponId/:userId",
+  auth(UserRole.ADMIN, UserRole.FOUNDER),
+  CouponControllers.softDeleteSingleCouponByIdWithUserIdIntoDB
+);
+
 
 router.get(
   "/:id",
@@ -28,7 +54,7 @@ router.get(
 // Apply coupon (User applies at checkout)
 router.post(
   "/apply",
-//   auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER),
+  auth(UserRole.USER, UserRole.INFLUENCER, UserRole.FOUNDER),
   CouponControllers.applyCoupon
 );
 

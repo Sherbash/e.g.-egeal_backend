@@ -86,6 +86,7 @@ import AppError from "../../errors/appError";
 import { CouponServices } from "./coupon.service";
 import sendResponse from "../../utils/sendResponse";
 import { ICoupon } from "./coupon.interface";
+import pickOptions from "../../utils/pick";
 
 // coupon.controller.ts
 const createCoupon = catchAsync(async (req: Request, res: Response) => {
@@ -101,8 +102,13 @@ const createCoupon = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
-  const result = await CouponServices.getAllCouponsFromDB();
+const getAllCouponsByUserIdFromDB = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+
+  const filters = pickOptions(req.query, ["searchTerm"]);
+
+  const result = await CouponServices.getAllCouponsByUserIdFromDB(userId, filters);
+
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
@@ -110,6 +116,60 @@ const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+
+const getSingleCouponByIdWithUserIdFromDB = catchAsync(async (req: Request, res: Response) => {
+  const { couponId } = req.params;
+  const userId = req.user?.id; 
+
+  const result = await CouponServices.getSingleCouponByIdWithUserIdFromDB(couponId, userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Coupon fetched successfully",
+    data: result,
+  });
+});
+
+const updateSingleCouponByIdWithUserIdIntoDB = catchAsync(
+  async (req: Request, res: Response) => {
+    const { couponId } = req.params;
+    const userId = req.user?.id;
+
+    const result = await CouponServices.updateSingleCouponByIdWithUserIdIntoDB(
+      couponId,
+      userId,
+      req.body
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Coupon updated successfully",
+      data: result,
+    });
+  }
+);
+
+const softDeleteSingleCouponByIdWithUserIdIntoDB = catchAsync(
+  async (req: Request, res: Response) => {
+    const { couponId } = req.params;
+    const userId = req.user?.id;
+
+    const result = await CouponServices.softDeleteSingleCouponByIdWithUserIdIntoDB(
+      couponId,
+      userId
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Coupon deleted successfully",
+      data: result,
+    });
+  }
+)
 
 const getMyCoupons = catchAsync(async (req: Request, res: Response) => {
   
@@ -150,7 +210,11 @@ const applyCoupon = catchAsync(async (req: Request, res: Response) => {
 
 export const CouponControllers = {
   createCoupon,
-  getAllCoupons,
+  getAllCouponsByUserIdFromDB,
+  getSingleCouponByIdWithUserIdFromDB,
+  updateSingleCouponByIdWithUserIdIntoDB,
+  softDeleteSingleCouponByIdWithUserIdIntoDB,
+
   applyCoupon,
   getMyCoupons
 };
