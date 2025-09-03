@@ -9,7 +9,8 @@ const storySchema = new mongoose.Schema(
   {
     authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     description: { type: String, required: true },
-    link: String,
+    imageLink: {type:String,required:false,default:null},
+    videoLink: {type:String,required:false,default:null},
     comments: [{ type: Schema.Types.ObjectId, ref: "Comment", default: [] }], 
     // pollChoices: [pollChoiceSchema],
   },

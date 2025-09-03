@@ -1,6 +1,6 @@
 import status from "http-status";
 import { IProof } from "./proof.interface";
-import ProofModel from "./proof.model";
+import ProofModel, { socialPostProofModel } from "./proof.model";
 import AppError from "../../../errors/appError";
 import UserModel from "../../user/user.model";
 import { FreePackage } from "../../gift/gift.model";
@@ -143,9 +143,114 @@ const getAllProofs = async (options: IPaginationOptions, filters: any, user: IUs
   };
 };
 
+
+
+const socialSubmitProof = async (payload: any, userId: string) => {
+  
+  const isAlreadyExists = await socialPostProofModel.findOne({
+    proofSubmittedBy: userId
+  })
+
+  // if (isAlreadyExists) {
+  //   throw new AppError(status.CONFLICT, "You have already submitted a proof");
+  // }
+
+  const proof = await socialPostProofModel.create({
+    ...payload,
+    proofSubmittedBy: userId,
+  });
+
+  return proof;
+};
+
+
+// Get All Social Proofs
+const socialGetAllProofs = async () => {
+  const proofs = await socialPostProofModel.find().sort({ createdAt: -1 });
+  return proofs;
+};
+
+// Get Single Social Proof
+const socialGetProofById = async (id: string) => {
+  const proof = await socialPostProofModel.findById(id);
+  if (!proof) {
+    throw new AppError(status.NOT_FOUND, "Social proof not found");
+  }
+  return proof;
+};
+
+// Get My Social Proofs
+const socialGetMyProofs = async (userId: string) => {
+  const proofs = await socialPostProofModel
+    .find({ proofSubmittedBy: userId })
+    .sort({ createdAt: -1 });
+  return proofs;
+};
+
+// Update Social Proof
+const socialUpdateProof = async (id: string, userId: string, payload: any) => {
+  const proof = await socialPostProofModel.findOneAndUpdate(
+    { _id: id, proofSubmittedBy: userId },
+    payload,
+    { new: true }
+  );
+  if (!proof) {
+    throw new AppError(status.NOT_FOUND, "Social proof not found or not authorized");
+  }
+  return proof;
+};
+
+// Delete Social Proof
+const socialDeleteProof = async (id: string, userId: string) => {
+  const proof = await socialPostProofModel.findOneAndDelete({
+    _id: id,
+    proofSubmittedBy: userId,
+  });
+  if (!proof) {
+    throw new AppError(status.NOT_FOUND, "Social proof not found or not authorized");
+  }
+  return proof;
+};
+
+
+const socialUpdateProofStatus = async (id: string,updateStatus:string) => {
+  if(!id){
+    throw new AppError(status.NOT_FOUND, " id is not found  ");
+  }
+
+  if(!updateStatus){
+    throw new AppError(status.NOT_FOUND, " status  is most be  required ");
+  }
+
+  
+  const proof = await socialPostProofModel.findOneAndUpdate(
+  {_id:id},{
+    $set:{status:updateStatus}
+  }
+  );
+  if (!proof) {
+    throw new AppError(status.NOT_FOUND, "Social proof not found or not authorized");
+  }
+const updateProof=await socialPostProofModel.findOne({_id:id})
+const updateCoin = await UserModel.findOneAndUpdate(
+  { _id: proof.proofSubmittedBy },
+  { $inc: { points: 1 } }, // points field 1 করে বাড়াবে
+  { new: true } // updated document return করবে
+);
+  return updateProof;
+};
+
+
 export const ProofService = {
   submitProof,
   reviewProof,
   getUserProofs,
   getAllProofs,
+  socialSubmitProof,
+  socialGetAllProofs,
+  socialGetProofById,
+  socialGetMyProofs,
+  socialUpdateProof,
+  socialDeleteProof,
+  socialUpdateProofStatus
 };

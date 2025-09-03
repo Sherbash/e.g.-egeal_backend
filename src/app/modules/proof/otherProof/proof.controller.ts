@@ -76,9 +76,116 @@ const getAllProofs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+// Submit Social Proof
+const socialSubmitProof = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const userId = req.user?.id;
+
+
+  const result = await ProofService.socialSubmitProof(payload, userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.CREATED,
+    message: "Social proof submitted successfully",
+    data: result,
+  });
+});
+
+// Get All Social Proofs
+const socialGetAllProofs = catchAsync(async (req: Request, res: Response) => {
+  const result = await ProofService.socialGetAllProofs();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "All social proofs retrieved successfully",
+    data: result,
+  });
+});
+
+// Get Single Social Proof
+const socialGetProofById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await ProofService.socialGetProofById(id);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Social proof retrieved successfully",
+    data: result,
+  });
+});
+
+// Get My Social Proofs
+const socialGetMyProofs = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const result = await ProofService.socialGetMyProofs(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "My social proofs retrieved successfully",
+    data: result,
+  });
+});
+
+// Update Social Proof
+const socialUpdateProof = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
+  const payload = req.body;
+
+  const result = await ProofService.socialUpdateProof(id, userId, payload);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Social proof updated successfully",
+    data: result,
+  });
+});
+
+// Delete Social Proof
+const socialDeleteProof = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
+
+  const result = await ProofService.socialDeleteProof(id, userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Social proof deleted successfully",
+    data: result,
+  });
+});
+
+
+const socialUpdateProofStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const payload = req.body;
+
+  const result = await ProofService.socialUpdateProofStatus(id,payload.status);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Social proof status updated successfully",
+    data: result,
+  });
+});
 export const ProofController = {
   submitProof,
   reviewProof,
   getMyProofs,
   getAllProofs,
+   socialSubmitProof,
+  socialGetAllProofs,
+  socialGetProofById,
+  socialGetMyProofs,
+  socialUpdateProof,
+  socialDeleteProof,
+  socialUpdateProofStatus
 };
