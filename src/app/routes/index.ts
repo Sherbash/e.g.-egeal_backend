@@ -30,7 +30,11 @@ import { PostRoutes } from "../modules/post/post.route";
 import { BadgeRoutes } from "../modules/badge/badge.routes";
 import { ContactPackageRoutes } from "../modules/contact-package/contact-package.route";
 import { FreeToolsLeadRoutes } from "../modules/free-tools-lead/free-tools-lead.route";
+<<<<<<< HEAD
 import { PackageRoutes } from "../modules/package/package.route";
+=======
+import { HypeWaitlistRoutes } from "../modules/hype-waitlist/hype-waitlist.route";
+>>>>>>> 01fd335e69dd00a5fef11ae505448db341f051e9
 const router = Router();
 
 const moduleRoutes = [
@@ -153,10 +157,18 @@ const moduleRoutes = [
     path: "/free-tools",
     route: FreeToolsLeadRoutes,
   },
+<<<<<<< HEAD
 {
     path: "/package",
     route: PackageRoutes,
   },
+=======
+  {
+    path: "/hype-waitlist",
+    route: HypeWaitlistRoutes,
+  },
+
+>>>>>>> 01fd335e69dd00a5fef11ae505448db341f051e9
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
