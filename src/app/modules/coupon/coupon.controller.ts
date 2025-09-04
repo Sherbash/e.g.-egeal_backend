@@ -184,29 +184,49 @@ const getMyCoupons = catchAsync(async (req: Request, res: Response) => {
 });
 
 //! coupon.controller.ts
-// const applyCoupon = catchAsync(async (req: Request, res: Response) => {
-//   const { code, toolPrice, toolId, usedBy } = req.body;
-//   if (!code || toolPrice == null || !usedBy) {
-//     throw new AppError(
-//       status.BAD_REQUEST,
-//       "code, toolPrice, and usedBy are required"
-//     );
-//   }
+const applyCoupon = catchAsync(async (req: Request, res: Response) => {
+  const { code, toolPrice, toolId, usedBy } = req.body;
+  if (!code || toolPrice == null || !usedBy) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "code, toolPrice, and usedBy are required"
+    );
+  }
 
-//   const result = await CouponServices.applyCoupon(
-//     code,
-//     Number(toolPrice),
-//     usedBy, // Pass user ID from req.body.usedBy
-//     toolId
-//   );
+  const result = await CouponServices.applyCoupon(
+    code,
+    Number(toolPrice),
+    usedBy, // Pass user ID from req.body.usedBy
+    toolId
+  );
 
-//   sendResponse(res, {
-//     success: true,
-//     statusCode: status.OK,
-//     message: "Coupon applied successfully",
-//     data: result,
-//   });
-// });
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Coupon applied successfully",
+    data: result,
+  });
+});
+
+const applyCouponForAdmin = catchAsync(async (req: Request, res: Response) => {
+  const {code, toolPrice, packageId, usedBy} = req.body;
+
+  if (!code || toolPrice == null || !usedBy || !packageId) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "code, toolPrice, packageId and usedBy are required"
+    );
+  }
+
+  const result = await CouponServices.applyCouponForAdmin(code, Number(toolPrice), usedBy, packageId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Coupon applied successfully",
+    data: result,
+  });
+})
 
 export const CouponControllers = {
   createCoupon,
@@ -215,6 +235,7 @@ export const CouponControllers = {
   updateSingleCouponByIdWithUserIdIntoDB,
   softDeleteSingleCouponByIdWithUserIdIntoDB,
 
-  // applyCoupon,
+  applyCoupon,
+  applyCouponForAdmin,
   getMyCoupons,
 };
