@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { model, Schema } from "mongoose";
 import { IPackage, ISubscription, Interval, PaymentStatus, PackageType } from "./package.interface";
 import { UserRole } from "../user/user.interface";
 
@@ -35,26 +35,18 @@ const packageSchema = new Schema<IPackage>(
   }
 );
 
-const subscriptionSchema = new Schema<ISubscription>(
+const SubscriptionSchema = new Schema<ISubscription>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     packageId: { type: Schema.Types.ObjectId, ref: "Package", required: true },
     startDate: { type: Date, required: true },
-    endDate: { type: Date, default: null },
-    amount: { type: Number, required: true, min: 0 },
-    stripePaymentId: { type: String, required: true, unique: true },
-    paymentStatus: {
-      type: String,
-      enum: Object.values(PaymentStatus),
-      default: PaymentStatus.PENDING,
-    },
+    endDate: { type: Date },
+    amount: { type: Number, required: true },
+    stripePaymentId: { type: String, required: true },
+    paymentStatus: { type: String, enum: Object.values(PaymentStatus), required: true },
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
+  { timestamps: true }
 );
 
 export const PackageModel = mongoose.model<IPackage>("Package", packageSchema);
-export const SubscriptionModel = mongoose.model<ISubscription>("Subscription", subscriptionSchema);
+export const SubscriptionModel = model<ISubscription>("Subscription", SubscriptionSchema);

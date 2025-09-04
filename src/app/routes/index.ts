@@ -31,7 +31,11 @@ import { BadgeRoutes } from "../modules/badge/badge.routes";
 import { ContactPackageRoutes } from "../modules/contact-package/contact-package.route";
 import { FreeToolsLeadRoutes } from "../modules/free-tools-lead/free-tools-lead.route";
 import { PackageRoutes } from "../modules/package/package.route";
+<<<<<<< HEAD
 import { HypeWaitlistRoutes } from "../modules/hype-waitlist/hype-waitlist.route";
+=======
+import { PackageSubscriptionRoutes } from "../modules/packageSubscription/packageSubscription.route";
+>>>>>>> b0e2291d5760e4c39116dbfad5b73e910df576bc
 const router = Router();
 
 const moduleRoutes = [
@@ -159,10 +163,16 @@ const moduleRoutes = [
     route: PackageRoutes,
   },
   {
+<<<<<<< HEAD
     path: "/hype-waitlist",
     route: HypeWaitlistRoutes,
   },
 
+=======
+    path: "/package-subscription",
+    route: PackageSubscriptionRoutes,
+  },
+>>>>>>> b0e2291d5760e4c39116dbfad5b73e910df576bc
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
