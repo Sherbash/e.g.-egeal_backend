@@ -173,6 +173,7 @@ const getAffiliatesByInfluencerId = async (influencerId: string) => {
 
   // 2. Get all affiliates for this influencer
   const affiliates = await Affiliate.find({ influencerId }).lean();
+  console.log(affiliates)
 
   if (affiliates.length === 0) {
     return {
@@ -222,8 +223,62 @@ const getAffiliatesByInfluencerId = async (influencerId: string) => {
   };
 };
 
+const InfluencerTotalRoi = async (influencerId: string) => {
+  if (!influencerId) {
+    throw new AppError(status.BAD_REQUEST, "Influencer ID is required");
+  }
+
+  // 1. Get influencer & populate user details
+  const influencer = await Influencer.findOne({ influencerId })
+    .populate<{ userId: IUser }>("userId", "firstName lastName email")
+    .lean();
+
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+ const affiliates = await Affiliate.find({ influencerId }).lean();
+   let totalAffiliations = affiliates.length;  // মোট affiliate count
+  let totalClicks = 0;
+  let totalConversions = 0;
+  let totalCommission = 0;
+  let totalSales = 0;
+
+  affiliates.forEach(aff => {
+    totalClicks += aff.clicks;
+    totalConversions += aff.conversions;
+    totalCommission += aff.earning;      // এখানে commissionEarned হচ্ছে earning field
+    totalSales += aff.conversions * (aff.earning / (aff.commissionRate / 100) || 0); // আনুমানিক sale
+  });
+
+  const CTR = totalAffiliations > 0 ? (totalClicks / totalAffiliations) * 100 : 0;
+  const CR = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
+  const engagement = totalAffiliations > 0 ? (totalConversions / totalAffiliations) * 100 : 0;
+  const AOV = totalConversions > 0 ? (totalSales / totalConversions) : 0;
+  const commissionROI = totalSales > 0 ? (totalCommission / totalSales) * 100 : 0;
+  const revenueROI = totalCommission > 0 ? ((totalSales - totalCommission) / totalCommission) * 100 : 0;
+  const totalROI = commissionROI;
+
+  return {
+    totalAffiliations,
+    totalClicks,
+    totalConversions,
+    totalSales: +totalSales.toFixed(2),
+    totalCommission: +totalCommission.toFixed(2),
+    CTR: +CTR.toFixed(2),
+    CR: +CR.toFixed(2),
+    engagement: +engagement.toFixed(2),
+    AOV: +AOV.toFixed(2),
+    commissionROI: +commissionROI.toFixed(2),
+    revenueROI: +revenueROI.toFixed(2),
+    totalROI: `${totalROI.toFixed(2)}%`
+  };
+
+};
+
 export const AffiliateServices = {
   createAffiliateIntoDB,
   incrementClickCount,
   getAffiliatesByInfluencerId,
+  InfluencerTotalRoi
 };

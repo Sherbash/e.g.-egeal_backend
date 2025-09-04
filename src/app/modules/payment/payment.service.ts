@@ -133,6 +133,7 @@ const confirmPaymentAndSave = async (sessionId: string) => {
     ? await Influencer.findOne({ influencerId }).populate("userId")
     : null;
 
+
   const subject = `✅ Payment Confirmed for ${toolName}`;
   const message = `
     <h2>Payment Confirmation</h2>

@@ -28,4 +28,12 @@ router.get(
 
 // router.get("/tool/:toolId", AffiliateControllers.handleAffiliateUrl);
 
+router.get(
+  "/influencer/:influencerId/total-roi",
+  // auth(UserRole.ADMIN, UserRole.INFLUENCER),
+  AffiliateControllers.InfluencerTotalRoi
+);
+
+// router.get("/tool/:toolId", AffiliateControllers.handleAffiliateUrl);
+
 export const AffiliateRoutes = router;

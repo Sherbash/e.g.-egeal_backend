@@ -53,6 +53,22 @@ const getAffiliatesByInfluencerId = catchAsync(
     });
   }
 );
+const InfluencerTotalRoi= catchAsync(
+  async (req: Request, res: Response) => {
+    const { influencerId } = req.params;
+
+    const result = await AffiliateServices.InfluencerTotalRoi(
+      influencerId
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Influencer roi retrieved successfully",
+      data: result,
+    });
+  }
+);
 
 
 
@@ -61,4 +77,5 @@ export const AffiliateControllers = {
   // handleAffiliateUrl,
   incrementClickApi,
   getAffiliatesByInfluencerId,
+  InfluencerTotalRoi
 };
