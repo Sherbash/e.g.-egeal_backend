@@ -4,6 +4,7 @@ import { stripe } from "../../utils/stripe";
 import { PackageModel } from "./package.model";
 import AppError from "../../errors/appError";
 import status from "http-status";
+import { UserRole } from "../user/user.interface";
 
 const createPackage = async (payload: IPackage) => {
   const session = await mongoose.startSession();
@@ -159,8 +160,20 @@ const updatePackage = async (packageId: string, payload: Partial<IPackage>) => {
   }
 };
 
-const getAllPackages = async () => {
-  const packages = await PackageModel.find().lean();
+// const getAllPackages = async () => {
+//   const packages = await PackageModel.find().lean();
+//   return packages;
+// };
+
+const getAllPackages = async (role?: UserRole) => {
+  const query: any = {};
+  if (role) {
+    query.roles = { $in: [role] };
+  } else {
+    // Include packages with empty roles array or no roles
+    query.$or = [{ roles: { $exists: false } }, { roles: { $size: 0 } }, { roles: { $ne: null } }];
+  }
+  const packages = await PackageModel.find(query).lean();
   return packages;
 };
 

@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import catchAsync from "../../utils/catchAsync";
 import { PackageServices } from "./package.service";
 import sendResponse from "../../utils/sendResponse";
+import { UserRole } from "../user/user.interface";
 // import { PackageServices } from "./package.service";
 // import catchAsync from "../../utils/catchAsync";
 // import sendResponse from "../../utils/sendResponse";
@@ -31,17 +32,28 @@ const updatePackage = catchAsync(async (req: Request, res: Response, next: NextF
   });
 });
 
-const getAllPackages = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const result = await PackageServices.getAllPackages();
-    sendResponse(res, {
-      statusCode: status.OK,
-      success: true,
-      message: "Packages fetched successfully!",
-      data: result,
-    });
-  }
-);
+// const getAllPackages = catchAsync(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     const result = await PackageServices.getAllPackages();
+//     sendResponse(res, {
+//       statusCode: status.OK,
+//       success: true,
+//       message: "Packages fetched successfully!",
+//       data: result,
+//     });
+//   }
+// );
+
+const getAllPackages = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const role = req.query.role as UserRole | undefined;
+  const result = await PackageServices.getAllPackages(role);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Packages fetched successfully!",
+    data: result,
+  });
+});
 
 const getPackageById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
