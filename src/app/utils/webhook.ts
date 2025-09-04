@@ -105,7 +105,7 @@ const handlePaymentIntentFailed = async (paymentIntent: Stripe.PaymentIntent) =>
     await SubscriptionModel.updateOne(
       { _id: subscription._id },
       {
-        paymentStatus: PaymentStatus.CANCELED,
+        paymentStatus: PaymentStatus?.CANCELED,
         endDate: new Date(),
       },
       { session }
