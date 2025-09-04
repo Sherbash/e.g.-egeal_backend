@@ -70,6 +70,95 @@ const createPackage = async (payload: IPackage) => {
   }
 };
 
+const updatePackage = async (packageId: string, payload: Partial<IPackage>) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Step 1: Find the existing package
+    const existingPackage = await PackageModel.findById(packageId).session(session);
+    if (!existingPackage) {
+      throw new AppError(status.NOT_FOUND, `Package with ID ${packageId} not found`);
+    }
+
+    // Step 2: Prepare update data
+    const updateData: Partial<IPackage> = {
+      packageName: payload.packageName ?? existingPackage.packageName,
+      amount: payload.amount ?? existingPackage.amount,
+      currency: payload.currency ?? existingPackage.currency,
+      packageType: payload.packageType ?? existingPackage.packageType,
+      interval: payload.packageType === PackageType.LIFETIME ? null : payload.interval ?? existingPackage.interval,
+      intervalCount: payload.packageType === PackageType.LIFETIME ? null : payload.intervalCount ?? existingPackage.intervalCount,
+      freeTrialDays: payload.freeTrialDays ?? existingPackage.freeTrialDays,
+      active: payload.active ?? existingPackage.active,
+      description: payload.description !== undefined ? payload.description : existingPackage.description,
+      features: payload.features ?? existingPackage.features,
+      promotionalMessage: payload.promotionalMessage !== undefined ? payload.promotionalMessage : existingPackage.promotionalMessage,
+      whyThisPackage: payload.whyThisPackage !== undefined ? payload.whyThisPackage : existingPackage.whyThisPackage,
+      isForHome: payload.isForHome ?? existingPackage.isForHome,
+      roles: payload.roles ?? existingPackage.roles,
+    };
+
+    // Step 3: Update Stripe product if necessary
+    if (payload.packageName || payload.description || payload.active !== undefined) {
+      await stripe.products.update(existingPackage.productId, {
+        name: updateData.packageName,
+        description: updateData.description || "",
+        active: updateData.active ?? true,
+      });
+    }
+
+    // Step 4: Create new Stripe price if pricing fields change
+    let newPriceId = existingPackage.priceId;
+    if (
+      payload.amount !== undefined ||
+      payload.currency !== undefined ||
+      payload.packageType !== undefined ||
+      payload.interval !== undefined ||
+      payload.intervalCount !== undefined
+    ) {
+      const priceConfig: any = {
+        currency: updateData.currency,
+        unit_amount: Math.round((updateData.amount || 0) * 100),
+        active: true,
+        product: existingPackage.productId,
+      };
+
+      if (updateData.packageType === PackageType.MONTHLY || updateData.packageType === PackageType.YEARLY) {
+        priceConfig.recurring = {
+          interval: updateData.interval,
+          interval_count: updateData.intervalCount,
+        };
+      }
+
+      const newPrice = await stripe.prices.create(priceConfig);
+      newPriceId = newPrice.id;
+
+      // Deactivate old price
+      await stripe.prices.update(existingPackage.priceId, { active: false });
+    }
+
+    // Step 5: Update package in database
+    const updatedPackage = await PackageModel.findByIdAndUpdate(
+      packageId,
+      { ...updateData, priceId: newPriceId },
+      { new: true, session }
+    );
+
+    if (!updatedPackage) {
+      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update package in database");
+    }
+
+    await session.commitTransaction();
+    return updatedPackage;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update package");
+  } finally {
+    session.endSession();
+  }
+};
+
 const getAllPackages = async () => {
   const packages = await PackageModel.find().lean();
   return packages;
@@ -117,6 +206,7 @@ const deletePackage = async (packageId: string) => {
 
 export const PackageServices = {
   createPackage,
+  updatePackage,
   getAllPackages,
   getPackageById,
   deletePackage,

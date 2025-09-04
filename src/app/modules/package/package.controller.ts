@@ -19,6 +19,18 @@ const createPackage = catchAsync(
   }
 );
 
+const updatePackage = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const packageId = req.params.id;
+  const payload = req.body;
+  const result = await PackageServices.updatePackage(packageId, payload);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Package updated successfully!",
+    data: result,
+  });
+});
+
 const getAllPackages = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const result = await PackageServices.getAllPackages();
@@ -57,6 +69,7 @@ const deletePackage = catchAsync(
 
 export const PackageController = {
   createPackage,
+  updatePackage,
   getAllPackages,
   getPackageById,
   deletePackage,
