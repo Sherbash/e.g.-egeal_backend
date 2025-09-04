@@ -5,7 +5,8 @@ import AppError from "../errors/appError";
 import mongoose from "mongoose";
 import { SubscriptionModel } from "../modules/package/package.model";
 import UserModel from "../modules/user/user.model";
-import { PaymentStatus } from "../modules/payment/payment.interface";
+import { PaymentStatus } from "../modules/packageSubscription/packageSubscription.interface";
+// import { PaymentStatus } from "../modules/payment/payment.interface";
 
 
 // Helper function to calculate end date based on package interval
