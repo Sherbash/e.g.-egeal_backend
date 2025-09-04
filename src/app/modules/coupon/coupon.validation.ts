@@ -20,7 +20,7 @@ const createCouponSchema = z.object({
       .optional(),
     isActive: z.boolean().optional(),
     isDeleted: z.boolean().optional(),
-    validatedFor: z.enum(["ALL", "TOOL"]),
+    validatedFor: z.enum(["PACKAGE", "TOOL"]),
   }),
 });
 

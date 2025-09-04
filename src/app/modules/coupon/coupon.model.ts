@@ -57,6 +57,7 @@ const couponSchema = new Schema<ICouponDocument>(
     },
     discountValue: { type: Number, required: true, min: 0 },
     toolId: { type: String },
+    packageId: { type: Schema.Types.ObjectId, ref: "Package" },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     maxUsage: { type: Number },
     usageCount: { type: Number, default: 0 },
@@ -66,7 +67,7 @@ const couponSchema = new Schema<ICouponDocument>(
     isDeleted: { type: Boolean, default: false },
     validatedFor: {
       type: String,
-      enum: ["ALL", "TOOL"],
+      enum: ["PACKAGE", "TOOL"],
       default: "TOOL",
     },
   },
