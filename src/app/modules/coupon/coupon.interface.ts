@@ -36,6 +36,7 @@ export interface ICoupon {
   discountType: "PERCENTAGE" | "FIXED";
   discountValue: number;
   toolId?: string;
+  packageId?: Types.ObjectId;
   createdBy: Types.ObjectId;
   maxUsage?: number | null;
   usageCount: number;
@@ -44,7 +45,7 @@ export interface ICoupon {
   null;
   isActive?: boolean;
   isDeleted?: boolean;
-  validatedFor: "ALL" | "TOOL";
+  validatedFor: "PACKAGE" | "TOOL";
 }
 
 export interface ICouponUpdate {
@@ -60,4 +61,6 @@ export interface ICouponUpdate {
 export interface ICouponDelete {
   isDeleted?: boolean;
 }
+
+
 

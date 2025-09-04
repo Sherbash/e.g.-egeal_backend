@@ -51,11 +51,17 @@ router.get(
   CouponControllers.getMyCoupons
 );
 
-// Apply coupon (User applies at checkout)
-// router.post(
-//   "/apply",
-//   auth(UserRole.USER, UserRole.INFLUENCER, UserRole.FOUNDER),
-//   CouponControllers.applyCoupon
-// );
+//! Apply coupon (User applies at checkout)
+router.post(
+  "/apply",
+  auth(UserRole.USER, UserRole.INFLUENCER, UserRole.FOUNDER),
+  CouponControllers.applyCoupon
+);
+
+router.post(
+  "/admin-coupon-apply",
+  auth(UserRole.USER, UserRole.INFLUENCER, UserRole.FOUNDER),
+  CouponControllers.applyCouponForAdmin
+)
 
 export const CouponRoutes = router;
