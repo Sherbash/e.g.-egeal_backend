@@ -30,6 +30,7 @@ import { PostRoutes } from "../modules/post/post.route";
 import { BadgeRoutes } from "../modules/badge/badge.routes";
 import { ContactPackageRoutes } from "../modules/contact-package/contact-package.route";
 import { FreeToolsLeadRoutes } from "../modules/free-tools-lead/free-tools-lead.route";
+import { HypeWaitlistRoutes } from "../modules/hype-waitlist/hype-waitlist.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -151,7 +152,11 @@ const moduleRoutes = [
   {
     path: "/free-tools",
     route: FreeToolsLeadRoutes,
-  }
+  },
+  {
+    path: "/hype-waitlist",
+    route: HypeWaitlistRoutes,
+  },
 
 ];
 
