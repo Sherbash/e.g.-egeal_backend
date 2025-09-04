@@ -18,6 +18,13 @@ router.get("/", PackageController.getAllPackages);
 
 router.get("/:packageId", PackageController.getPackageById);
 
+router.patch(
+  "/update/:id",
+  auth(UserRole.ADMIN),
+  validateRequest(PackageValidation.updatePackageValidationSchema),
+  PackageController.updatePackage
+);
+
 router.delete(
   "/:packageId",
   auth(UserRole.ADMIN),
