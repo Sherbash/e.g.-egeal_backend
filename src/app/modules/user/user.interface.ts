@@ -1,6 +1,5 @@
 import { Document, Types } from "mongoose";
 
-// Enum for User Roles
 export enum UserRole {
   INFLUENCER = "influencer",
   FOUNDER = "founder",
@@ -9,7 +8,6 @@ export enum UserRole {
   ADMIN = "admin",
 }
 
-// User Schema Definition
 export interface IUser extends Document {
   _id: Types.ObjectId;
   firstName: string;
@@ -22,12 +20,13 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   additionalNotes?: string;
-  referralCode?: string; // Added to match schema
-  referredBy?: Types.ObjectId; // Made optional as it's not required
+  referralCode?: string;
+  referredBy?: Types.ObjectId;
   referralLink?: string;
-  points: number; // Added to match schema
+  points: number;
   invitedUserCount: number;
   freePackages: Types.ObjectId[];
-  currentBadge?: Types.ObjectId; // Made optional as it can be null
+  currentBadge?: Types.ObjectId;
   autoAssignBadge?: boolean;
+  subscriptions: Types.ObjectId[];
 }
