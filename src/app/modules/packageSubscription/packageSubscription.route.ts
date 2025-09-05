@@ -21,25 +21,25 @@ router.get(
 );
 
 router.get(
-  "/",
-
+  "/all-subscriptions",
+auth(UserRole.ADMIN),
   SubscriptionController.getAllSubscription
 );
 
 router.get(
-  "/:subscriptionId",
-  auth(UserRole.INFLUENCER, UserRole.FOUNDER, UserRole.INVESTOR, UserRole.USER),
+  "/subscriptionId/:subscriptionId",
+  auth(UserRole.INFLUENCER, UserRole.FOUNDER, UserRole.INVESTOR, UserRole.USER, UserRole.ADMIN),
   SubscriptionController.getSingleSubscription
 );
 
-router.put(
-  "/:subscriptionId",
+router.patch(
+  "/update/:subscriptionId",
   auth(UserRole.ADMIN),
   SubscriptionController.updateSubscription
 );
 
 router.delete(
-  "/:subscriptionId",
+  "/delete/:subscriptionId",
   auth(UserRole.ADMIN),
   SubscriptionController.deleteSubscription
 );
