@@ -136,7 +136,6 @@ const getLeaderboard = async () => {
       return {
         ...influencer,
         trustScoreDetails: {
-          score: trustScoreDetails.trustScore,
           totalReviews: trustScoreDetails.reviewStats.totalReviews,
           averageRating: trustScoreDetails.reviewStats.averageRating,
         }
