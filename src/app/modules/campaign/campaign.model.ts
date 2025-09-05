@@ -7,7 +7,7 @@ export interface ICampaign extends Document {
   influencers: {
     // Influencers participating
     influencerId: Types.ObjectId;
-    status: "pending" | "approved" | "completed" | "rejected";
+    status: "pending" | "approved" |  "rejected";
     proofs?: Types.ObjectId[];
   }[];
   campaignName: string; // Campaign name

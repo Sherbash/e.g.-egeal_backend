@@ -1,6 +1,7 @@
 import { Campaign } from "../campaign/campaign.model";
 import { ReviewModel } from "../global-review/global-review.model";
 import { Influencer } from "../influencer/influencer.model";
+import { InfluencerReputationService } from "../influencer/Reputation/reputation.service";
 
 const getLeaderboard = async () => {
   const [mostActive, bestReviews, topInfluencers] = await Promise.all([
@@ -10,15 +11,13 @@ const getLeaderboard = async () => {
       { $match: { "influencers.status": "approved" } },
       {
         $group: {
-          _id: "$influencers.influencerId", // Influencer profile ID
+          _id: "$influencers.influencerId",
           campaignsJoined: { $sum: 1 },
           lastCampaignDate: { $max: "$createdAt" },
         },
       },
       { $sort: { campaignsJoined: -1, lastCampaignDate: -1 } },
       { $limit: 10 },
-
-      // Step 1: Get Influencer profile
       {
         $lookup: {
           from: "influencers",
@@ -28,8 +27,6 @@ const getLeaderboard = async () => {
         },
       },
       { $unwind: "$influencer" },
-
-      // Step 2: Get linked User data from Influencer.userId
       {
         $lookup: {
           from: "users",
@@ -39,17 +36,17 @@ const getLeaderboard = async () => {
         },
       },
       { $unwind: "$user" },
-
-      // Step 3: Final projection
       {
         $project: {
           influencerId: "$influencer._id",
           campaignsJoined: 1,
-          reputationScore: "$influencer.reputation.score",
+          trustScore: "$influencer.reputation.score", // Changed from reputationScore
+          verified: "$user.verified",
           profileImage: { $ifNull: ["$influencer.profileImage", null] },
           name: "$user.name",
           email: "$user.email",
-          verified: "$user.verified",
+          lastCampaignDate: 1,
+          // Removed badges field
         },
       },
     ]),
@@ -64,7 +61,7 @@ const getLeaderboard = async () => {
         },
       },
       { $sort: { rating: -1, createdAt: -1 } },
-      { $limit: 5 },
+      { $limit: 10 },
       {
         $lookup: {
           from: "influencers",
@@ -103,32 +100,54 @@ const getLeaderboard = async () => {
       },
     ]),
 
-    // 3. Top Influencers (by reputation score)
+    // 3. Top Influencers (by trust score)
     Influencer.aggregate([
-      { $sort: { "reputation.score": -1 } },
+      { $sort: { "reputation.score": -1 } }, // Still sorting by score
       { $limit: 10 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
       {
         $project: {
           influencerId: 1,
           profileImage: 1,
           reputation: 1,
-          campaignStats: { $size: "$affiliations" },
-          engagementRate: {
-            $cond: [
-              { $gt: ["$reputation.score", 0] },
-              { $multiply: ["$reputation.score", 0.8] }, // Example calculation
-              0,
-            ],
-          },
+          verified: "$user.verified",
+          name: "$user.name",
+          // Removed engagementRate calculation since it was based on reputation
         },
       },
     ]),
   ]);
 
+  // Enhance top influencers with trust score details
+  const enhancedTopInfluencers = await Promise.all(
+    topInfluencers.map(async (influencer) => {
+      const trustScoreDetails = await InfluencerReputationService.getInfluencerTrustScoreDetails(
+        influencer._id
+      );
+      
+      return {
+        ...influencer,
+        trustScoreDetails: {
+          score: trustScoreDetails.trustScore,
+          totalReviews: trustScoreDetails.reviewStats.totalReviews,
+          averageRating: trustScoreDetails.reviewStats.averageRating,
+        }
+      };
+    })
+  );
+
   return {
     mostActive,
     bestReviews,
-    topInfluencers,
+    topInfluencers: enhancedTopInfluencers,
     lastUpdated: new Date(),
   };
 };

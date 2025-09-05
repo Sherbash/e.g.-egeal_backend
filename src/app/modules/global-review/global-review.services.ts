@@ -10,15 +10,59 @@ import { InfluencerReputationService } from "../influencer/Reputation/reputation
 import { IUser } from "../user/user.interface";
 import { FreePackage } from "../gift/gift.model";
 import mongoose from "mongoose";
+import { Influencer } from "../influencer/influencer.model";
+import { Founder } from "../founder/founder.model";
+import { ToolModel } from "../tool/tool.model";
+import { Payment } from "../payment/payment.model";
 
 /**
  * Create Review (Dynamic for any entity)
  */
 const createReview = async (payload: any, userId: string) => {
-  // console.log("payload", payload)
-  // 1. Validate Entity (Story, Tool, etc.)
   if (payload?.entityId && payload?.entityType) {
     await validateEntity("_id", payload.entityId, payload.entityType);
+  }
+
+  // first find the user from entityId and entityType
+  if (payload?.entityId && payload?.entityType === "influencer") {
+    const influencer = await Influencer.findById({ _id: payload?.entityId });
+    if (!influencer) {
+      throw new AppError(status.NOT_FOUND, "Influencer not found");
+    }
+
+    const founder = await Founder.findOne({ userId });
+    if (!founder) {
+      throw new AppError(status.NOT_FOUND, "Founder not found");
+    }
+
+    // Check if founder's tools and influencer's affiliations have common values
+    const common = founder.tools.filter((tool: string) =>
+      influencer.affiliations.includes(tool)
+    );
+
+    if (common.length === 0) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "You can only review influencers affiliated with your tools"
+      );
+    }
+  }
+
+  if (payload?.entityId && payload?.entityType === "tool") {
+    const tool = await ToolModel.findOne({ _id: payload?.entityId });
+    if (!tool) {
+      throw new AppError(status.NOT_FOUND, "Tool not found");
+    }
+
+    const checkPaymentForToolId = await Payment.findOne({
+      toolId: tool?.toolId,
+    });
+    if (!checkPaymentForToolId) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "You can only review tools you have paid for"
+      );
+    }
   }
 
   // 2. Prevent duplicate review by same user for same entity
@@ -120,7 +164,6 @@ const updateReview = async (
   return result;
 };
 
-
 const updateReviewStatus = async (
   reviewId: string,
   user: IUser,
@@ -167,7 +210,7 @@ const updateReviewStatus = async (
       result?.entityType === "testimonialWall" &&
       reviewStatus === "approved"
     ) {
-      // ✅ Check if user already has freePackage for testimonialWall
+      //  Check if user already has freePackage for testimonialWall
       const alreadyHas = await FreePackage.findOne({
         userId: result?.userId,
         type: "testimonialWall",
@@ -203,7 +246,6 @@ const updateReviewStatus = async (
     throw error;
   }
 };
-
 
 const getAllReviewForDb = async (
   options: IPaginationOptions,
@@ -305,7 +347,7 @@ const getReviewByInfulencerId = async (influencerId: string) => {
 };
 
 const getAllReviewByInfulencerId = async (influencerId: string) => {
-  console.log("influencerId", influencerId)
+  console.log("influencerId", influencerId);
   const review = await ReviewModel.find({ entityId: influencerId })
     .populate("userId", "firstName lastName email")
     .populate("entityId", "title")
@@ -340,8 +382,6 @@ const getReviewsByUser = async (userId: string) => {
     .populate("comments");
   return reviews;
 };
-
-
 
 /**
  * Get Reviews by Entity (Story, Tool, etc.)
@@ -379,5 +419,5 @@ export const ReviewService = {
   getAllReviewByInfulencerId,
   ToggleReviewEditorPick,
   updateReviewStatus,
-  getReviewByInfulencerId
+  getReviewByInfulencerId,
 };
