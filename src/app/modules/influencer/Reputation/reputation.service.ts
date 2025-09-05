@@ -75,12 +75,14 @@ interface TrustScoreResult {
 const calculateReputation = async (
   influencerId: string | mongoose.Types.ObjectId
 ): Promise<TrustScoreResult> => {
+  // console.log("calculateReputation", influencerId)
   // Get approved reviews for this influencer
   const reviews = await ReviewModel.find({
     entityType: "influencer",
     entityId: influencerId,
     status: "approved",
   });
+  // console.log("find the rev", reviews)
 
   // Calculate metrics from reviews
   const totalReviews = reviews.length;
@@ -91,12 +93,13 @@ const calculateReputation = async (
 
   // Trust score will be only based on average rating (0-100)
   const trustScore = Math.min(100, Math.floor(averageRating * 20));
-
+  // console.log("trustScore", trustScore)
   // Get influencer to check verification status
   const influencer = (await Influencer.findById(influencerId).populate(
     "userId"
   )) as any;
   const verified = influencer?.userId?.verified || false;
+  // console.log("verified", verified)
 
   return {
     score: trustScore,
@@ -106,8 +109,9 @@ const calculateReputation = async (
   };
 };
 
-
-const updateInfluencerReputation = async (influencerId: string | mongoose.Types.ObjectId) => {
+const updateInfluencerReputation = async (
+  influencerId: string | mongoose.Types.ObjectId
+) => {
   const trustScoreData = await calculateReputation(influencerId);
 
   // Update only the score in the influencer model
@@ -115,34 +119,43 @@ const updateInfluencerReputation = async (influencerId: string | mongoose.Types.
     influencerId,
     {
       $set: {
-        "reputation.score": trustScoreData.score,
+        "reputation.score": trustScoreData?.score,
+        "reputation.isVerified": trustScoreData?.verified,
         "reputation.lastUpdated": new Date(),
       },
     },
     { new: true }
   );
 
+  // console.log("updatedInfluencer", updatedInfluencer)
+
   if (!updatedInfluencer) {
     throw new Error("Influencer not found");
   }
-
+  // console.log("trustScoreData", trustScoreData)
   return trustScoreData;
 };
 
-const getInfluencerTrustScoreDetails = async (influencerId: string | mongoose.Types.ObjectId) => {
-  const trustScoreData = await calculateReputation(influencerId);
-  const influencer = await Influencer.findById(influencerId).populate("userId") as any;
-  
+const getInfluencerTrustScoreDetails = async (
+  influencerId: string | mongoose.Types.ObjectId
+) => {
+  const trustScoreData = await updateInfluencerReputation(influencerId);
+  const influencer = (await Influencer.findById(influencerId).populate(
+    "userId"
+  )) as any;
+
   return {
     influencerId,
-    name: influencer?.userId?.firstName + " " + influencer?.userId?.lastName  || "Unknown",
+    name:
+      influencer?.userId?.firstName + " " + influencer?.userId?.lastName ||
+      "Unknown",
     verified: influencer?.userId?.verified || false,
     trustScore: trustScoreData.score,
     reviewStats: {
       totalReviews: trustScoreData.totalReviews,
       averageRating: trustScoreData.averageRating.toFixed(1),
     },
-    lastUpdated: new Date()
+    lastUpdated: new Date(),
   };
 };
 
@@ -151,5 +164,5 @@ export const InfluencerReputationService = {
   updateInfluencerReputation,
   getInfluencerTrustScoreDetails,
   handleNewReview,
-  handleCampaignStatusChange
+  handleCampaignStatusChange,
 };
