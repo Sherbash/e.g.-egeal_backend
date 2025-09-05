@@ -261,6 +261,54 @@ const deleteToolIntoDB = async (id: string) => {
   return result;
 };
 
+
+const getAllToolsByFounderUserId = async (
+  userId: string,
+  paginationOptions: IPaginationOptions,
+  filters: { searchTerm?: string; isActive?: boolean; launched?: boolean }
+) => {
+  const founder = await Founder.findOne({ userId });
+  if (!founder) {
+    throw new AppError(status.NOT_FOUND, "Founder not found for this userId");
+  }
+
+  const { limit, page, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(paginationOptions);
+
+  const query: any = { founderId: founder._id };
+
+  // Search filter
+  if (filters.searchTerm) {
+    query.$or = [
+      { name: { $regex: filters.searchTerm, $options: "i" } },
+      { description: { $regex: filters.searchTerm, $options: "i" } },
+      { toolId: { $regex: filters.searchTerm, $options: "i" } },
+    ];
+  }
+
+  if (filters.isActive !== undefined) {
+    query.isActive = filters.isActive;
+  }
+
+  if (filters.launched !== undefined) {
+    query.launched = filters.launched;
+  }
+
+  const tools = await ToolModel.find(query)
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await ToolModel.countDocuments(query);
+
+  return {
+    meta: { page, limit, total },
+    data: tools,
+  };
+};
+
+
 export const ToolServices = {
   createToolIntoDB,
   getAllToolsFromDB,
@@ -269,4 +317,5 @@ export const ToolServices = {
   updateToolIntoDB,
   deleteToolIntoDB,
   getSingleToolByToolIdFromDB,
+  getAllToolsByFounderUserId,
 };
