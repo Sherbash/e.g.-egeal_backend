@@ -212,6 +212,7 @@ import { IParticipant, IProof } from "./participant.interface";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { IPaginationOptions } from "../../interface/pagination";
 import { sendEmail } from "../../utils/emailHelper";
+import UserModel from "../user/user.model";
 
 const createParticipant = async (
   payload: IParticipant & { inviteCode: string },
@@ -340,12 +341,12 @@ const getAllParticipants = async (
   }
 
   // If not admin, check ownership
-  if (role !== "admin" && giveaway.authorId.toString() !== userId) {
-    throw new AppError(
-      status.FORBIDDEN,
-      "You are not authorized to view participants"
-    );
-  }
+  // if (role !== "admin" && giveaway.authorId.toString() !== userId) {
+  //   throw new AppError(
+  //     status.FORBIDDEN,
+  //     "You are not authorized to view participants"
+  //   );
+  // }
 
   const participants = await Participant.find({ giveawayId })
     .skip(skip)
@@ -490,15 +491,15 @@ const verifyParticipantProof = async (
     }
 
     // 2. Authorization check
-    if (
-      user.role !== "admin" &&
-      giveaway.authorId.toString() !== user.id.toString()
-    ) {
-      throw new AppError(
-        status.FORBIDDEN,
-        "You are not authorized to verify proofs"
-      );
-    }
+    // if (
+    //   user.role !== "admin" &&
+    //   giveaway.authorId.toString() !== user.id.toString()
+    // ) {
+    //   throw new AppError(
+    //     status.FORBIDDEN,
+    //     "You are not authorized to verify proofs"
+    //   );
+    // }
 
     // 3. Find participant
     const participant = await Participant.findById(participantId).session(session);
@@ -506,22 +507,38 @@ const verifyParticipantProof = async (
       throw new AppError(status.NOT_FOUND, "Participant not found");
     }
 
-    // 4. Find the proof
-    const proof = participant.proofs.find(
-      (p) => p._id.toString() === payload?.proofId.toString()
-    );
-    if (!proof) {
-      throw new AppError(status.NOT_FOUND, "Proof not found");
-    }
 
-    // 5. Update proof verified status
-    proof.verified = payload?.verified; // true or false
 
-    // 6. Save participant
-    await participant.save({ session });
+// 2. Find the proof inside proofs array
+const proof = participant.proofs.find(
+  (item: any) => item._id?.toString() === payload.proofId
+)as any
 
+if (!proof) {
+  console.log('Available proofs:', participant?.proofs);
+  throw new AppError(status.NOT_FOUND, "Proof not found");
+}
+
+
+
+
+// 3. Update verified status
+proof.verified = payload.verified;  // true/false
+
+// 4. Save participant document (subdocument update)
+await participant.save({ session });
+if (proof && proof.verified) {
+  const result = await UserModel.findOneAndUpdate(
+    { _id: participant.userId },
+    { $inc: { points: 1 } },
+    { new: true }
+  );
+  console.log('Updated user points:', result);
+}
     // 7. Commit transaction
     await session.commitTransaction();
+
+    console.log(participant)
 // console.log("participant", participant)
     return participant;
   } catch (error) {

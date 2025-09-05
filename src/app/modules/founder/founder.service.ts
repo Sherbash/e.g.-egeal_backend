@@ -132,32 +132,10 @@ const getAllFounder = async (
 
 
 export const getAllFoundersByRefer = async () => {
-  const founders = await Founder.find()
-    .populate({
-      path: "userId",
-      select: "-password",
-      populate: [
-        { path: "referralCount" },
-        { path: "referralStats" },
-        { path: "freePackages", select: "_id status type createdAt" },
-      ],
-    })
-    .lean();
+  const users = await UserModel.find({ invitedUserCount: { $gt: 0 } }).lean();
 
-  if (!founders || founders.length === 0) {
-    throw new AppError(status.NOT_FOUND, "No Founders found!");
-  }
 
-  const filteredFounders = founders.filter((founder: any) => {
-    const invitedLength = founder?.userId?.invitedUserCount || 0;
-    return invitedLength >= 1; // minimum 1
-  });
-
-  if (filteredFounders.length === 0) {
-    throw new AppError(status.NOT_FOUND, "No Founders with at least 1 referral found!");
-  }
-
-  return filteredFounders;
+  return users
 };
 
 export const sendCouponCode = async (
