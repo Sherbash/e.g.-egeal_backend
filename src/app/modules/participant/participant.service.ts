@@ -208,7 +208,7 @@ import { Types } from "mongoose";
 import { Participant } from "./participant.model";
 import { IUser } from "../user/user.interface";
 import mongoose from "mongoose";
-import { IParticipant, IProof } from "./participant.interface";
+import { IParticipant } from "./participant.interface";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { IPaginationOptions } from "../../interface/pagination";
 

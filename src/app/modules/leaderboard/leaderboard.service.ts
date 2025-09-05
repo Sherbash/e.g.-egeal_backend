@@ -201,7 +201,7 @@ const getLeaderboard = async () => {
         },
       },
       { $sort: { rating: -1, createdAt: -1 } },
-      { $limit: 5 },
+      { $limit: 10 },
       {
         $lookup: {
           from: "influencers",
