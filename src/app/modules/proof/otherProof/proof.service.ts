@@ -232,11 +232,15 @@ const socialUpdateProofStatus = async (id: string,updateStatus:string) => {
     throw new AppError(status.NOT_FOUND, "Social proof not found or not authorized");
   }
 const updateProof=await socialPostProofModel.findOne({_id:id})
+
+if(updateProof?.status==="approved"){
 const updateCoin = await UserModel.findOneAndUpdate(
   { _id: proof.proofSubmittedBy },
   { $inc: { points: 1 } }, // points field 1 করে বাড়াবে
   { new: true } // updated document return করবে
 );
+}
+
   return updateProof;
 };
 
