@@ -25,6 +25,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    isCodeSend: {
+      type: Boolean,
+      default: false,
+    },
     points: {
       type: Number,
       default: 0,

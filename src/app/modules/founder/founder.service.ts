@@ -160,6 +160,8 @@ export const sendCouponCode = async (
 
   await sendEmail(payload.email, subject, html);
 
+  const user=await UserModel.findOneAndUpdate({email:payload.email},{$set:{isCodeSend:true}})
+
   return { success: true, message: "Coupon code sent successfully", code, referralCount, discount };
 };
 

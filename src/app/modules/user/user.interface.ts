@@ -29,4 +29,5 @@ export interface IUser extends Document {
   currentBadge?: Types.ObjectId;
   autoAssignBadge?: boolean;
   subscriptions: Types.ObjectId[];
+    isCodeSend?:boolean
 }
