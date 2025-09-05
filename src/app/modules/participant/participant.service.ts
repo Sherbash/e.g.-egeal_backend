@@ -325,6 +325,23 @@ const createParticipant = async (
   }
 };
 
+
+const getGiveawaysByUser = async (userId: string) => {
+  // Find all participant entries for this user
+  const participants = await Participant.find({ userId })
+    .populate({
+      path: "giveawayId",
+      select: "title description startDate endDate status maxParticipants",
+    })
+    .lean();
+
+  // Map to just giveaway details if needed
+  const giveaways = participants.map(p => p.giveawayId);
+
+  return giveaways;
+};
+
+
 const getAllParticipants = async (
   giveawayId: string,
   user: IUser,
@@ -553,6 +570,7 @@ if (proof && proof.verified) {
 
 export const ParticipantServices = {
   createParticipant,
+  getGiveawaysByUser,
   verifyParticipantProof,
   getAllParticipants,
   getParticipant,
