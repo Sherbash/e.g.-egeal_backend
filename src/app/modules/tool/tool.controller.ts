@@ -14,7 +14,7 @@ const createTool = catchAsync(async (req: Request, res: Response) => {
   console.log("body", body);
 
   const result = await ToolServices.createToolIntoDB(body, req.user as IUser);
- 
+
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
@@ -30,7 +30,11 @@ const getAllTools = catchAsync(async (req: Request, res: Response) => {
     "sortBy",
     "sortOrder",
   ]);
-  const filters = pickOptions(req.query, ["searchTerm",  "isActive" , "launched"]);
+  const filters = pickOptions(req.query, [
+    "searchTerm",
+    "isActive",
+    "launched",
+  ]);
   const result = await ToolServices.getAllToolsFromDB(options, filters);
 
   sendResponse(res, {
@@ -41,26 +45,36 @@ const getAllTools = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllToolsByFounderId = catchAsync(async (req: Request, res: Response) => {
-  const { founderId } = req.params;
+const getAllToolsByFounderId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { founderId } = req.params;
 
-  const options = pickOptions(req.query, [
-    "limit",
-    "page",
-    "sortBy",
-    "sortOrder",
-  ]);
-  const filters = pickOptions(req.query, ["searchTerm", "isActive", "launched"]);
+    const options = pickOptions(req.query, [
+      "limit",
+      "page",
+      "sortBy",
+      "sortOrder",
+    ]);
+    const filters = pickOptions(req.query, [
+      "searchTerm",
+      "isActive",
+      "launched",
+    ]);
 
-  const result = await ToolServices.getAllToolsByFounderId(founderId, options, filters);
+    const result = await ToolServices.getAllToolsByFounderId(
+      founderId,
+      options,
+      filters
+    );
 
-  sendResponse(res, {
-    success: true,
-    statusCode: status.OK,
-    message: "Tools fetched successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Tools fetched successfully",
+      data: result,
+    });
+  }
+);
 
 const getSingleTool = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -135,6 +149,37 @@ const deleteTool = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllToolsByFounderUserId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    const options = pickOptions(req.query, [
+      "limit",
+      "page",
+      "sortBy",
+      "sortOrder",
+    ]);
+    const filters = pickOptions(req.query, [
+      "searchTerm",
+      "isActive",
+      "launched",
+    ]);
+
+    const result = await ToolServices.getAllToolsByFounderUserId(
+      userId,
+      options,
+      filters
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Tools fetched successfully",
+      data: result,
+    });
+  }
+);
+
 export const ToolControllers = {
   createTool,
   getAllTools,
@@ -143,4 +188,5 @@ export const ToolControllers = {
   updateTool,
   deleteTool,
   getSingleToolByToolId,
+  getAllToolsByFounderUserId,
 };

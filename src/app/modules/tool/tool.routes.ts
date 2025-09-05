@@ -48,4 +48,11 @@ router.delete(
   ToolControllers.deleteTool
 );
 
+router.get(
+  "/by-founder-userid/:userId",
+  auth(UserRole.FOUNDER, UserRole.ADMIN),
+  ToolControllers.getAllToolsByFounderUserId
+);
+
+
 export const ToolRoutes = router;

@@ -369,9 +369,9 @@ const getAllReviewForDb = async (
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit)
-      .lean(),
+      .lean().populate("userId",'-password'),
     ReviewModel.countDocuments(queryConditions),
-  ]);
+  ])
 
   return {
     meta: {
