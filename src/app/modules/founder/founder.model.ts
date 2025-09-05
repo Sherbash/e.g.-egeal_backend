@@ -1,6 +1,5 @@
 import mongoose, { Schema } from "mongoose";
 import { IFounder } from "./founder.interface";
-import { string } from "zod";
 
 const founderSchema = new Schema<IFounder>({
   userId: {
