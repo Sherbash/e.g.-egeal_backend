@@ -39,7 +39,7 @@ router.put(
 );
 
 router.delete(
-  "/:subscriptionId",
+  "/delete/:subscriptionId",
   auth(UserRole.ADMIN),
   SubscriptionController.deleteSubscription
 );
