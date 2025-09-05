@@ -293,6 +293,7 @@ import { IGiveaway } from "./giveaway.interface";
 import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
+import { sendEmail } from "../../utils/emailHelper";
 
 // Generate a random invite code
 const generateInviteCode = () => {
@@ -319,6 +320,47 @@ const createGiveaway = async (payload: IGiveaway, user: IUser) => {
   }
 
   const result = await Giveaway.create(giveawayPayload);
+
+  if(result.createdAt){
+
+await sendEmail(
+  user.email,
+  "🎉 Giveaway Created Successfully",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #ff9800; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">🎁 Giveaway Created Successfully</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            Your giveaway has been successfully created in our system!  
+            We will notify you as soon as there are updates or participant entries.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/giveway" style="background-color: #ff9800; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Your Giveaways
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
+
+
+  }
   return result;
 };
 

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { model } from "mongoose";
 import { IProof } from "./proof.interface";
 
 const ProofSchema = new mongoose.Schema<IProof>(
@@ -58,3 +58,37 @@ ProofSchema.pre("save", function (next: any) {
 const ProofModel = mongoose.model("Proof", ProofSchema);
 
 export default ProofModel;
+
+
+
+const socialProofSchema = new mongoose.Schema(
+  {
+    proofSubmittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    proofType: {
+      type: String,
+      enum: [
+        "social-post", 
+      ],
+      default:"social-post"
+    },
+    proofLink: { type: String, required: true },
+    proofAbout: { type: String, required: true },
+    image:{ type: String, required: true },
+
+    // Verification status
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    adminFeedback: { type: String ,default:null},
+    rewardGiven: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+export const socialPostProofModel=model("social-proof",socialProofSchema)

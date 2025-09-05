@@ -9,7 +9,7 @@ const router = Router();
 
 router.post(
   "/",
-  // auth(UserRole.ADMIN, UserRole.INFLUENCER),
+  auth(UserRole.ADMIN, UserRole.INFLUENCER),
   validateRequest(affiliateValidation.createAffiliateZodSchema),
   AffiliateControllers.createAffiliate
 );
@@ -24,6 +24,14 @@ router.get(
   "/influencer/:influencerId",
   // auth(UserRole.ADMIN, UserRole.INFLUENCER),
   AffiliateControllers.getAffiliatesByInfluencerId
+);
+
+// router.get("/tool/:toolId", AffiliateControllers.handleAffiliateUrl);
+
+router.get(
+  "/influencer/:influencerId/total-roi",
+  // auth(UserRole.ADMIN, UserRole.INFLUENCER),
+  AffiliateControllers.InfluencerTotalRoi
 );
 
 // router.get("/tool/:toolId", AffiliateControllers.handleAffiliateUrl);

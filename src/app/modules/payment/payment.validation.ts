@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const createPaymentIntentZodSchema = z.object({
   body: z.object({
     toolId: z.string({
-      required_error: 'Tool ID is required',
+      required_error: "Tool ID is required",
     }),
     influencerId: z.string().optional(),
   }),

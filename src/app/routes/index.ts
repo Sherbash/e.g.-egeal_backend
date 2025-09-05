@@ -27,6 +27,12 @@ import { InvestorWaitlistRoutes } from "../modules/investorWaitlist/investorWait
 import { ProofUserInviteRoutes } from "../modules/proof/ProofUserInvite/proofUserInvite.route";
 import { ProofRoutes } from "../modules/proof/otherProof/proof.route";
 import { PostRoutes } from "../modules/post/post.route";
+import { BadgeRoutes } from "../modules/badge/badge.routes";
+import { ContactPackageRoutes } from "../modules/contact-package/contact-package.route";
+import { FreeToolsLeadRoutes } from "../modules/free-tools-lead/free-tools-lead.route";
+import { PackageRoutes } from "../modules/package/package.route";
+import { HypeWaitlistRoutes } from "../modules/hype-waitlist/hype-waitlist.route";
+import { PackageSubscriptionRoutes } from "../modules/packageSubscription/packageSubscription.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -107,7 +113,7 @@ const moduleRoutes = [
   },
   {
     path: "/coupon",
-    route: CouponRoutes,
+    route: CouponRoutes, 
   },
   {
     path: "/reputation",
@@ -136,6 +142,30 @@ const moduleRoutes = [
   {
     path: "/post",
     route: PostRoutes,
+  },
+  {
+    path: "/badge",
+    route: BadgeRoutes,
+  },
+  {
+    path: "/contact-package",
+    route: ContactPackageRoutes,
+  },
+  {
+    path: "/free-tools",
+    route: FreeToolsLeadRoutes,
+  },
+{
+    path: "/package",
+    route: PackageRoutes,
+  },
+  {
+    path: "/hype-waitlist",
+    route: HypeWaitlistRoutes,
+  },
+{
+    path: "/package-subscription",
+    route: PackageSubscriptionRoutes,
   },
 ];
 

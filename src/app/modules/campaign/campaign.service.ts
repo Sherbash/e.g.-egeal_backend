@@ -1,20 +1,20 @@
 import status from "http-status";
-import { Campaign, ICampaign } from "./campaign.model";
+import { Campaign, ICampaign, rejectedProfModel } from "./campaign.model";
 import AppError from "../../errors/appError";
 import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { Founder } from "../founder/founder.model";
 import { ToolModel } from "../tool/tool.model";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { Influencer } from "../influencer/influencer.model";
 import UserModel from "../user/user.model";
 import { findProfileByRole } from "../../utils/findUser";
 import { IProof } from "../proof/otherProof/proof.interface";
 import ProofModel from "../proof/otherProof/proof.model";
+import { sendEmail } from "../../utils/emailHelper";
 
 const createCampaign = async (payload: ICampaign, user: IUser) => {
-
   const authorId = user?.id;
 
   if (!authorId) {
@@ -56,6 +56,44 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
     { new: true }
   );
 
+  if(result.createdAt){
+    await sendEmail(
+  user.email,
+  "🚀 Campaign Created Successfully",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #4CAF50; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">🚀 Campaign Created Successfully</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            Your campaign has been successfully created!  
+            You can now manage and track its performance directly from your dashboard.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/campaigns" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Your Campaigns
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
+
+  }
   return result;
 };
 
@@ -104,17 +142,21 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
 //   };
 // };
 
-const getAllCampaigns = async (paginationOptions: IPaginationOptions, user: IUser) => {
+const getAllCampaigns = async (
+  paginationOptions: IPaginationOptions,
+  user: IUser
+) => {
   const { limit, page, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(paginationOptions);
 
-    
-    if(user?.role === "founder") {
-      
-    }
+  if (user?.role === "founder") {
+  }
   // First get the campaigns with all other populated fields
   const campaigns = await Campaign.find()
-    .populate("authorId", "firstName lastName email role referralLink referralCode")
+    .populate(
+      "authorId",
+      "firstName lastName email role referralLink referralCode"
+    )
     .populate({
       path: "influencers",
       populate: [
@@ -139,18 +181,20 @@ const getAllCampaigns = async (paginationOptions: IPaginationOptions, user: IUse
     .lean(); // Convert to plain JS object
 
   // Get all unique toolIds from the campaigns
-  const toolIds = [...new Set(campaigns.map(c => c.toolId))];
+  const toolIds = [...new Set(campaigns.map((c) => c.toolId))];
 
   // Find all tools that match these toolIds
   const tools = await ToolModel.find({ toolId: { $in: toolIds } })
-    .select('_id name logo description price commissionRate toolId isActive launched imageUrl')
+    .select(
+      "_id name logo description price commissionRate toolId isActive launched imageUrl"
+    )
     .lean();
 
   // Create a map for quick lookup: toolId -> tool document
-  const toolMap = new Map(tools.map(tool => [tool.toolId, tool]));
+  const toolMap = new Map(tools.map((tool) => [tool.toolId, tool]));
 
   // Combine the data
-  const campaignsWithTools = campaigns.map(campaign => ({
+  const campaignsWithTools = campaigns.map((campaign) => ({
     ...campaign,
     tool: toolMap.get(campaign.toolId) || null, // Add the full tool document
   }));
@@ -341,6 +385,41 @@ const requestToJoinCampaign = async (
   });
 
   await campaign.save();
+await sendEmail(
+  user.email,
+  "✅ Successfully Campaign Joined request send ",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #3F51B5; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">✅ Successfully Joined Campaign</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            You have successfully send the request joined the campaign!  
+            You can now track your progress and view campaign details from your dashboard.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/influencer/promote-to-earn" style="background-color: #3F51B5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Your Campaigns
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
 
   // 6. Return populated data if needed
   return await Campaign.findById(campaign._id)
@@ -417,6 +496,85 @@ const updateInfluencerStatus = async (
   return campaign;
 };
 
+const proofRejectRequest = async (
+  proofId: string,
+  founderId: string,
+  payload: { message: string }
+) => {
+  if (!proofId) {
+    throw new Error("prof id is not found ");
+  }
+  if (!payload) {
+    throw new Error("prof reject payload  is not found ");
+  }
+
+  const founder=await Founder.findOne({userId:founderId})
+  const result = await rejectedProfModel.create({
+    ...payload,
+    proofId: new mongoose.Types.ObjectId(proofId),
+    founderId: new mongoose.Types.ObjectId(founder?._id),
+  });
+
+  return result;
+};
+
+const getAllProofRejectRequests = async () => {
+  const result = await rejectedProfModel
+    .find()
+    .populate("proofId")
+    .populate("founderId")
+    .exec();
+  return result;
+};
+
+// Get Single Proof Reject Request by ID
+const getSingleProofRejectRequest = async (id: string) => {
+  if (!id) {
+    throw new Error("Proof reject ID is required");
+  }
+
+  const result = await rejectedProfModel
+    .findById(id)
+    .populate("proofId")
+    .populate("founderId")
+    .exec();
+  if (!result) {
+    throw new Error("Proof reject request not found");
+  }
+
+  return result;
+};
+
+const updateProofRejectRequest = async (
+  id: string,
+  payload:{ status:"approved" | "rejected"}
+) => {
+  if (!id) {
+    throw new Error("Proof reject ID is required");
+  }
+
+  // findById
+  const result = await ProofModel.findById(id);
+  if (!result) {
+    throw new Error("Proof reject request not found");
+  }
+
+
+
+  if(!payload.status){
+      throw new Error("status is required");
+  }
+  // যদি status দেওয়া থাকে, update করা হবে
+  if (status) {
+    result.status = payload.status; // schema তে status field থাকতে হবে
+    await result.save();
+  }
+
+  await rejectedProfModel.findOneAndDelete({ proofId: id });
+
+  return result;
+};
+
 export const CampaignServices = {
   createCampaign,
   getAllCampaigns,
@@ -426,4 +584,8 @@ export const CampaignServices = {
   addInfluencerToCampaign,
   updateInfluencerStatus,
   requestToJoinCampaign,
+  proofRejectRequest,
+  getAllProofRejectRequests,
+  getSingleProofRejectRequest,
+  updateProofRejectRequest,
 };

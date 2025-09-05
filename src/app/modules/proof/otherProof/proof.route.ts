@@ -35,4 +35,52 @@ router.get(
   ProofController.getAllProofs
 );
 
+
+// ✅ Create Social Proof
+router.post(
+  "/create-social-proof",
+  auth(UserRole.USER),
+  ProofController.socialSubmitProof
+);
+
+// ✅ Get All Social Proofs
+router.get(
+  "/get-social-proofs",
+  auth(UserRole.ADMIN),
+    ProofController.socialGetAllProofs
+);
+
+// ✅ Get Single Social Proof
+router.get(
+  "/get-social-proof/:id",
+  auth(UserRole.ADMIN),
+  ProofController.socialGetProofById
+);
+
+// ✅ Get My Social Proofs
+router.get(
+  "/get-my-social-proofs",
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER),
+  ProofController.socialGetMyProofs
+);
+
+// ✅ Update Social Proof
+router.patch(
+  "/update-social-proof/:id",
+  auth(UserRole.USER),
+  ProofController.socialUpdateProof
+);
+router.patch(
+  "/update-proof-status/:id",
+  auth(UserRole.ADMIN),
+  ProofController.socialUpdateProofStatus
+);
+
+// ✅ Delete Social Proof
+router.delete(
+  "/delete-social-proof/:id",
+  auth(UserRole.ADMIN),
+  ProofController.socialDeleteProof
+);
+
 export const ProofRoutes = router;

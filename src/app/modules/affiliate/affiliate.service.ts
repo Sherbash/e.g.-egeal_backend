@@ -7,11 +7,13 @@ import { Affiliate } from "./affiliate.model";
 import { Influencer } from "../influencer/influencer.model";
 import mongoose from "mongoose";
 import { IUser } from "../user/user.interface";
+import { sendEmail } from "../../utils/emailHelper";
 
-const createAffiliateIntoDB = async (payload: IAffiliate) => {
+const createAffiliateIntoDB = async (payload: IAffiliate,user:any) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
+  console.log(user)
   try {
     // 1. Check the tool exists and is active
     const tool = await ToolModel.findOne({ toolId: payload.toolId }).session(
@@ -75,6 +77,47 @@ const createAffiliateIntoDB = async (payload: IAffiliate) => {
       { session, new: true }
     );
 
+    if(createdAffiliate.length){
+
+      await sendEmail(
+  user.email,
+  "🔗 Affiliate Link Generated Successfully",
+  `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="background-color: #673AB7; color: white; padding: 15px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">🔗 Affiliate Link Generated</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px; color: #333;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #555;">
+            Your affiliate link has been successfully generated!  
+            You can now share it with others to earn rewards and commissions.
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://172.252.13.69:3002/dashboard/influencer/explore-tools" style="background-color: #673AB7; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Affiliate Dashboard
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888;">
+            If you have any questions, feel free to reply to this email.  
+          </p>
+          <p style="font-size: 14px; color: #333; margin-top: 20px;">
+            Best regards,  
+            <br>
+            <strong>Egeal AI Hub Team</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+);
+    }
+
+
+
     await session.commitTransaction();
     return createdAffiliate[0];
   } catch (error) {
@@ -130,6 +173,7 @@ const getAffiliatesByInfluencerId = async (influencerId: string) => {
 
   // 2. Get all affiliates for this influencer
   const affiliates = await Affiliate.find({ influencerId }).lean();
+  console.log(affiliates)
 
   if (affiliates.length === 0) {
     return {
@@ -179,8 +223,62 @@ const getAffiliatesByInfluencerId = async (influencerId: string) => {
   };
 };
 
+const InfluencerTotalRoi = async (influencerId: string) => {
+  if (!influencerId) {
+    throw new AppError(status.BAD_REQUEST, "Influencer ID is required");
+  }
+
+  // 1. Get influencer & populate user details
+  const influencer = await Influencer.findOne({ influencerId })
+    .populate<{ userId: IUser }>("userId", "firstName lastName email")
+    .lean();
+
+  if (!influencer) {
+    throw new AppError(status.NOT_FOUND, "Influencer not found");
+  }
+
+ const affiliates = await Affiliate.find({ influencerId }).lean();
+   let totalAffiliations = affiliates.length;  // মোট affiliate count
+  let totalClicks = 0;
+  let totalConversions = 0;
+  let totalCommission = 0;
+  let totalSales = 0;
+
+  affiliates.forEach(aff => {
+    totalClicks += aff.clicks;
+    totalConversions += aff.conversions;
+    totalCommission += aff.earning;      // এখানে commissionEarned হচ্ছে earning field
+    totalSales += aff.conversions * (aff.earning / (aff.commissionRate / 100) || 0); // আনুমানিক sale
+  });
+
+  const CTR = totalAffiliations > 0 ? (totalClicks / totalAffiliations) * 100 : 0;
+  const CR = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
+  const engagement = totalAffiliations > 0 ? (totalConversions / totalAffiliations) * 100 : 0;
+  const AOV = totalConversions > 0 ? (totalSales / totalConversions) : 0;
+  const commissionROI = totalSales > 0 ? (totalCommission / totalSales) * 100 : 0;
+  const revenueROI = totalCommission > 0 ? ((totalSales - totalCommission) / totalCommission) * 100 : 0;
+  const totalROI = commissionROI;
+
+  return {
+    totalAffiliations,
+    totalClicks,
+    totalConversions,
+    totalSales: +totalSales.toFixed(2),
+    totalCommission: +totalCommission.toFixed(2),
+    CTR: +CTR.toFixed(2),
+    CR: +CR.toFixed(2),
+    engagement: +engagement.toFixed(2),
+    AOV: +AOV.toFixed(2),
+    commissionROI: +commissionROI.toFixed(2),
+    revenueROI: +revenueROI.toFixed(2),
+    totalROI: `${totalROI.toFixed(2)}%`
+  };
+
+};
+
 export const AffiliateServices = {
   createAffiliateIntoDB,
   incrementClickCount,
   getAffiliatesByInfluencerId,
+  InfluencerTotalRoi
 };

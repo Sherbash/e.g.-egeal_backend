@@ -18,7 +18,7 @@ const addToWaitlist = async (email: string, name: string | undefined, toolId: st
   const joinedAt = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
-    day: "numeric",
+    day: "numeric", 
   });
 
   // Explicitly map fields to match Google Sheet columns
