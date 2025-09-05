@@ -18,6 +18,86 @@ import { Payment } from "../payment/payment.model";
 /**
  * Create Review (Dynamic for any entity)
  */
+// const createReview = async (payload: any, userId: string) => {
+//   if (payload?.entityId && payload?.entityType) {
+//     await validateEntity("_id", payload.entityId, payload.entityType);
+//   }
+
+//   // first find the user from entityId and entityType
+//   if (payload?.entityId && payload?.entityType === "influencer") {
+//     const influencer = await Influencer.findById({ _id: payload?.entityId });
+//     if (!influencer) {
+//       throw new AppError(status.NOT_FOUND, "Influencer not found");
+//     }
+
+//     const founder = await Founder.findOne({ userId });
+//     if (!founder) {
+//       throw new AppError(status.NOT_FOUND, "Founder not found");
+//     }
+
+//     // Check if founder's tools and influencer's affiliations have common values
+//     const common = founder.tools.filter((tool: string) =>
+//       influencer.affiliations.includes(tool)
+//     );
+
+//     if (common.length === 0) {
+//       throw new AppError(
+//         status.FORBIDDEN,
+//         "You can only review influencers affiliated with your tools"
+//       );
+//     }
+//   }
+
+//   if (payload?.entityId && payload?.entityType === "tool") {
+//     const tool = await ToolModel.findOne({ _id: payload?.entityId });
+//     if (!tool) {
+//       throw new AppError(status.NOT_FOUND, "Tool not found");
+//     }
+
+//     const checkPaymentForToolId = await Payment.findOne({
+//       toolId: tool?.toolId,
+//     });
+//     if (!checkPaymentForToolId) {
+//       throw new AppError(
+//         status.FORBIDDEN,
+//         "You can only review tools you have paid for"
+//       );
+//     }
+//   }
+
+//   // 2. Prevent duplicate review by same user for same entity
+//   const alreadyReviewed = await ReviewModel.findOne({
+//     userId,
+//     entityId: payload.entityId,
+//     entityType: payload.entityType,
+//   });
+//   if (alreadyReviewed) {
+//     throw new AppError(status.CONFLICT, "You already reviewed this entity");
+//   }
+
+//   let review = null;
+//   if (!payload?.entityId || !payload?.entityType) {
+//     review = await ReviewModel.create({
+//       ...payload,
+//       entityType: "testimonialWall",
+//       userId,
+//     });
+//   } else {
+//     // 3. Create Review
+//     review = await ReviewModel.create({
+//       ...payload,
+//       userId,
+//     });
+//   }
+
+//   // Update reputation if reviewing an influencer
+//   if (payload.entityType === "influencer") {
+//     await InfluencerReputationService.handleNewReview(review);
+//   }
+
+//   return review;
+// };
+
 const createReview = async (payload: any, userId: string) => {
   if (payload?.entityId && payload?.entityType) {
     await validateEntity("_id", payload.entityId, payload.entityType);
@@ -75,18 +155,25 @@ const createReview = async (payload: any, userId: string) => {
     throw new AppError(status.CONFLICT, "You already reviewed this entity");
   }
 
+  // Determine the status - auto-approve for influencer reviews
+  const statusValue = payload?.entityId && payload?.entityType === "influencer" 
+    ? "approved" 
+    : "pending";
+
   let review = null;
   if (!payload?.entityId || !payload?.entityType) {
     review = await ReviewModel.create({
       ...payload,
       entityType: "testimonialWall",
       userId,
+      status: statusValue,
     });
   } else {
     // 3. Create Review
     review = await ReviewModel.create({
       ...payload,
       userId,
+      status: statusValue,
     });
   }
 
@@ -97,7 +184,6 @@ const createReview = async (payload: any, userId: string) => {
 
   return review;
 };
-
 /**
  * Update Review
  */
@@ -189,11 +275,11 @@ const updateReviewStatus = async (
     }
 
     // Prevent unnecessary updates
-    if (review.status === reviewStatus) {
-      await session.abortTransaction();
-      session.endSession();
-      return review; // No change
-    }
+    // if (review.status === reviewStatus) {
+    //   await session.abortTransaction();
+    //   session.endSession();
+    //   return review; // No change
+    // }
 
     // Update review
     const result = await ReviewModel.findOneAndUpdate(
@@ -203,6 +289,7 @@ const updateReviewStatus = async (
     );
 
     if (result?.entityType === "influencer") {
+      console.log("influencer entity", result)
       await InfluencerReputationService.updateInfluencerReputation(
         result?.entityId
       );
