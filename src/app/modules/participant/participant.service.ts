@@ -279,9 +279,9 @@ const createParticipant = async (
     );
 
     await sendEmail(
- user.email,
-  "🎉 Join a Giveaway Successfully",
-  `
+      user.email,
+      "🎉 Join a Giveaway Successfully",
+      `
     <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
       <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <div style="background-color: #FF5722; color: white; padding: 15px 20px; text-align: center;">
@@ -312,7 +312,7 @@ const createParticipant = async (
       </div>
     </div>
   `
-);
+    );
     await session.commitTransaction();
     return result[0];
   } catch (err) {
@@ -323,6 +323,21 @@ const createParticipant = async (
   } finally {
     session.endSession();
   }
+};
+
+const getGiveawaysByUser = async (userId: string) => {
+  // Find all participant entries for this user
+  const participants = await Participant.find({ userId })
+    .populate({
+      path: "giveawayId",
+      select: "title description startDate endDate status maxParticipants",
+    })
+    .lean();
+
+  // Map to just giveaway details if needed
+  const giveaways = participants.map((p) => p.giveawayId);
+
+  return giveaways;
 };
 
 const getAllParticipants = async (
@@ -482,10 +497,12 @@ const verifyParticipantProof = async (
   console.log(payload);
 
   const session = await mongoose.startSession();
-  session.startTransaction(); 
+  session.startTransaction();
   try {
     // 1. Find the giveaway
-    const giveaway = await Giveaway.findById(payload?.giveawayId).session(session);
+    const giveaway = await Giveaway.findById(payload?.giveawayId).session(
+      session
+    );
     if (!giveaway) {
       throw new AppError(status.NOT_FOUND, "Giveaway not found");
     }
@@ -502,44 +519,41 @@ const verifyParticipantProof = async (
     // }
 
     // 3. Find participant
-    const participant = await Participant.findById(participantId).session(session);
+    const participant = await Participant.findById(participantId).session(
+      session
+    );
     if (!participant) {
       throw new AppError(status.NOT_FOUND, "Participant not found");
     }
 
+    // 2. Find the proof inside proofs array
+    const proof = participant.proofs.find(
+      (item: any) => item._id?.toString() === payload.proofId
+    ) as any;
 
+    if (!proof) {
+      console.log("Available proofs:", participant?.proofs);
+      throw new AppError(status.NOT_FOUND, "Proof not found");
+    }
 
-// 2. Find the proof inside proofs array
-const proof = participant.proofs.find(
-  (item: any) => item._id?.toString() === payload.proofId
-)as any
+    // 3. Update verified status
+    proof.verified = payload.verified; // true/false
 
-if (!proof) {
-  console.log('Available proofs:', participant?.proofs);
-  throw new AppError(status.NOT_FOUND, "Proof not found");
-}
-
-
-
-
-// 3. Update verified status
-proof.verified = payload.verified;  // true/false
-
-// 4. Save participant document (subdocument update)
-await participant.save({ session });
-if (proof && proof.verified) {
-  const result = await UserModel.findOneAndUpdate(
-    { _id: participant.userId },
-    { $inc: { points: 1 } },
-    { new: true }
-  );
-  console.log('Updated user points:', result);
-}
+    // 4. Save participant document (subdocument update)
+    await participant.save({ session });
+    if (proof && proof.verified) {
+      const result = await UserModel.findOneAndUpdate(
+        { _id: participant.userId },
+        { $inc: { points: 1 } },
+        { new: true }
+      );
+      console.log("Updated user points:", result);
+    }
     // 7. Commit transaction
     await session.commitTransaction();
 
-    console.log(participant)
-// console.log("participant", participant)
+    console.log(participant);
+    // console.log("participant", participant)
     return participant;
   } catch (error) {
     if (session.inTransaction()) {
@@ -553,6 +567,7 @@ if (proof && proof.verified) {
 
 export const ParticipantServices = {
   createParticipant,
+  getGiveawaysByUser,
   verifyParticipantProof,
   getAllParticipants,
   getParticipant,

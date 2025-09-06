@@ -33,6 +33,7 @@ import { FreeToolsLeadRoutes } from "../modules/free-tools-lead/free-tools-lead.
 import { PackageRoutes } from "../modules/package/package.route";
 import { HypeWaitlistRoutes } from "../modules/hype-waitlist/hype-waitlist.route";
 import { PackageSubscriptionRoutes } from "../modules/packageSubscription/packageSubscription.route";
+import { HomePopupRoutes } from "../modules/homePopUp/homePopUp.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -69,6 +70,10 @@ const moduleRoutes = [
   {
     path: "/participant",
     route: ParticipantRoutes,
+  },
+  {
+    path: "/home-popup",
+    route: HomePopupRoutes,
   },
 
   // {
