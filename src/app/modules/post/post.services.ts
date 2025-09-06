@@ -35,7 +35,7 @@ user.email,
             Our team will review and keep you updated on the progress.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="${`http://172.252.13.69:3002/dashboard/create-job`}" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${`${process.env.CLIENT_URL}/dashboard/create-job`}" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Jobs
             </a>
           </div>
