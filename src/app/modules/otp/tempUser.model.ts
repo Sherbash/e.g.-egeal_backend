@@ -7,6 +7,7 @@ interface ITempUser extends Document {
   email: string;
   password: string;
   role: UserRole;
+  verifiedDefaultRules?: boolean;
   additionalNotes?: string;
   referredBy?: Schema.Types.ObjectId;
   referralCode: string;
@@ -21,6 +22,7 @@ const tempUserSchema = new Schema<ITempUser>({
   password: { type: String, required: true },
   role: { type: String, enum: Object.values(UserRole), required: true },
   additionalNotes: { type: String },
+  verifiedDefaultRules: { type: Boolean, default: false },
   referredBy: { type: Schema.Types.ObjectId, ref: "User" },
   referralCode: { type: String, required: true, unique: true },
   referralLink: { type: String, required: true },
