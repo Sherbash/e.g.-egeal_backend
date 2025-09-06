@@ -16,6 +16,7 @@ const userSchema = new Schema<IUser>(
       default: null,
       required: false,
     },
+    verifiedDefaultRules: { type: Boolean, default: false },
     referralLink: { type: String, default: null },
     referredBy: {
       type: Schema.Types.ObjectId,

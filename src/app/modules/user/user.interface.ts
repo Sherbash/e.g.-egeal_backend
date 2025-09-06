@@ -8,6 +8,12 @@ export enum UserRole {
   ADMIN = "admin",
 }
 
+// {
+//         ruleTitle: String,
+//         verifiedAt: Date,
+//       },
+
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   firstName: string;
@@ -24,6 +30,7 @@ export interface IUser extends Document {
   referredBy?: Types.ObjectId;
   referralLink?: string;
   points: number;
+  verifiedDefaultRules: boolean;
   invitedUserCount: number;
   freePackages: Types.ObjectId[];
   earnedBadges?: Types.ObjectId[]; // Changed from currentBadge to earnedBadges
