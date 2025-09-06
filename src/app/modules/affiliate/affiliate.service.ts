@@ -97,7 +97,7 @@ const createAffiliateIntoDB = async (payload: IAffiliate,user:any) => {
             You can now share it with others to earn rewards and commissions.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="http://172.252.13.69:3002/dashboard/influencer/explore-tools" style="background-color: #673AB7; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${process.env.CLIENT_URL}/dashboard/influencer/explore-tools" style="background-color: #673AB7; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Affiliate Dashboard
             </a>
           </div>

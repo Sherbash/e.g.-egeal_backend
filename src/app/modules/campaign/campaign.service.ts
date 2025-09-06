@@ -403,7 +403,7 @@ await sendEmail(
             You can now track your progress and view campaign details from your dashboard.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="http://172.252.13.69:3002/dashboard/influencer/promote-to-earn" style="background-color: #3F51B5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${process.env.CLIENT_URL}/dashboard/influencer/promote-to-earn" style="background-color: #3F51B5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Campaigns
             </a>
           </div>

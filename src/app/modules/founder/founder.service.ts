@@ -144,6 +144,11 @@ export const sendCouponCode = async (
   if (!payload.email) throw new Error("Email is required");
   if (!payload || !payload.code) throw new Error("Coupon code is required");
 
+    const users = await UserModel.findOne({email:payload.email}).lean()
+ if (users?.invitedUserCount! < 3) {
+  throw new Error("Invited user count must be at least 3");
+}
+
   const { code, referralCount, discount } = payload;
 
   const subject = "🎉 Your Exclusive Coupon Code from Egeal AI Hub!";
