@@ -102,7 +102,8 @@ const cancelGiveaway = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getGiveawayStats = catchAsync(async (req: Request, res: Response) => {
-  const stats = await GiveawayServices.getGiveawayStats();
+  const user = req.user as IUser;
+  const stats = await GiveawayServices.getGiveawayStats(user);
 
   res.status(status.OK).json({
     success: true,

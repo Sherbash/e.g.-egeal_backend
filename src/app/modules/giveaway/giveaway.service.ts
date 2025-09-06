@@ -305,24 +305,21 @@ const generateInviteCode = () => {
 const createGiveaway = async (payload: IGiveaway, user: IUser) => {
   const getRules = await GiveawayRuleService.getAllRules();
 
-const modifyRules = getRules?.map((rule) => rule?.ruleTitle).filter(Boolean);
+  const modifyRules = getRules?.map((rule) => rule?.ruleTitle).filter(Boolean);
 
-// console.log(modifyRules); 
+  // console.log(modifyRules);
 
-const giveawayPayload = {
-  ...payload,
-  rules: [
-    ...(modifyRules || []),
-    ...(payload.rules || [])
-  ],
-  authorId: user.id,
-  priceMoney: payload.priceMoney,
-  isPrivate: payload.isPrivate,
-  maxParticipants: payload.maxParticipants || 30,
-  inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
-};
+  const giveawayPayload = {
+    ...payload,
+    rules: [...(modifyRules || []), ...(payload.rules || [])],
+    authorId: user.id,
+    priceMoney: payload.priceMoney,
+    isPrivate: payload.isPrivate,
+    maxParticipants: payload.maxParticipants || 30,
+    inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
+  };
 
-console.log("giveawayPayload", giveawayPayload);
+  console.log("giveawayPayload", giveawayPayload);
 
   // Validate invite code for private giveaways
   if (giveawayPayload.isPrivate && !giveawayPayload.inviteCode) {
@@ -640,8 +637,59 @@ const cancelGiveaway = async (giveawayId: string, user: IUser) => {
   return result;
 };
 
-const getGiveawayStats = async () => {
+// const getGiveawayStats = async (user: IUser) => {
+
+//   if(user?.role === "admin"){
+
+//   }
+//   if(user?.role === "founder"){
+
+//   }
+//   const stats = await Giveaway.aggregate([
+//     {
+//       $group: {
+//         _id: null,
+//         totalWinners: {
+//           $sum: { $cond: [{ $ne: ["$winnerId", null] }, 1, 0] },
+//         },
+//         totalPrizeMoney: { $sum: "$priceMoney" },
+//         totalParticipants: { $sum: { $size: "$participants" } },
+//         totalGiveaways: { $sum: 1 },
+//       },
+//     },
+//     {
+//       $project: {
+//         _id: 0,
+//         totalWinners: 1,
+//         totalPrizeMoney: 1,
+//         totalParticipants: 1,
+//         totalGiveaways: 1,
+//       },
+//     },
+//   ]);
+
+//   return stats.length
+//     ? stats[0]
+//     : {
+//         totalWinners: 0,
+//         totalPrizeMoney: 0,
+//         totalParticipants: 0,
+//         totalGiveaways: 0,
+//       };
+// };
+
+const getGiveawayStats = async (user: IUser) => {
+  let matchStage: any = {};
+
+  console.log("user", user)
+  if (user?.role === "founder") {
+    matchStage = { authorId: user?.id };
+  }
+
   const stats = await Giveaway.aggregate([
+    {
+      $match: matchStage,
+    },
     {
       $group: {
         _id: null,
