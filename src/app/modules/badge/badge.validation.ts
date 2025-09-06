@@ -18,7 +18,15 @@ const updateBadgeSchema = z.object({
   }),
 });
 
+const removeBadgeSchema = z.object({
+  params: z.object({
+    userId: z.string().nonempty("User ID is required"),
+    badgeId: z.string().nonempty("Badge ID is required"),
+  }),
+});
+
 export const badgeValidation = {
   createBadgeSchema,
   updateBadgeSchema,
+  removeBadgeSchema,
 };
