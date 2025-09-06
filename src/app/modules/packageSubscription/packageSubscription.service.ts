@@ -26,7 +26,22 @@ const createSubscription = async (userId: string, packageId: string) => {
       throw new AppError(status.NOT_FOUND, "Package not found");
     }
 
-    // 3. Calculate end date based on package type and interval
+    // 3. Check for existing active subscription for the same package
+    const existingActiveSubscription = await SubscriptionModel.findOne({
+      userId,
+      packageId,
+      paymentStatus: { $in: [PaymentStatus.PENDING, PaymentStatus.COMPLETED] },
+      $or: [
+        { endDate: { $gte: new Date() } }, // For monthly/yearly packages with valid endDate
+        { endDate: null }, // For lifetime packages
+      ],
+    }).session(session);
+
+    if (existingActiveSubscription) {
+      throw new AppError(status.BAD_REQUEST, "You already have an active subscription for this package");
+    }
+
+    // 4. Calculate end date based on package type and interval
     const startDate = new Date();
     let endDate: Date | null = null;
 
@@ -39,7 +54,7 @@ const createSubscription = async (userId: string, packageId: string) => {
       endDate = null; // Lifetime packages have no end date
     }
 
-    // 4. Create payment intent in Stripe
+    // 5. Create payment intent in Stripe
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(pkg.amount * 100),
       currency: pkg.currency,
@@ -52,7 +67,7 @@ const createSubscription = async (userId: string, packageId: string) => {
       },
     });
 
-    // 5. Handle existing subscription
+    // 6. Handle existing subscription
     const existingSubscription = await SubscriptionModel.findOne({ userId }).session(session);
 
     let subscription: ISubscription;
@@ -75,7 +90,7 @@ const createSubscription = async (userId: string, packageId: string) => {
       }
       subscription = updatedSubscription as ISubscription;
     } else {
-      // 6. Create new subscription
+      // 7. Create new subscription
       const newSubscriptions = await SubscriptionModel.create(
         [
           {
@@ -96,6 +111,13 @@ const createSubscription = async (userId: string, packageId: string) => {
       }
       subscription = newSubscriptions[0].toObject() as ISubscription;
     }
+
+    // 8. Update user's subscriptions array
+    await UserModel.findByIdAndUpdate(
+      userId,
+      { $addToSet: { subscriptions: subscription._id } },
+      { session }
+    );
 
     await session.commitTransaction();
     return {

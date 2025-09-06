@@ -8,8 +8,6 @@ import UserModel from "../modules/user/user.model";
 import { PaymentStatus } from "../modules/packageSubscription/packageSubscription.interface";
 // import { PaymentStatus } from "../modules/payment/payment.interface";
 
-
-// Helper function to calculate end date based on package interval
 const calculateEndDate = (startDate: Date, interval: Interval, intervalCount: number): Date => {
   const endDate = new Date(startDate);
 
@@ -68,7 +66,11 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent)
     // Update user and subscription in a transaction
     await UserModel.updateOne(
       { _id: subscription.userId },
-      { isSubscribed: true, planExpiration: endDate },
+      { 
+        isSubscribed: true, 
+        planExpiration: endDate,
+        $addToSet: { subscriptions: subscription._id } // Add subscription to user's subscriptions array
+      },
       { session }
     );
 
@@ -106,7 +108,7 @@ const handlePaymentIntentFailed = async (paymentIntent: Stripe.PaymentIntent) =>
     await SubscriptionModel.updateOne(
       { _id: subscription._id },
       {
-        paymentStatus: PaymentStatus?.CANCELED,
+        paymentStatus: PaymentStatus.CANCELED,
         endDate: new Date(),
       },
       { session }

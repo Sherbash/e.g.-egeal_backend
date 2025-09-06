@@ -7,7 +7,7 @@ const packageSchema = new Schema<IPackage>(
     packageName: { type: String, required: true },
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, required: true, length: 3 },
-    packageType: { type: String, enum: Object.values(PackageType), required: true }, // New required field
+    packageType: { type: String, enum: Object.values(PackageType), required: true },
     interval: { type: String, enum: Object.values(Interval), required: false },
     intervalCount: { type: Number, min: 1, required: false },
     freeTrialDays: { type: Number, min: 0, default: 0 },
