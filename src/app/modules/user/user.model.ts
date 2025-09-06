@@ -43,11 +43,13 @@ const userSchema = new Schema<IUser>(
         ref: "FreePackage",
       },
     ],
-    currentBadge: {
-      type: Schema.Types.ObjectId,
-      ref: "Badge",
-      default: undefined,
-    },
+    earnedBadges: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Badge",
+        default: [],
+      },
+    ],
     autoAssignBadge: {
       type: Boolean,
       default: true,

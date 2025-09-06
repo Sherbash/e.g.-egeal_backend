@@ -77,14 +77,26 @@ const assignBadgeToUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const removeBadgeFromUser = catchAsync(async (req: Request, res: Response) => {
-  const { userId } = req.params;
-  await BadgeService.removeBadgeFromUser(userId);
+  const { userId, badgeId } = req.params;
+  const result = await BadgeService.removeBadgeFromUser(userId, badgeId);
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Badge removed successfully",
-    data: null,
+    data: result,
+  });
+});
+
+const getUserEarnedBadges = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const result = await BadgeService.getUserEarnedBadges(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "User's earned badges retrieved successfully",
+    data: result,
   });
 });
 
@@ -96,4 +108,5 @@ export const BadgeController = {
   deleteBadge,
   assignBadgeToUser,
   removeBadgeFromUser,
+  getUserEarnedBadges,
 };
