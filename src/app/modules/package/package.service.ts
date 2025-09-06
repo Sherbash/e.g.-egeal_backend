@@ -71,46 +71,196 @@ const createPackage = async (payload: IPackage) => {
   }
 };
 
+// const updatePackage = async (packageId: string, payload: Partial<IPackage>) => {
+
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     // Step 1: Find the existing package
+//     const existingPackage = await PackageModel.findById(packageId).session(session);
+//     if (!existingPackage) {
+//       throw new AppError(status.NOT_FOUND, `Package with ID ${packageId} not found`);
+//     }
+    
+
+//     // Step 2: Prepare update data
+//     const updateData: Partial<IPackage> = {
+//       packageName: payload.packageName ?? existingPackage.packageName,
+//       amount: payload.amount ?? existingPackage.amount,
+//       currency: payload.currency ?? existingPackage.currency,
+//       packageType: payload.packageType ?? existingPackage.packageType,
+//       interval: payload.packageType === PackageType.LIFETIME ? null : payload.interval ?? existingPackage.interval,
+//       intervalCount: payload.packageType === PackageType.LIFETIME ? null : payload.intervalCount ?? existingPackage.intervalCount,
+//       freeTrialDays: payload.freeTrialDays ?? existingPackage.freeTrialDays,
+//       active: payload.active ?? existingPackage.active,
+//       description: payload.description !== undefined ? payload.description : existingPackage.description,
+//       features: payload.features ?? existingPackage.features,
+//       promotionalMessage: payload.promotionalMessage !== undefined ? payload.promotionalMessage : existingPackage.promotionalMessage,
+//       whyThisPackage: payload.whyThisPackage !== undefined ? payload.whyThisPackage : existingPackage.whyThisPackage,
+//       isForHome: payload.isForHome ?? existingPackage.isForHome,
+//       roles: payload.roles ?? existingPackage.roles,
+//     };
+
+//     // Step 3: Update Stripe product if necessary
+//     if (payload.packageName || payload.description || payload.active !== undefined) {
+//       await stripe.products.update(existingPackage.productId, {
+//         name: updateData.packageName,
+//         description: updateData.description || "",
+//         active: updateData.active ?? true,
+//       });
+//     }
+
+//     // Step 4: Create new Stripe price if pricing fields change
+//     let newPriceId = existingPackage.priceId;
+
+//     if (
+//       payload.amount !== undefined ||
+//       payload.currency !== undefined ||
+//       payload.packageType !== undefined ||
+//       payload.interval !== undefined ||
+//       payload.intervalCount !== undefined
+//     ) {
+        
+//       const priceConfig: any = {
+//         currency: updateData.currency,
+//         unit_amount: Math.round((updateData.amount || 0) * 100),
+//         active: true,
+//         product: existingPackage.productId,
+//       };
+
+//       if (updateData.packageType === PackageType.MONTHLY || updateData.packageType === PackageType.YEARLY) {
+//         priceConfig.recurring = {
+//           interval: updateData.interval,
+//           interval_count: updateData.intervalCount,
+//         };
+//       }
+
+//       const newPrice = await stripe.prices.create(priceConfig);
+//       newPriceId = newPrice.id;
+// console.log('check new price ',newPrice)
+//       // Deactivate old price
+//       await stripe.prices.update(existingPackage.priceId, { active: false });
+//     }
+
+//     console.log("check update package",packageId,newPriceId)
+//     // Step 5: Update package in database
+//     const updatedPackage = await PackageModel.findByIdAndUpdate(
+//       packageId,
+//       { ...updateData, priceId: newPriceId },
+//       { new: true, session }
+//     );
+
+//     if (!updatedPackage) {
+//       throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update package in database");
+//     }
+
+//     await session.commitTransaction();
+//     return updatedPackage;
+//   } catch (error) {
+//     await session.abortTransaction();
+//     throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update package");
+//   } finally {
+//     session.endSession();
+//   }
+// };
+
+// const getAllPackages = async () => {
+//   const packages = await PackageModel.find().lean();
+//   return packages;
+// };
 const updatePackage = async (packageId: string, payload: Partial<IPackage>) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
+  let newPriceId: string | null = null;
+  let oldPriceId: string | null = null;
+  let stripePriceCreated = false;
+  let productIdToUse: string;
+
   try {
-    // Step 1: Find the existing package
+    console.log("=== Update Package Start ===");
+
+    // Step 1: Find existing package
     const existingPackage = await PackageModel.findById(packageId).session(session);
     if (!existingPackage) {
       throw new AppError(status.NOT_FOUND, `Package with ID ${packageId} not found`);
     }
 
-    // Step 2: Prepare update data
+    oldPriceId = existingPackage.priceId;
+    productIdToUse = existingPackage.productId;
+
+    // Step 2: Check if Stripe product exists, create if missing
+    try {
+      await stripe.products.retrieve(productIdToUse);
+    } catch (err: any) {
+      if (err.code === "resource_missing") {
+        console.warn(`Stripe product ${productIdToUse} not found. Creating new product...`);
+
+        const newProduct = await stripe.products.create({
+          name: payload.packageName ?? existingPackage.packageName,
+          description: payload.description ?? existingPackage.description ?? "",
+          active: payload.active ?? existingPackage.active ?? true,
+        });
+
+        productIdToUse = newProduct.id;
+
+        // Save new productId to DB immediately
+        await PackageModel.findByIdAndUpdate(
+          packageId,
+          { productId: productIdToUse },
+          { session }
+        );
+      } else {
+        throw err;
+      }
+    }
+
+    // Step 3: Prepare update data
     const updateData: Partial<IPackage> = {
       packageName: payload.packageName ?? existingPackage.packageName,
       amount: payload.amount ?? existingPackage.amount,
       currency: payload.currency ?? existingPackage.currency,
       packageType: payload.packageType ?? existingPackage.packageType,
-      interval: payload.packageType === PackageType.LIFETIME ? null : payload.interval ?? existingPackage.interval,
-      intervalCount: payload.packageType === PackageType.LIFETIME ? null : payload.intervalCount ?? existingPackage.intervalCount,
+      interval:
+        (payload.packageType ?? existingPackage.packageType) === PackageType.LIFETIME
+          ? null
+          : payload.interval ?? existingPackage.interval,
+      intervalCount:
+        (payload.packageType ?? existingPackage.packageType) === PackageType.LIFETIME
+          ? null
+          : payload.intervalCount ?? existingPackage.intervalCount,
       freeTrialDays: payload.freeTrialDays ?? existingPackage.freeTrialDays,
       active: payload.active ?? existingPackage.active,
-      description: payload.description !== undefined ? payload.description : existingPackage.description,
+      description: payload.description ?? existingPackage.description,
       features: payload.features ?? existingPackage.features,
-      promotionalMessage: payload.promotionalMessage !== undefined ? payload.promotionalMessage : existingPackage.promotionalMessage,
-      whyThisPackage: payload.whyThisPackage !== undefined ? payload.whyThisPackage : existingPackage.whyThisPackage,
+      promotionalMessage: payload.promotionalMessage ?? existingPackage.promotionalMessage,
+      whyThisPackage: payload.whyThisPackage ?? existingPackage.whyThisPackage,
       isForHome: payload.isForHome ?? existingPackage.isForHome,
       roles: payload.roles ?? existingPackage.roles,
     };
 
-    // Step 3: Update Stripe product if necessary
-    if (payload.packageName || payload.description || payload.active !== undefined) {
-      await stripe.products.update(existingPackage.productId, {
+    // Step 4: Update Stripe product if needed
+    if (
+      payload.packageName !== undefined ||
+      payload.description !== undefined ||
+      payload.active !== undefined
+    ) {
+      await stripe.products.update(productIdToUse, {
         name: updateData.packageName,
         description: updateData.description || "",
         active: updateData.active ?? true,
       });
     }
 
-    // Step 4: Create new Stripe price if pricing fields change
-    let newPriceId = existingPackage.priceId;
+    // Step 5: Safety check before creating price
+    try {
+      await stripe.products.retrieve(productIdToUse);
+    } catch {
+      throw new AppError(status.BAD_REQUEST, `Stripe product ${productIdToUse} is invalid. Cannot create price.`);
+    }
+
+    // Step 6: Create new Stripe price if needed
     if (
       payload.amount !== undefined ||
       payload.currency !== undefined ||
@@ -122,10 +272,19 @@ const updatePackage = async (packageId: string, payload: Partial<IPackage>) => {
         currency: updateData.currency,
         unit_amount: Math.round((updateData.amount || 0) * 100),
         active: true,
-        product: existingPackage.productId,
+        product: productIdToUse,
       };
 
-      if (updateData.packageType === PackageType.MONTHLY || updateData.packageType === PackageType.YEARLY) {
+      if (
+        updateData.packageType === PackageType.MONTHLY ||
+        updateData.packageType === PackageType.YEARLY
+      ) {
+        if (!updateData.interval || !updateData.intervalCount) {
+          throw new AppError(
+            status.BAD_REQUEST,
+            "Interval and intervalCount are required for recurring packages"
+          );
+        }
         priceConfig.recurring = {
           interval: updateData.interval,
           interval_count: updateData.intervalCount,
@@ -134,15 +293,27 @@ const updatePackage = async (packageId: string, payload: Partial<IPackage>) => {
 
       const newPrice = await stripe.prices.create(priceConfig);
       newPriceId = newPrice.id;
+      stripePriceCreated = true;
 
-      // Deactivate old price
-      await stripe.prices.update(existingPackage.priceId, { active: false });
+      if (oldPriceId) {
+        try {
+          await stripe.prices.update(oldPriceId, { active: false });
+        } catch (err: any) {
+          if (err.code === "resource_missing") {
+            console.warn(`Old price ${oldPriceId} not found in Stripe, skipping deactivation`);
+          } else {
+            throw err;
+          }
+        }
+      }
+    } else {
+      newPriceId = existingPackage.priceId;
     }
 
-    // Step 5: Update package in database
+    // Step 7: Update package in DB
     const updatedPackage = await PackageModel.findByIdAndUpdate(
       packageId,
-      { ...updateData, priceId: newPriceId },
+      { ...updateData, priceId: newPriceId, productId: productIdToUse },
       { new: true, session }
     );
 
@@ -151,19 +322,31 @@ const updatePackage = async (packageId: string, payload: Partial<IPackage>) => {
     }
 
     await session.commitTransaction();
+    console.log("=== Update Package Success ===");
     return updatedPackage;
   } catch (error) {
+    console.error("Update Package Error:", error);
     await session.abortTransaction();
-    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update package");
+
+    if (stripePriceCreated && newPriceId) {
+      try {
+        await stripe.prices.update(newPriceId, { active: false });
+        if (oldPriceId) {
+          await stripe.prices.update(oldPriceId, { active: true });
+        }
+      } catch (rollbackError) {
+        console.error("Failed to rollback Stripe price:", rollbackError);
+      }
+    }
+
+    throw error instanceof AppError
+      ? error
+      : new AppError(status.INTERNAL_SERVER_ERROR, error as any)
   } finally {
     session.endSession();
   }
 };
 
-// const getAllPackages = async () => {
-//   const packages = await PackageModel.find().lean();
-//   return packages;
-// };
 
 const getAllPackages = async (role?: UserRole) => {
   const query: any = {};
