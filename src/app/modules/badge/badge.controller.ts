@@ -71,7 +71,7 @@ const assignBadgeToUser = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: "Badge assigned successfully",
+    message: `Assigned ${result.length} badge(s) successfully`,
     data: result,
   });
 });
@@ -100,6 +100,18 @@ const getUserEarnedBadges = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getEligibleBadges = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const result = await BadgeService.getEligibleBadges(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Eligible badges retrieved successfully",
+    data: result,
+  });
+});
+
 export const BadgeController = {
   createBadge,
   getAllBadges,
@@ -109,4 +121,5 @@ export const BadgeController = {
   assignBadgeToUser,
   removeBadgeFromUser,
   getUserEarnedBadges,
+  getEligibleBadges,
 };

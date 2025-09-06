@@ -18,6 +18,17 @@ const createBadge = async (
     );
   }
 
+  // Optional: Validate non-overlapping ranges
+  const overlappingBadge = await Badge.findOne({
+    $or: [{ minScore: { $lte: maxScore }, maxScore: { $gte: minScore } }],
+  });
+  if (overlappingBadge) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      `Score range overlaps with existing badge: ${overlappingBadge.name}`
+    );
+  }
+
   const badge = await Badge.create({ name, minScore, maxScore, iconUrl });
   return badge;
 };
@@ -80,28 +91,29 @@ const assignBadgeToUser = async (userId: string) => {
   }
 
   const badges = await Badge.find().sort({ minScore: 1 });
-  let assignedBadge = null;
+  const assignedBadges = [];
 
   for (const badge of badges) {
-    if (user.points >= badge.minScore && user.points <= badge.maxScore) {
-      assignedBadge = badge;
+    if (user.points >= badge.minScore) {
       // Check if badge is already in earnedBadges
       if (!user.earnedBadges?.some((id) => id.equals(badge._id))) {
         user.earnedBadges = user.earnedBadges
           ? [...user.earnedBadges, badge._id]
           : [badge._id];
+        assignedBadges.push(badge);
+      } else {
+        assignedBadges.push(badge); // Include already assigned badges in response
       }
-      break;
     }
   }
 
-  if (!assignedBadge) {
-    throw new AppError(status.BAD_REQUEST, "No badge matches the user's score");
+  if (assignedBadges.length === 0) {
+    throw new AppError(status.BAD_REQUEST, "No badges match the user's score");
   }
 
   user.autoAssignBadge = true;
   await user.save();
-  return assignedBadge;
+  return assignedBadges;
 };
 
 const removeBadgeFromUser = async (userId: string, badgeId: string) => {
@@ -110,17 +122,24 @@ const removeBadgeFromUser = async (userId: string, badgeId: string) => {
     throw new AppError(status.NOT_FOUND, "User not found");
   }
 
+  // Convert badgeId string to ObjectId
   const badgeObjectId = new mongoose.Types.ObjectId(badgeId);
+
+  // Check if badge exists in earnedBadges
   if (!user.earnedBadges?.some((id) => id.equals(badgeObjectId))) {
     throw new AppError(status.BAD_REQUEST, "User does not have this badge");
   }
 
+  // Remove badge from earnedBadges
   user.earnedBadges = user.earnedBadges.filter(
     (id) => !id.equals(badgeObjectId)
   );
+
+  // Disable autoAssignBadge if no badges remain
   if (user.earnedBadges.length === 0) {
     user.autoAssignBadge = false;
   }
+
   await user.save();
 
   const badge = await Badge.findById(badgeId);
@@ -128,18 +147,36 @@ const removeBadgeFromUser = async (userId: string, badgeId: string) => {
 };
 
 const getUserEarnedBadges = async (userId: string) => {
-  // console.log(`Fetching badges for userId: ${userId}`);
+  console.log(`Fetching badges for userId: ${userId}`);
   const user = await UserModel.findById(userId).populate("earnedBadges");
   if (!user) {
-    // console.log(`User not found: ${userId}`);
+    console.log(`User not found: ${userId}`);
     throw new AppError(status.NOT_FOUND, "User not found");
   }
   if (user.role !== "influencer") {
     console.log(`User ${userId} is not an influencer, role: ${user.role}`);
     return [];
   }
-  // console.log(`User found: ${user.email}, earnedBadges: ${JSON.stringify(user.earnedBadges)}`);
+  console.log(`User found: ${user.email}, earnedBadges: ${JSON.stringify(user.earnedBadges)}`);
   return user.earnedBadges || [];
+};
+
+const getEligibleBadges = async (userId: string) => {
+  console.log(`Fetching eligible badges for userId: ${userId}`);
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    console.log(`User not found: ${userId}`);
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+  if (user.role !== "influencer") {
+    console.log(`User ${userId} is not an influencer, role: ${user.role}`);
+    return [];
+  }
+  const badges = await Badge.find({ minScore: { $lte: user.points } }).sort({
+    minScore: 1,
+  });
+  console.log(`Eligible badges for ${user.email}: ${JSON.stringify(badges)}`);
+  return badges;
 };
 
 export const BadgeService = {
@@ -151,4 +188,5 @@ export const BadgeService = {
   assignBadgeToUser,
   removeBadgeFromUser,
   getUserEarnedBadges,
+  getEligibleBadges,
 };

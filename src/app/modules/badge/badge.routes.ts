@@ -36,7 +36,7 @@ router.post(
 router.delete(
   "/remove/:userId/:badgeId",
   auth(UserRole.ADMIN),
-  validateRequest(badgeValidation.removeBadgeSchema),
+  // validateRequest(badgeValidation.removeBadgeSchema),
   BadgeController.removeBadgeFromUser
 );
 
@@ -44,6 +44,12 @@ router.get(
   "/earned/:userId",
   auth(UserRole.ADMIN, UserRole.INFLUENCER),
   BadgeController.getUserEarnedBadges
+);
+
+router.get(
+  "/eligible/:userId",
+  auth(UserRole.ADMIN, UserRole.INFLUENCER),
+  BadgeController.getEligibleBadges
 );
 
 export const BadgeRoutes = router;
