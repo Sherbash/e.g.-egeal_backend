@@ -356,7 +356,7 @@ await sendEmail(
             We will notify you as soon as there are updates or participant entries.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="http://172.252.13.69:3002/dashboard/giveway" style="background-color: #ff9800; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${process.env.CLIENT_URL}/dashboard/giveway" style="background-color: #ff9800; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Giveaways
             </a>
           </div>

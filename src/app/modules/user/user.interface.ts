@@ -33,7 +33,8 @@ export interface IUser extends Document {
   verifiedDefaultRules: boolean;
   invitedUserCount: number;
   freePackages: Types.ObjectId[];
-  currentBadge?: Types.ObjectId;
+  earnedBadges?: Types.ObjectId[]; // Changed from currentBadge to earnedBadges
   autoAssignBadge?: boolean;
   subscriptions: Types.ObjectId[];
+  isCodeSend?: boolean;
 }

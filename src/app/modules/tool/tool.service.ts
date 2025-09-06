@@ -79,7 +79,7 @@ const createToolIntoDB = async (payload: ITool, user: IUser) => {
             You can now access and manage it from your dashboard.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="http://172.252.13.69:3002/dashboard/add-tools" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${process.env.CLIENT_URL}/dashboard/add-tools" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Tools
             </a>
           </div>

@@ -311,6 +311,7 @@ const getSingleUser = async (id: string) => {
     .populate("referralCount")
     .populate("referralStats")
     .populate("freePackages", "_id status type createdAt")
+    .populate("earnedBadges") // Changed from currentBadge
     .select("-password")
     .lean();
 
@@ -477,6 +478,7 @@ const myProfile = async (authUser: IJwtPayload) => {
     .populate("referralCount")
     .populate("referralStats")
     .populate("freePackages", "_id status type createdAt")
+    .populate("earnedBadges") // Changed from currentBadge
     .lean();
 
   if (!user) {

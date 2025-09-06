@@ -26,6 +26,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    isCodeSend: {
+      type: Boolean,
+      default: false,
+    },
     points: {
       type: Number,
       default: 0,
@@ -40,11 +44,13 @@ const userSchema = new Schema<IUser>(
         ref: "FreePackage",
       },
     ],
-    currentBadge: {
-      type: Schema.Types.ObjectId,
-      ref: "Badge",
-      default: undefined,
-    },
+    earnedBadges: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Badge",
+        default: [],
+      },
+    ],
     autoAssignBadge: {
       type: Boolean,
       default: true,

@@ -22,6 +22,13 @@ router.get(
   ParticipantController.getAllParticipants
 );
 
+router.get(
+  "/influencer/:userId",
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER),
+  ParticipantController.getGiveawaysByUser
+);
+
+
 // Both participant and author can view single participation
 router.get(
   "/:participantId",

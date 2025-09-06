@@ -19,6 +19,20 @@ const createParticipant = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const getGiveawaysByUser = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+
+  const result = await ParticipantServices.getGiveawaysByUser(userId);
+
+  res.status(status.OK).json({
+    success: true,
+    message: "Giveaways fetched successfully",
+    data: result,
+  });
+});
+
+
 const getAllParticipants = catchAsync(async (req: Request, res: Response) => {
   const { giveawayId } = req.params;
   const options = pickOptions(req.query, [
@@ -93,4 +107,5 @@ export const ParticipantController = {
   getParticipant,
   pickWinner,
   verifyProof,
+  getGiveawaysByUser,
 };

@@ -365,7 +365,7 @@ const generateJoinEmailTemplate = (firstName: string) => {
             You can now view your participation and track updates from your dashboard.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="http://172.252.13.69:3002/dashboard/influencer/participant" style="background-color: #FF5722; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${process.env.CLIENT_URL}/dashboard/influencer/participant" style="background-color: #FF5722; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Giveaways
             </a>
           </div>
@@ -470,6 +470,21 @@ const verifyParticipantProof = async (
   } finally {
     session.endSession();
   }
+};
+
+const getGiveawaysByUser = async (userId: string) => {
+  // Find all participant entries for this user
+  const participants = await Participant.find({ userId })
+    .populate({
+      path: "giveawayId",
+      select: "title description startDate endDate status maxParticipants",
+    })
+    .lean();
+
+  // Map to just giveaway details if needed
+  const giveaways = participants.map((p) => p.giveawayId);
+
+  return giveaways;
 };
 
 const getAllParticipants = async (
@@ -621,9 +636,85 @@ const pickWinner = async (giveawayId: string, user: IUser) => {
   }
 };
 
+// const verifyParticipantProof = async (
+//   participantId: string,
+//   payload: any,
+//   user: IUser
+// ) => {
+//   console.log(payload);
+
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+//   try {
+//     // 1. Find the giveaway
+//     const giveaway = await Giveaway.findById(payload?.giveawayId).session(
+//       session
+//     );
+//     if (!giveaway) {
+//       throw new AppError(status.NOT_FOUND, "Giveaway not found");
+//     }
+
+//     // 2. Authorization check
+//     // if (
+//     //   user.role !== "admin" &&
+//     //   giveaway.authorId.toString() !== user.id.toString()
+//     // ) {
+//     //   throw new AppError(
+//     //     status.FORBIDDEN,
+//     //     "You are not authorized to verify proofs"
+//     //   );
+//     // }
+
+//     // 3. Find participant
+//     const participant = await Participant.findById(participantId).session(
+//       session
+//     );
+//     if (!participant) {
+//       throw new AppError(status.NOT_FOUND, "Participant not found");
+//     }
+
+//     // 2. Find the proof inside proofs array
+//     const proof = participant.proofs.find(
+//       (item: any) => item._id?.toString() === payload.proofId
+//     ) as any;
+
+//     if (!proof) {
+//       console.log("Available proofs:", participant?.proofs);
+//       throw new AppError(status.NOT_FOUND, "Proof not found");
+//     }
+
+//     // 3. Update verified status
+//     proof.verified = payload.verified; // true/false
+
+//     // 4. Save participant document (subdocument update)
+//     await participant.save({ session });
+//     if (proof && proof.verified) {
+//       const result = await UserModel.findOneAndUpdate(
+//         { _id: participant.userId },
+//         { $inc: { points: 1 } },
+//         { new: true }
+//       );
+//       console.log("Updated user points:", result);
+//     }
+//     // 7. Commit transaction
+//     await session.commitTransaction();
+
+//     console.log(participant);
+//     // console.log("participant", participant)
+//     return participant;
+//   } catch (error) {
+//     if (session.inTransaction()) {
+//       await session.abortTransaction();
+//     }
+//     throw error;
+//   } finally {
+//     session.endSession();
+//   }
+// };
 
 export const ParticipantServices = {
   createParticipant,
+  getGiveawaysByUser,
   verifyParticipantProof,
   getAllParticipants,
   getParticipant,
