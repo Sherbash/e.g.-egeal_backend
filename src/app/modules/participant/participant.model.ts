@@ -1,14 +1,22 @@
 // models/Participant.js
 import mongoose from "mongoose";
 
+// const proofSchema = new mongoose.Schema({
+//   ruleTitle: String, // title of the rule
+//   imageUrl: String,  // image URL 
+//   verified: {
+//     type: Boolean,
+//     default: false,  // here the rules will be false by default
+//   },
+// });
 const proofSchema = new mongoose.Schema({
-  ruleTitle: String, // title of the rule
-  imageUrl: String,  // image URL 
-  verified: {
-    type: Boolean,
-    default: false,  // here the rules will be false by default
-  },
+  ruleId: { type: mongoose.Schema.Types.ObjectId, required: false }, // default rule হলে লাগবে
+  ruleTitle: String,
+  imageUrl: String,
+  verified: { type: Boolean, default: false },
+  isDefaultRule: { type: Boolean, default: false }, // safe flag
 });
+
 
 const participantSchema = new mongoose.Schema(
   {

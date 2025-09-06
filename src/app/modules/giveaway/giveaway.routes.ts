@@ -18,7 +18,7 @@ router.get(
   // auth(UserRole.ADMIN, UserRole.FOUNDER),
   GiveawayController.getAllGiveaways
 );
-router.get("/stats", GiveawayController.getGiveawayStats);
+router.get("/stats",auth(UserRole.ADMIN, UserRole.FOUNDER), GiveawayController.getGiveawayStats);
 router.get(
   "/ongoing-giveaways",
   // auth(UserRole.ADMIN, UserRole.FOUNDER),
