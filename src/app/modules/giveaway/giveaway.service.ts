@@ -294,6 +294,7 @@ import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { sendEmail } from "../../utils/emailHelper";
+import { DefaultRule, defaultRules } from "../giveawayRules/giveawayRule.model";
 
 // Generate a random invite code
 const generateInviteCode = () => {
@@ -301,9 +302,23 @@ const generateInviteCode = () => {
 };
 
 const createGiveaway = async (payload: IGiveaway, user: IUser) => {
+
+  // const defaultRuleDoc = await DefaultRule.findOne();
+  // const defaultRules = defaultRuleDoc?.rules || [];
+
+  // const giveawayPayload = {
+  //   ...payload,
+  //   rules: [...defaultRules, ...payload.rules], // merge
+  //   authorId: user.id,
+  //   priceMoney: payload.priceMoney,
+  //   isPrivate: payload.isPrivate,
+  //   maxParticipants: payload.maxParticipants || 30,
+  //   inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
+  // };
+
   const giveawayPayload = {
     ...payload,
-    rules: ["Egale: Follow equally across all social media.", ...payload.rules],
+    rules: [...defaultRules, ...payload.rules],
     authorId: user.id,
     priceMoney: payload.priceMoney,
     isPrivate: payload.isPrivate,
