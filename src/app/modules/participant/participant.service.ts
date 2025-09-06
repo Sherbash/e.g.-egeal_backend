@@ -11,6 +11,7 @@ import { IPaginationOptions } from "../../interface/pagination";
 import { sendEmail } from "../../utils/emailHelper";
 import UserModel from "../user/user.model";
 import { defaultRules } from "../giveawayRules/giveawayRule.model";
+import { GiveawayRuleService } from "../giveawayRules/giveawayRule.service";
 
 // const createParticipant = async (
 //   payload: IParticipant & { inviteCode: string },
@@ -213,9 +214,8 @@ import { defaultRules } from "../giveawayRules/giveawayRule.model";
 //   }
 // };
 
-
 const createParticipant = async (
-  payload: IParticipant & { inviteCode: string },
+  payload: any,
   user: IUser
 ) => {
   const session = await mongoose.startSession();
@@ -251,42 +251,25 @@ const createParticipant = async (
       throw new AppError(status.BAD_REQUEST, "Already participated");
     }
 
-    // 3. Fetch default rules (demo array or DB)
-    // Example: from DB
-    // const defaultRuleDoc = await DefaultRule.findOne().session(session);
-    // const defaultRules = defaultRuleDoc?.rules || [];
-
-    // 4. Build proofs array
-    let proofs = [
-      ...defaultRules.map((rule) => ({
+    // 3. Build proofs array from frontend
+    const proofs = [
+      // Default rules from frontend
+      ...(payload.defaultRules || []).map((rule:any) => ({
         ruleId: rule._id,
-        imageUrl: rule.imageUrl,
         ruleTitle: rule.ruleTitle,
-        verified: false,
+        imageUrl: rule.imageUrl || null,
+        verified: !!user.verifiedDefaultRules, 
         isDefaultRule: true,
       })),
-      ...(payload?.proofs || []).map((proof) => ({
+      // Custom proofs
+      ...(payload.proofs || []).map((proof:any) => ({
         ...proof,
         verified: false,
         isDefaultRule: false,
       })),
     ];
 
-    console.log("proofs", proofs);
-
-    // 5. Auto verify if user globally verified
-    if (user.verifiedDefaultRules) {
-      const defaultRuleIds = new Set(defaultRules.map((r) => r._id.toString()));
-      proofs = proofs.map((p) => ({
-        ...p,
-        verified:
-          p.isDefaultRule && defaultRuleIds.has(p.ruleId?.toString())
-            ? true
-            : p.verified,
-      }));
-    }
-
-    // 6. Create participant
+    // 4. Create participant
     const [newParticipant] = await Participant.create(
       [
         {
@@ -300,14 +283,14 @@ const createParticipant = async (
       { session }
     );
 
-    // 7. Update giveaway participant list
+    // 5. Update giveaway participant list
     await Giveaway.updateOne(
       { _id: payload.giveawayId },
       { $push: { participants: newParticipant._id } },
       { session }
     );
 
-    // 8. Email (non-blocking)
+    // 6. Send email (non-blocking)
     try {
       await sendEmail(
         user.email,
@@ -327,6 +310,7 @@ const createParticipant = async (
     await session.endSession();
   }
 };
+
 
 const verifyParticipantProof = async (
   participantId: string,
@@ -363,13 +347,12 @@ const verifyParticipantProof = async (
     // 5. Verification logic
     if (payload.verified && !wasVerified) {
       if (proof.isDefaultRule) {
-        // যদি প্রথমবার default rule verify হয় → global flag set হবে
         const userDoc = await UserModel.findById(participant.userId).session(
           session
         );
         if (userDoc && !userDoc.verifiedDefaultRules) {
           userDoc.verifiedDefaultRules = true;
-          userDoc.points += 1; // প্রথমবার point
+          userDoc.points += 1; 
           await userDoc.save({ session });
         }
       }

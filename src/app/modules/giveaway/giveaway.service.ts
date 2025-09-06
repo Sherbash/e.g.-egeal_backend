@@ -295,6 +295,7 @@ import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { sendEmail } from "../../utils/emailHelper";
 import { defaultRules } from "../giveawayRules/giveawayRule.model";
+import { GiveawayRuleService } from "../giveawayRules/giveawayRule.service";
 
 // Generate a random invite code
 const generateInviteCode = () => {
@@ -302,29 +303,26 @@ const generateInviteCode = () => {
 };
 
 const createGiveaway = async (payload: IGiveaway, user: IUser) => {
+  const getRules = await GiveawayRuleService.getAllRules();
 
-  // const defaultRuleDoc = await DefaultRule.findOne();
-  // const defaultRules = defaultRuleDoc?.rules || [];
+const modifyRules = getRules?.map((rule) => rule?.ruleTitle).filter(Boolean);
 
-  // const giveawayPayload = {
-  //   ...payload,
-  //   rules: [...defaultRules, ...payload.rules], // merge
-  //   authorId: user.id,
-  //   priceMoney: payload.priceMoney,
-  //   isPrivate: payload.isPrivate,
-  //   maxParticipants: payload.maxParticipants || 30,
-  //   inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
-  // };
+// console.log(modifyRules); 
 
-  const giveawayPayload = {
-    ...payload,
-    rules: [...defaultRules, ...payload.rules],
-    authorId: user.id,
-    priceMoney: payload.priceMoney,
-    isPrivate: payload.isPrivate,
-    maxParticipants: payload.maxParticipants || 30,
-    inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
-  };
+const giveawayPayload = {
+  ...payload,
+  rules: [
+    ...(modifyRules || []),
+    ...(payload.rules || [])
+  ],
+  authorId: user.id,
+  priceMoney: payload.priceMoney,
+  isPrivate: payload.isPrivate,
+  maxParticipants: payload.maxParticipants || 30,
+  inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
+};
+
+console.log("giveawayPayload", giveawayPayload);
 
   // Validate invite code for private giveaways
   if (giveawayPayload.isPrivate && !giveawayPayload.inviteCode) {
@@ -336,12 +334,11 @@ const createGiveaway = async (payload: IGiveaway, user: IUser) => {
 
   const result = await Giveaway.create(giveawayPayload);
 
-  if(result.createdAt){
-
-await sendEmail(
-  user.email,
-  "🎉 Giveaway Created Successfully",
-  `
+  if (result.createdAt) {
+    await sendEmail(
+      user.email,
+      "🎉 Giveaway Created Successfully",
+      `
     <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
       <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <div style="background-color: #ff9800; color: white; padding: 15px 20px; text-align: center;">
@@ -352,19 +349,21 @@ await sendEmail(
             Hello <strong>${user.firstName || "User"}</strong>,
           </p>
           <p style="font-size: 15px; color: #555;">
-            Your giveaway has been successfully created in our system!  
+            Your giveaway has been successfully created in our system!
             We will notify you as soon as there are updates or participant entries.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="${process.env.CLIENT_URL}/dashboard/giveway" style="background-color: #ff9800; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${
+              process.env.CLIENT_URL
+            }/dashboard/giveway" style="background-color: #ff9800; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Giveaways
             </a>
           </div>
           <p style="font-size: 14px; color: #888;">
-            If you have any questions, feel free to reply to this email.  
+            If you have any questions, feel free to reply to this email.
           </p>
           <p style="font-size: 14px; color: #333; margin-top: 20px;">
-            Best regards,  
+            Best regards,
             <br>
             <strong>Egeal AI Hub Team</strong>
           </p>
@@ -372,9 +371,7 @@ await sendEmail(
       </div>
     </div>
   `
-);
-
-
+    );
   }
   return result;
 };

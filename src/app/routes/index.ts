@@ -34,6 +34,7 @@ import { PackageRoutes } from "../modules/package/package.route";
 import { HypeWaitlistRoutes } from "../modules/hype-waitlist/hype-waitlist.route";
 import { PackageSubscriptionRoutes } from "../modules/packageSubscription/packageSubscription.route";
 import { HomePopupRoutes } from "../modules/homePopUp/homePopUp.route";
+import { GiveawayRuleRoutes } from "../modules/giveawayRules/giveawayRule.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -118,7 +119,7 @@ const moduleRoutes = [
   },
   {
     path: "/coupon",
-    route: CouponRoutes, 
+    route: CouponRoutes,
   },
   {
     path: "/reputation",
@@ -160,7 +161,7 @@ const moduleRoutes = [
     path: "/free-tools",
     route: FreeToolsLeadRoutes,
   },
-{
+  {
     path: "/package",
     route: PackageRoutes,
   },
@@ -168,9 +169,13 @@ const moduleRoutes = [
     path: "/hype-waitlist",
     route: HypeWaitlistRoutes,
   },
-{
+  {
     path: "/package-subscription",
     route: PackageSubscriptionRoutes,
+  },
+  {
+    path: "/giveaway-rules",
+    route: GiveawayRuleRoutes,
   },
 ];
 
