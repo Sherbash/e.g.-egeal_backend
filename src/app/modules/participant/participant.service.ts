@@ -1,5 +1,3 @@
-
-
 import status from "http-status";
 import { Giveaway } from "../giveaway/giveaway.model";
 import AppError from "../../errors/appError";
@@ -12,7 +10,7 @@ import { paginationHelper } from "../../utils/paginationHelpers";
 import { IPaginationOptions } from "../../interface/pagination";
 import { sendEmail } from "../../utils/emailHelper";
 import UserModel from "../user/user.model";
-import { DefaultRule, defaultRules } from "../giveawayRules/giveawayRule.model";
+import { defaultRules } from "../giveawayRules/giveawayRule.model";
 
 // const createParticipant = async (
 //   payload: IParticipant & { inviteCode: string },
@@ -106,7 +104,7 @@ import { DefaultRule, defaultRules } from "../giveawayRules/giveawayRule.model";
 //             Hello <strong>${user.firstName || "User"}</strong>,
 //           </p>
 //           <p style="font-size: 15px; color: #555;">
-//             You have successfully joined the giveaway!  
+//             You have successfully joined the giveaway!
 //             You can now view your participation and track updates from your dashboard.
 //           </p>
 //           <div style="text-align: center; margin: 25px 0;">
@@ -115,10 +113,10 @@ import { DefaultRule, defaultRules } from "../giveawayRules/giveawayRule.model";
 //             </a>
 //           </div>
 //           <p style="font-size: 14px; color: #888;">
-//             If you have any questions, feel free to reply to this email.  
+//             If you have any questions, feel free to reply to this email.
 //           </p>
 //           <p style="font-size: 14px; color: #333; margin-top: 20px;">
-//             Best regards,  
+//             Best regards,
 //             <br>
 //             <strong>Egeal AI Hub Team</strong>
 //           </p>
@@ -221,130 +219,179 @@ const createParticipant = async (
   user: IUser
 ) => {
   const session = await mongoose.startSession();
-  
+
   try {
     session.startTransaction();
 
-    // Validate giveaway exists and is active
+    // 1. Giveaway validation
     const giveaway = await Giveaway.findById(payload.giveawayId)
       .session(session)
-      .select('status isPrivate inviteCode maxParticipants participants');
-    
-    if (!giveaway) {
-      throw new AppError(status.NOT_FOUND, "Giveaway not found");
-    }
-    
-    if (giveaway.status !== "ongoing") {
-      throw new AppError(
-        status.BAD_REQUEST,
-        "This giveaway is not currently accepting participants"
-      );
-    }
+      .select("status isPrivate inviteCode maxParticipants participants");
 
-    // Check participant limit
+    if (!giveaway) throw new AppError(status.NOT_FOUND, "Giveaway not found");
+    if (giveaway.status !== "ongoing") {
+      throw new AppError(status.BAD_REQUEST, "This giveaway is not active");
+    }
     if (giveaway.participants.length >= giveaway.maxParticipants) {
       throw new AppError(
         status.BAD_REQUEST,
-        `Maximum participant limit reached (${giveaway.maxParticipants})`
+        `Max participant limit reached (${giveaway.maxParticipants})`
       );
     }
-
-    // Validate invite code for private giveaways
-    if (giveaway.isPrivate) {
-      if (!payload.inviteCode) {
-        throw new AppError(
-          status.BAD_REQUEST, 
-          "Invite code is required for private giveaways"
-        );
-      }
-      
-      if (payload.inviteCode !== giveaway.inviteCode) {
-        throw new AppError(
-          status.FORBIDDEN, 
-          "Invalid invite code"
-        );
-      }
+    if (giveaway.isPrivate && payload.inviteCode !== giveaway.inviteCode) {
+      throw new AppError(status.FORBIDDEN, "Invalid invite code");
     }
 
-    // Check if user already participated
-    const existingParticipant = await Participant.findOne({
+    // 2. Already participated?
+    const existing = await Participant.findOne({
       giveawayId: payload.giveawayId,
       userId: user.id,
     }).session(session);
-    
-    if (existingParticipant) {
-      throw new AppError(
-        status.BAD_REQUEST,
-        "You have already participated in this giveaway"
-      );
+    if (existing) {
+      throw new AppError(status.BAD_REQUEST, "Already participated");
     }
 
-    // Fetch default rules
+    // 3. Fetch default rules (demo array or DB)
+    // Example: from DB
     // const defaultRuleDoc = await DefaultRule.findOne().session(session);
     // const defaultRules = defaultRuleDoc?.rules || [];
 
-    // Build proofs array with default and custom rules
-    const proofs = [
-      // Default rules with verification status based on user's global verification
-      ...defaultRules.map(rule => ({
-        ruleTitle: rule,
-        verified: user.verifiedDefaultRules,
-        isDefaultRule: true, // Flag to identify default rules
+    // 4. Build proofs array
+    let proofs = [
+      ...defaultRules.map((rule) => ({
+        ruleId: rule._id,
+        imageUrl: rule.imageUrl,
+        ruleTitle: rule.ruleTitle,
+        verified: false,
+        isDefaultRule: true,
       })),
-      
-      // Custom rules from payload (always start unverified)
-      ...(payload.proofs || []).map(proof => ({
+      ...(payload?.proofs || []).map((proof) => ({
         ...proof,
         verified: false,
-        isDefaultRule: false, // Flag to identify custom rules
+        isDefaultRule: false,
       })),
     ];
 
-    // Create participant
+    console.log("proofs", proofs);
+
+    // 5. Auto verify if user globally verified
+    if (user.verifiedDefaultRules) {
+      const defaultRuleIds = new Set(defaultRules.map((r) => r._id.toString()));
+      proofs = proofs.map((p) => ({
+        ...p,
+        verified:
+          p.isDefaultRule && defaultRuleIds.has(p.ruleId?.toString())
+            ? true
+            : p.verified,
+      }));
+    }
+
+    // 6. Create participant
     const [newParticipant] = await Participant.create(
-      [{
-        giveawayId: payload.giveawayId,
-        userId: user.id,
-        socialUsername: payload.socialUsername,
-        videoLink: payload.videoLink,
-        proofs,
-        // Additional fields if needed
-      }],
+      [
+        {
+          giveawayId: payload.giveawayId,
+          userId: user.id,
+          socialUsername: payload.socialUsername,
+          videoLink: payload.videoLink,
+          proofs,
+        },
+      ],
       { session }
     );
 
-    // Add participant to giveaway
+    // 7. Update giveaway participant list
     await Giveaway.updateOne(
       { _id: payload.giveawayId },
       { $push: { participants: newParticipant._id } },
       { session }
     );
 
-    // Send confirmation email
+    // 8. Email (non-blocking)
     try {
       await sendEmail(
         user.email,
         "🎉 Successfully Joined Giveaway",
         generateJoinEmailTemplate(user.firstName)
       );
-    } catch (emailError) {
-      // Log email error but don't fail the transaction
-      console.error("Failed to send confirmation email:", emailError);
+    } catch (err) {
+      console.error("Email failed:", err);
     }
 
     await session.commitTransaction();
-    
     return newParticipant;
   } catch (error) {
-    // Abort transaction on error
-    if (session.inTransaction()) {
-      await session.abortTransaction();
-    }
-    
-    // Re-throw the error for higher-level handling
+    if (session.inTransaction()) await session.abortTransaction();
     throw error;
   } finally {
     await session.endSession();
+  }
+};
+
+const verifyParticipantProof = async (
+  participantId: string,
+  payload: any,
+  user: IUser
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Giveaway check
+    const giveaway = await Giveaway.findById(payload?.giveawayId).session(
+      session
+    );
+    if (!giveaway) throw new AppError(status.NOT_FOUND, "Giveaway not found");
+
+    // 2. Participant check
+    const participant = await Participant.findById(participantId).session(
+      session
+    );
+    if (!participant)
+      throw new AppError(status.NOT_FOUND, "Participant not found");
+
+    // 3. Find proof
+    const proof = participant.proofs.find(
+      (item: any) => item._id?.toString() === payload.proofId
+    );
+    if (!proof) throw new AppError(status.NOT_FOUND, "Proof not found");
+
+    // 4. Update status
+    const wasVerified = proof.verified;
+    proof.verified = payload.verified;
+
+    // 5. Verification logic
+    if (payload.verified && !wasVerified) {
+      if (proof.isDefaultRule) {
+        // যদি প্রথমবার default rule verify হয় → global flag set হবে
+        const userDoc = await UserModel.findById(participant.userId).session(
+          session
+        );
+        if (userDoc && !userDoc.verifiedDefaultRules) {
+          userDoc.verifiedDefaultRules = true;
+          userDoc.points += 1; // প্রথমবার point
+          await userDoc.save({ session });
+        }
+      }
+      // else {
+      //   // custom rule হলে সবসময় point বাড়বে
+      //   await UserModel.findByIdAndUpdate(
+      //     participant.userId,
+      //     { $inc: { points: 1 } },
+      //     { session }
+      //   );
+      // }
+    }
+
+    await participant.save({ session });
+    await session.commitTransaction();
+
+    return participant;
+  } catch (err) {
+    if (session.inTransaction()) await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
   }
 };
 
@@ -365,7 +412,9 @@ const generateJoinEmailTemplate = (firstName: string) => {
             You can now view your participation and track updates from your dashboard.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="${process.env.CLIENT_URL}/dashboard/influencer/participant" style="background-color: #FF5722; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="${
+              process.env.CLIENT_URL
+            }/dashboard/influencer/participant" style="background-color: #FF5722; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Giveaways
             </a>
           </div>
@@ -382,95 +431,97 @@ const generateJoinEmailTemplate = (firstName: string) => {
     </div>
   `;
 };
-const verifyParticipantProof = async (
-  participantId: string,
-  payload: any,
-  user: IUser
-) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    // 1. Find the giveaway
-    const giveaway = await Giveaway.findById(payload?.giveawayId).session(
-      session
-    );
-    if (!giveaway) {
-      throw new AppError(status.NOT_FOUND, "Giveaway not found");
-    }
+// const verifyParticipantProof = async (
+//   participantId: string,
+//   payload: any,
+//   user: IUser
+// ) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+//   try {
+//     // 1. Find the giveaway
+//     const giveaway = await Giveaway.findById(payload?.giveawayId).session(
+//       session
+//     );
+//     if (!giveaway) {
+//       throw new AppError(status.NOT_FOUND, "Giveaway not found");
+//     }
 
-    // 2. Authorization check (commented out but should be implemented)
-    // if (user.role !== "admin" && giveaway.authorId.toString() !== user.id.toString()) {
-    //   throw new AppError(status.FORBIDDEN, "You are not authorized to verify proofs");
-    // }
+//     // 2. Authorization check (commented out but should be implemented)
+//     // if (user.role !== "admin" && giveaway.authorId.toString() !== user.id.toString()) {
+//     //   throw new AppError(status.FORBIDDEN, "You are not authorized to verify proofs");
+//     // }
 
-    // 3. Find participant
-    const participant = await Participant.findById(participantId).session(
-      session
-    );
-    if (!participant) {
-      throw new AppError(status.NOT_FOUND, "Participant not found");
-    }
+//     // 3. Find participant
+//     const participant = await Participant.findById(participantId).session(
+//       session
+//     );
+//     if (!participant) {
+//       throw new AppError(status.NOT_FOUND, "Participant not found");
+//     }
 
-    // 4. Find the proof inside proofs array
-    const proof = participant.proofs.find(
-      (item: any) => item._id?.toString() === payload.proofId
-    ) as any;
+//     // 4. Find the proof inside proofs array
+//     const proof = participant.proofs.find(
+//       (item: any) => item._id?.toString() === payload.proofId
+//     ) as any;
 
-    if (!proof) {
-      console.log("Available proofs:", participant?.proofs);
-      throw new AppError(status.NOT_FOUND, "Proof not found");
-    }
+//     if (!proof) {
+//       console.log("Available proofs:", participant?.proofs);
+//       throw new AppError(status.NOT_FOUND, "Proof not found");
+//     }
 
-    // 5. Get default rules to check if this is a default rule
-    // const defaultRuleDoc = await DefaultRule.findOne().session(session);
-    // const defaultRules = defaultRuleDoc?.rules || [];
-    
-    // 6. Update verified status
-    const wasVerified = proof.verified;
-    proof.verified = payload.verified;
-    
-    // 7. Handle verification logic
-    if (payload.verified && !wasVerified) {
-      // Check if this is a default rule
-      const isDefaultRule = defaultRules.includes(proof.ruleTitle);
-      
-      if (isDefaultRule) {
-        // Update user's global verification status
-        await UserModel.findByIdAndUpdate(
-          participant.userId,
-          { verifiedDefaultRules: true },
-          { session }
-        );
-      }
-      
-      // Always increment points for verified proofs
-      await UserModel.findByIdAndUpdate(
-        participant.userId,
-        { $inc: { points: 1 } },
-        { session, new: true }
-      );
-    } else if (!payload.verified && wasVerified) {
-      // Handle case where verification is removed
-      // Note: We might want to decrement points and handle default rule status
-      // This is more complex and depends on business rules
-    }
+//     // 5. Get default rules to check if this is a default rule
+//     // const defaultRuleDoc = await DefaultRule.findOne().session(session);
+//     // const defaultRules = defaultRuleDoc?.rules || [];
 
-    // 8. Save participant document
-    await participant.save({ session });
+//     // 6. Update verified status
+//     const wasVerified = proof.verified;
+//     proof.verified = payload.verified;
 
-    // 9. Commit transaction
-    await session.commitTransaction();
+//     console.log("all proofs", proof);
+//     // 7. Handle verification logic
+//     if (payload.verified && !wasVerified) {
+//       // Check if this is a default rule
+//       const isDefaultRule = defaultRules.includes(proof.ruleTitle);
+//       // console.log("Is default rule:", isDefaultRule)
 
-    return participant;
-  } catch (error) {
-    if (session.inTransaction()) {
-      await session.abortTransaction();
-    }
-    throw error;
-  } finally {
-    session.endSession();
-  }
-};
+//       if (isDefaultRule) {
+//         // Update user's global verification status
+//         await UserModel.findByIdAndUpdate(
+//           participant.userId,
+//           { verifiedDefaultRules: true },
+//           { session }
+//         );
+//       }
+
+//       // Always increment points for verified proofs
+//       await UserModel.findByIdAndUpdate(
+//         participant.userId,
+//         { $inc: { points: 1 } },
+//         { session, new: true }
+//       );
+//     } else if (!payload.verified && wasVerified) {
+//       // Handle case where verification is removed
+//       // Note: We might want to decrement points and handle default rule status
+//       // This is more complex and depends on business rules
+//     }
+
+//     // 8. Save participant document
+//     await participant.save({ session });
+
+//     // 9. Commit transaction
+//     await session.commitTransaction();
+
+//     return participant;
+//   } catch (error) {
+//     if (session.inTransaction()) {
+//       await session.abortTransaction();
+//     }
+//     throw error;
+//   } finally {
+//     session.endSession();
+//   }
+// };
 
 const getGiveawaysByUser = async (userId: string) => {
   // Find all participant entries for this user

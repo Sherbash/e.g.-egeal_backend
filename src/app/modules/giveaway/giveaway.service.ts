@@ -294,7 +294,7 @@ import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { sendEmail } from "../../utils/emailHelper";
-import { DefaultRule, defaultRules } from "../giveawayRules/giveawayRule.model";
+import { defaultRules } from "../giveawayRules/giveawayRule.model";
 
 // Generate a random invite code
 const generateInviteCode = () => {
