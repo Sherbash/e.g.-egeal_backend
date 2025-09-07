@@ -8,6 +8,7 @@ import UserModel from "../modules/user/user.model";
 import { PaymentStatus } from "../modules/packageSubscription/packageSubscription.interface";
 // import { PaymentStatus } from "../modules/payment/payment.interface";
 // Helper function to calculate end date based on package interval
+// Helper function to calculate end date based on package interval
 const calculateEndDate = (startDate: Date, interval: Interval, intervalCount: number): Date => {
   const endDate = new Date(startDate);
 
@@ -74,24 +75,41 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent)
       { session }
     );
 
-    // Update user's subscriptions array
+    // Find all active subscriptions to determine the latest endDate
+    const activeSubscriptions = await SubscriptionModel.find({
+      userId: subscription.userId,
+      paymentStatus: PaymentStatus.COMPLETED,
+      $or: [{ endDate: { $gte: new Date() } }, { endDate: null }],
+    }).session(session);
+
+    const latestEndDate = activeSubscriptions.reduce((latest: Date | null, sub) => {
+      if (!sub.endDate) return null; // Lifetime subscriptions have no end date
+      if (!latest || (sub.endDate && sub.endDate > latest)) return sub.endDate;
+      return latest;
+    }, endDate);
+
+    // Update user's subscriptions array and planExpiration
     await UserModel.updateOne(
       { _id: subscription.userId },
       { 
         $addToSet: { subscriptions: subscription._id },
-        // Only update isSubscribed and planExpiration if this is the most relevant subscription
         $set: {
           isSubscribed: true,
-          planExpiration: endDate || undefined, // Use undefined for lifetime packages
+          planExpiration: latestEndDate || undefined, // Use undefined for lifetime packages
         },
       },
       { session }
     );
 
     await session.commitTransaction();
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
-    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to handle payment success");
+    console.error("Error in handlePaymentIntentSucceeded:", {
+      error: error.message,
+      stack: error.stack,
+      paymentIntentId: paymentIntent.id,
+    });
+    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, `Failed to handle payment success: ${error.message}`);
   } finally {
     session.endSession();
   }
@@ -119,9 +137,14 @@ const handlePaymentIntentFailed = async (paymentIntent: Stripe.PaymentIntent) =>
     );
 
     await session.commitTransaction();
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
-    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to handle payment failure");
+    console.error("Error in handlePaymentIntentFailed:", {
+      error: error.message,
+      stack: error.stack,
+      paymentIntentId: paymentIntent.id,
+    });
+    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, `Failed to handle payment failure: ${error.message}`);
   } finally {
     session.endSession();
   }

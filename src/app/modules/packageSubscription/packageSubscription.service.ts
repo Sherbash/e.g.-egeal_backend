@@ -67,45 +67,62 @@ const createSubscription = async (userId: string, packageId: string) => {
     }
 
     // 6. Create payment intent in Stripe
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(pkg.amount * 100),
-      currency: pkg.currency,
-      metadata: {
-        userId: user._id.toString(),
-        packageId: pkg._id.toString(),
-      },
-      automatic_payment_methods: {
-        enabled: true,
-      },
-    });
+    let paymentIntent;
+    try {
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(pkg.amount * 100),
+        currency: pkg.currency,
+        metadata: {
+          userId: user._id.toString(),
+          packageId: pkg._id.toString(),
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+    } catch (stripeError: any) {
+      console.error("Stripe payment intent creation failed:", stripeError);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create payment intent: ${stripeError.message}`);
+    }
 
     // 7. Create new subscription
-    const newSubscriptions = await SubscriptionModel.create(
-      [
-        {
-          userId,
-          packageId,
-          startDate,
-          amount: pkg.amount,
-          stripePaymentId: paymentIntent.id,
-          paymentStatus: PaymentStatus.PENDING,
-          endDate,
-        },
-      ],
-      { session }
-    );
+    let newSubscriptions;
+    try {
+      newSubscriptions = await SubscriptionModel.create(
+        [
+          {
+            userId,
+            packageId,
+            startDate,
+            amount: pkg.amount,
+            stripePaymentId: paymentIntent.id,
+            paymentStatus: PaymentStatus.PENDING,
+            endDate,
+          },
+        ],
+        { session }
+      );
+    } catch (createError: any) {
+      console.error("Subscription creation failed:", createError);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription record: ${createError.message}`);
+    }
 
     if (!newSubscriptions || newSubscriptions.length === 0) {
-      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription");
+      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription: No subscription record returned");
     }
     const subscription = newSubscriptions[0].toObject() as ISubscription;
 
     // 8. Update user's subscriptions array
-    await UserModel.findByIdAndUpdate(
-      userId,
-      { $addToSet: { subscriptions: subscription._id } },
-      { session }
-    );
+    try {
+      await UserModel.findByIdAndUpdate(
+        userId,
+        { $addToSet: { subscriptions: subscription._id } },
+        { session }
+      );
+    } catch (updateError: any) {
+      console.error("User update failed:", updateError);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to update user subscriptions: ${updateError.message}`);
+    }
 
     await session.commitTransaction();
     return {
@@ -113,9 +130,15 @@ const createSubscription = async (userId: string, packageId: string) => {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     };
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
-    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription");
+    console.error("Error in createSubscription:", {
+      error: error.message,
+      stack: error.stack,
+      userId,
+      packageId,
+    });
+    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription: ${error.message}`);
   } finally {
     session.endSession();
   }
@@ -178,7 +201,7 @@ const getMySubscription = async (userId: string) => {
     throw new AppError(status.NOT_FOUND, "User not found");
   }
 
-  const result = await SubscriptionModel.find({ userId }) // Changed to find all subscriptions
+  const result = await SubscriptionModel.find({ userId })
     .populate({
       path: "userId",
       select: "_id fullName email profilePic role isSubscribed planExpiration",
@@ -231,9 +254,13 @@ const handleStripeWebhook = async (event: Stripe.Event) => {
     }
 
     return { received: true };
-  } catch (error) {
-    console.error("Error handling Stripe webhook:", error);
-    throw new AppError(status.INTERNAL_SERVER_ERROR, "Webhook handling failed");
+  } catch (error: any) {
+    console.error("Error handling Stripe webhook:", {
+      error: error.message,
+      stack: error.stack,
+      eventType: event.type,
+    });
+    throw new AppError(status.INTERNAL_SERVER_ERROR, `Webhook handling failed: ${error.message}`);
   }
 };
 
