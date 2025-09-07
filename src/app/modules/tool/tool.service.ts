@@ -9,6 +9,7 @@ import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { sendEmail } from "../../utils/emailHelper";
+import { Campaign } from "../campaign/campaign.model";
 
 const createToolIntoDB = async (payload: ITool, user: IUser) => {
   const session = await mongoose.startSession();
@@ -262,11 +263,57 @@ const deleteToolIntoDB = async (id: string) => {
 };
 
 
+// const getAllToolsByFounderUserId = async (
+//   userId: string,
+//   paginationOptions: IPaginationOptions,
+//   filters: { searchTerm?: string; isActive?: boolean; launched?: boolean }
+// ) => {
+//   const founder = await Founder.findOne({ userId });
+//   if (!founder) {
+//     throw new AppError(status.NOT_FOUND, "Founder not found for this userId");
+//   }
+
+//   const { limit, page, skip, sortBy, sortOrder } =
+//     paginationHelper.calculatePagination(paginationOptions);
+
+//   const query: any = { founderId: founder._id };
+
+//   // Search filter
+//   if (filters.searchTerm) {
+//     query.$or = [
+//       { name: { $regex: filters.searchTerm, $options: "i" } },
+//       { description: { $regex: filters.searchTerm, $options: "i" } },
+//       { toolId: { $regex: filters.searchTerm, $options: "i" } },
+//     ];
+//   }
+
+//   if (filters.isActive !== undefined) {
+//     query.isActive = filters.isActive;
+//   }
+
+//   if (filters.launched !== undefined) {
+//     query.launched = filters.launched;
+//   }
+
+//   const tools = await ToolModel.find(query)
+//     .sort({ [sortBy]: sortOrder })
+//     .skip(skip)
+//     .limit(limit)
+//     .lean();
+
+//   const total = await ToolModel.countDocuments(query);
+
+//   return {
+//     meta: { page, limit, total },
+//     data: tools,
+//   };
+// };
 const getAllToolsByFounderUserId = async (
   userId: string,
   paginationOptions: IPaginationOptions,
   filters: { searchTerm?: string; isActive?: boolean; launched?: boolean }
 ) => {
+  // 1. Founder check
   const founder = await Founder.findOne({ userId });
   if (!founder) {
     throw new AppError(status.NOT_FOUND, "Founder not found for this userId");
@@ -275,9 +322,9 @@ const getAllToolsByFounderUserId = async (
   const { limit, page, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(paginationOptions);
 
+  // 2. Tool query (founder specific)
   const query: any = { founderId: founder._id };
 
-  // Search filter
   if (filters.searchTerm) {
     query.$or = [
       { name: { $regex: filters.searchTerm, $options: "i" } },
@@ -294,17 +341,33 @@ const getAllToolsByFounderUserId = async (
     query.launched = filters.launched;
   }
 
+  // 3. Fetch tools
   const tools = await ToolModel.find(query)
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit)
     .lean();
 
+  const toolIds = tools.map((tool) => tool.toolId);
+
+  // 4. Check campaigns for these tools
+  const campaigns = await Campaign.find({ toolId: { $in: toolIds } })
+    .select("toolId")
+    .lean();
+
+  const campaignToolIds = new Set(campaigns.map((c) => c.toolId));
+
+  // 5. Add campaign flag to each tool
+  const toolsWithCampaignFlag = tools.map((tool) => ({
+    ...tool,
+    campaign: campaignToolIds.has(tool.toolId), // true/false
+  }));
+
   const total = await ToolModel.countDocuments(query);
 
   return {
     meta: { page, limit, total },
-    data: tools,
+    data: toolsWithCampaignFlag,
   };
 };
 

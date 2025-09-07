@@ -6,13 +6,11 @@ import status from "http-status";
 
 // Create a new rule
 const createRule = catchAsync(async (req: Request, res: Response) => {
-  const { ruleTitle, imageUrl } = req.body;
+  const { ruleTitle } = req.body 
 
   const newRule = await GiveawayRuleService.createRule({
     ruleTitle,
-    imageUrl,
-  });
-
+  }) 
   sendResponse(res, {
     statusCode: status.CREATED,
     success: true,
