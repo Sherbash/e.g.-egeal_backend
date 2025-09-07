@@ -319,7 +319,7 @@ const createGiveaway = async (payload: IGiveaway, user: IUser) => {
     inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
   };
 
-  console.log("giveawayPayload", giveawayPayload);
+  // console.log("giveawayPayload", giveawayPayload);
 
   // Validate invite code for private giveaways
   if (giveawayPayload.isPrivate && !giveawayPayload.inviteCode) {
