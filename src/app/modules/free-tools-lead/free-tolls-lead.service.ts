@@ -1,4 +1,6 @@
 import axios from "axios";
+import AppError from "../../errors/appError";
+import status from "http-status";
 
 
 const STEINHQ_URL =
@@ -29,12 +31,16 @@ const createFreeToolsLead = async (
 
   const existing = await axios.get(searchUrl);
 
-  if (existing.data && existing.data.length > 0) {
-    return {
-      success: false,
-      message: "This email already exists for this tool",
-    };
-  }
+  // if (existing.data && existing.data.length > 0) {
+  //   return {
+  //     success: false,
+  //     message: "This email already exists for this tool",
+  //   };
+  // }
+
+   if (existing.data && existing.data.length > 0) {
+      throw new AppError(status.BAD_REQUEST, "This email already exists for this tool");
+    }
   
   await axios.post(`${STEINHQ_URL}/${SHEET_NAME}`, [payload]);
 
