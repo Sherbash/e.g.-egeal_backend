@@ -55,8 +55,12 @@ export interface ISubscription extends Document {
   startDate: Date;
   endDate?: Date;
   amount: number;
+  originalAmount?: number; // Store original price before discount
   stripePaymentId: string;
   paymentStatus: PaymentStatus;
+  appliedCouponId?: Types.ObjectId; // Reference to applied coupon
+  couponCode?: string; // Store coupon code for reference
+  discountAmount?: number; // Amount discounted
   createdAt: Date;
   updatedAt: Date;
 }

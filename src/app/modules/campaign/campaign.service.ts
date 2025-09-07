@@ -211,6 +211,20 @@ const getAllCampaigns = async (
     data: campaignsWithTools,
   };
 };
+
+
+const getAllMyCampaigns = async (
+  paginationOptions: IPaginationOptions,
+toolId: string
+) => {
+
+
+  const campaigns = await Campaign.findOne({toolId:toolId})
+  return campaigns
+   
+  }
+
+
 const getCampaignById = async (campaignId: string) => {
   const campaign = await Campaign.findById(campaignId)
     .populate("authorId", "-password")
@@ -588,4 +602,5 @@ export const CampaignServices = {
   getAllProofRejectRequests,
   getSingleProofRejectRequest,
   updateProofRejectRequest,
+  getAllMyCampaigns
 };

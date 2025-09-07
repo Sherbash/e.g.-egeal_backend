@@ -37,13 +37,17 @@ const packageSchema = new Schema<IPackage>(
 
 const SubscriptionSchema = new Schema<ISubscription>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true }, // Non-unique index for querying
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     packageId: { type: Schema.Types.ObjectId, ref: "Package", required: true },
     startDate: { type: Date, required: true },
     endDate: { type: Date },
     amount: { type: Number, required: true },
-    stripePaymentId: { type: String, required: true, unique: true }, // Unique index on stripePaymentId
+    originalAmount: { type: Number }, // New field
+    stripePaymentId: { type: String, required: true, unique: true },
     paymentStatus: { type: String, enum: Object.values(PaymentStatus), required: true },
+    appliedCouponId: { type: Schema.Types.ObjectId, ref: "Coupon" }, // New field
+    couponCode: { type: String }, // New field
+    discountAmount: { type: Number }, // New field
   },
   { timestamps: true }
 );

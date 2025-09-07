@@ -8,8 +8,16 @@ import { calculateEndDate, handlePaymentIntentFailed, handlePaymentIntentSucceed
 import { stripe } from "../../utils/stripe";
 import Stripe from "stripe";
 import { PaymentStatus } from "./packageSubscription.interface";
+import { CouponServices } from "../coupon/coupon.service";
 
-const createSubscription = async (userId: string, packageId: string) => {
+// Enhanced interface for subscription creation with coupon support
+interface CreateSubscriptionPayload {
+  userId: string;
+  packageId: string;
+  couponCode?: string; // Optional coupon code
+}
+
+const createSubscription = async (userId: string, packageId: string, couponCode?: string) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -66,15 +74,48 @@ const createSubscription = async (userId: string, packageId: string) => {
       endDate = null; // Lifetime packages have no end date
     }
 
-    // 6. Create payment intent in Stripe
+    // 6. Apply coupon if provided
+    let finalAmount = pkg.amount;
+    let discountAmount = 0;
+    let appliedCoupon = null;
+
+    if (couponCode) {
+      try {
+        const couponResult = await CouponServices.applyCouponForAdmin(
+          couponCode,
+          pkg.amount,
+          new mongoose.Types.ObjectId(userId),
+          pkg._id
+        );
+        
+        finalAmount = couponResult.finalPrice;
+        discountAmount = couponResult.discountAmount;
+        appliedCoupon = couponResult.coupon;
+        
+        console.log(`Coupon applied: ${couponCode}, Discount: ${discountAmount}, Final price: ${finalAmount}`);
+      } catch (couponError: any) {
+        // Don't abort the transaction for coupon errors, just throw the error
+        throw new AppError(status.BAD_REQUEST, `Coupon error: ${couponError.message}`);
+      }
+    }
+
+    // 7. Create payment intent in Stripe with final amount
     let paymentIntent;
     try {
+      const stripeAmount = Math.round(finalAmount * 100);
+      
       paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(pkg.amount * 100),
+        amount: stripeAmount,
         currency: pkg.currency,
         metadata: {
           userId: user._id.toString(),
           packageId: pkg._id.toString(),
+          originalAmount: pkg.amount.toString(),
+          ...(couponCode && {
+            couponCode: couponCode,
+            discountAmount: discountAmount.toString(),
+            finalAmount: finalAmount.toString()
+          })
         },
         automatic_payment_methods: {
           enabled: true,
@@ -85,23 +126,26 @@ const createSubscription = async (userId: string, packageId: string) => {
       throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create payment intent: ${stripeError.message}`);
     }
 
-    // 7. Create new subscription
+    // 8. Create new subscription with coupon information
     let newSubscriptions;
     try {
-      newSubscriptions = await SubscriptionModel.create(
-        [
-          {
-            userId,
-            packageId,
-            startDate,
-            amount: pkg.amount,
-            stripePaymentId: paymentIntent.id,
-            paymentStatus: PaymentStatus.PENDING,
-            endDate,
-          },
-        ],
-        { session }
-      );
+      const subscriptionData = {
+        userId,
+        packageId,
+        startDate,
+        amount: finalAmount, // Store the final amount after discount
+        originalAmount: pkg.amount, // Store original amount for reference
+        stripePaymentId: paymentIntent.id,
+        paymentStatus: PaymentStatus.PENDING,
+        endDate,
+        ...(appliedCoupon && {
+          appliedCouponId: appliedCoupon._id,
+          couponCode: couponCode,
+          discountAmount: discountAmount
+        })
+      };
+
+      newSubscriptions = await SubscriptionModel.create([subscriptionData], { session });
     } catch (createError: any) {
       console.error("Subscription creation failed:", createError);
       throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription record: ${createError.message}`); // 
@@ -112,7 +156,7 @@ const createSubscription = async (userId: string, packageId: string) => {
     }
     const subscription = newSubscriptions[0].toObject() as ISubscription;
 
-    // 8. Update user's subscriptions array
+    // 9. Update user's subscriptions array
     try {
       await UserModel.findByIdAndUpdate(
         userId,
@@ -125,10 +169,18 @@ const createSubscription = async (userId: string, packageId: string) => {
     }
 
     await session.commitTransaction();
+    
     return {
       subscription,
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
+      pricing: {
+        originalAmount: pkg.amount,
+        discountAmount: discountAmount,
+        finalAmount: finalAmount,
+        couponCode: couponCode || null,
+        appliedCoupon: appliedCoupon
+      }
     };
   } catch (error: any) {
     await session.abortTransaction();
@@ -137,6 +189,7 @@ const createSubscription = async (userId: string, packageId: string) => {
       stack: error.stack,
       userId,
       packageId,
+      couponCode
     });
     throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription: ${error.message}`);
   } finally {
@@ -144,6 +197,7 @@ const createSubscription = async (userId: string, packageId: string) => {
   }
 };
 
+// Other existing methods remain the same...
 const getAllSubscription = async (query: Record<string, any>) => {
   const page = parseInt(query.page as string) || 1;
   const limit = parseInt(query.limit as string) || 10;
@@ -162,6 +216,7 @@ const getAllSubscription = async (query: Record<string, any>) => {
       select: "_id fullName email profilePic role isSubscribed planExpiration",
     })
     .populate("packageId")
+    .populate("appliedCouponId") // Populate coupon information
     .skip(skip)
     .limit(limit)
     .lean();
@@ -189,6 +244,7 @@ const getSingleSubscription = async (subscriptionId: string) => {
       select: "_id fullName email profilePic role isSubscribed planExpiration",
     })
     .populate("packageId")
+    .populate("appliedCouponId") // Populate coupon information
     .lean();
 
   if (!result) {
@@ -210,6 +266,7 @@ const getMySubscription = async (userId: string) => {
       select: "_id fullName email profilePic role isSubscribed planExpiration",
     })
     .populate("packageId")
+    .populate("appliedCouponId") // Populate coupon information
     .lean();
 
   if (!result || result.length === 0) {
