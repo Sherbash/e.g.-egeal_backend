@@ -6,6 +6,7 @@ const userValidationSchema = z.object({
     firstName: z.string({
       required_error: "First name is required",
     }),
+    verifiedDefaultRules: z.boolean().optional(),
     lastName: z.string({
       required_error: "Last name is required",
     }),

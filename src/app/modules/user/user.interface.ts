@@ -8,12 +8,6 @@ export enum UserRole {
   ADMIN = "admin",
 }
 
-// {
-//         ruleTitle: String,
-//         verifiedAt: Date,
-//       },
-
-
 export interface IUser extends Document {
   _id: Types.ObjectId;
   firstName: string;
@@ -33,7 +27,7 @@ export interface IUser extends Document {
   verifiedDefaultRules: boolean;
   invitedUserCount: number;
   freePackages: Types.ObjectId[];
-  earnedBadges?: Types.ObjectId[]; // Changed from currentBadge to earnedBadges
+  earnedBadges?: Types.ObjectId[];
   autoAssignBadge?: boolean;
   subscriptions: Types.ObjectId[];
   isCodeSend?: boolean;

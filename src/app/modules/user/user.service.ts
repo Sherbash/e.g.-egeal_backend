@@ -27,6 +27,7 @@ const registerUser = async (payload: IUser) => {
     additionalNotes,
     referredBy,
     referralCode,
+    verifiedDefaultRules
   } = payload;
 
   const session = await mongoose.startSession();
@@ -75,6 +76,7 @@ const registerUser = async (payload: IUser) => {
       firstName,
       lastName,
       email,
+      verifiedDefaultRules,
       password: hashedPassword,
       role,
       additionalNotes,
@@ -123,6 +125,7 @@ const completeRegistration = async (email: string, otp: string) => {
     const userData = {
       firstName: tempUser.firstName,
       lastName: tempUser.lastName,
+      verifiedDefaultRules: tempUser.verifiedDefaultRules,
       email: tempUser.email,
       password: tempUser.password, // Already hashed
       role: tempUser.role,
