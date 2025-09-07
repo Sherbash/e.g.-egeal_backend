@@ -26,22 +26,34 @@ const createSubscription = async (userId: string, packageId: string) => {
       throw new AppError(status.NOT_FOUND, "Package not found");
     }
 
-    // 3. Check for existing active subscription for the same package
-    const existingActiveSubscription = await SubscriptionModel.findOne({
-      userId,
-      packageId,
-      paymentStatus: { $in: [PaymentStatus.PENDING, PaymentStatus.COMPLETED] },
-      $or: [
-        { endDate: { $gte: new Date() } }, // For monthly/yearly packages with valid endDate
-        { endDate: null }, // For lifetime packages
-      ],
-    }).session(session);
-
-    if (existingActiveSubscription) {
-      throw new AppError(status.BAD_REQUEST, "You already have an active subscription for this package");
+    // 3. Check if the package is available for the user's role
+    if (pkg.roles && pkg.roles.length > 0 && !pkg.roles.includes(user.role)) {
+      throw new AppError(status.FORBIDDEN, "This package is not available for your role");
     }
 
-    // 4. Calculate end date based on package type and interval
+    // 4. Check for existing subscription for the same package
+    const existingSubscription = await SubscriptionModel.findOne({
+      userId,
+      packageId,
+    }).session(session);
+
+    if (existingSubscription) {
+      if (pkg.packageType === PackageType.LIFETIME) {
+        // Lifetime packages cannot be repurchased
+        throw new AppError(status.BAD_REQUEST, "You have already purchased this lifetime package");
+      } else if (
+        existingSubscription.paymentStatus === PaymentStatus.PENDING ||
+        existingSubscription.paymentStatus === PaymentStatus.COMPLETED
+      ) {
+        // For monthly/yearly packages, check if the subscription is still active
+        if (!existingSubscription.endDate || existingSubscription.endDate >= new Date()) {
+          throw new AppError(status.BAD_REQUEST, "You have already purchased this package and it is still active");
+        }
+      }
+      // Allow repurchasing if the previous subscription has expired
+    }
+
+    // 5. Calculate end date based on package type and interval
     const startDate = new Date();
     let endDate: Date | null = null;
 
@@ -54,7 +66,7 @@ const createSubscription = async (userId: string, packageId: string) => {
       endDate = null; // Lifetime packages have no end date
     }
 
-    // 5. Create payment intent in Stripe
+    // 6. Create payment intent in Stripe
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(pkg.amount * 100),
       currency: pkg.currency,
@@ -67,50 +79,26 @@ const createSubscription = async (userId: string, packageId: string) => {
       },
     });
 
-    // 6. Handle existing subscription
-    const existingSubscription = await SubscriptionModel.findOne({ userId }).session(session);
-
-    let subscription: ISubscription;
-    if (existingSubscription && existingSubscription.paymentStatus === PaymentStatus.PENDING) {
-      const updatedSubscription = await SubscriptionModel.findOneAndUpdate(
-        { userId },
+    // 7. Create new subscription
+    const newSubscriptions = await SubscriptionModel.create(
+      [
         {
+          userId,
           packageId,
-          stripePaymentId: paymentIntent.id,
           startDate,
           amount: pkg.amount,
-          endDate: existingSubscription.endDate || endDate,
+          stripePaymentId: paymentIntent.id,
           paymentStatus: PaymentStatus.PENDING,
+          endDate,
         },
-        { new: true, session }
-      ).lean();
+      ],
+      { session }
+    );
 
-      if (!updatedSubscription) {
-        throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update existing subscription");
-      }
-      subscription = updatedSubscription as ISubscription;
-    } else {
-      // 7. Create new subscription
-      const newSubscriptions = await SubscriptionModel.create(
-        [
-          {
-            userId,
-            packageId,
-            startDate,
-            amount: pkg.amount,
-            stripePaymentId: paymentIntent.id,
-            paymentStatus: PaymentStatus.PENDING,
-            endDate,
-          },
-        ],
-        { session }
-      );
-
-      if (!newSubscriptions || newSubscriptions.length === 0) {
-        throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription");
-      }
-      subscription = newSubscriptions[0].toObject() as ISubscription;
+    if (!newSubscriptions || newSubscriptions.length === 0) {
+      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription");
     }
+    const subscription = newSubscriptions[0].toObject() as ISubscription;
 
     // 8. Update user's subscriptions array
     await UserModel.findByIdAndUpdate(
@@ -190,7 +178,7 @@ const getMySubscription = async (userId: string) => {
     throw new AppError(status.NOT_FOUND, "User not found");
   }
 
-  const result = await SubscriptionModel.findOne({ userId })
+  const result = await SubscriptionModel.find({ userId }) // Changed to find all subscriptions
     .populate({
       path: "userId",
       select: "_id fullName email profilePic role isSubscribed planExpiration",
@@ -198,8 +186,8 @@ const getMySubscription = async (userId: string) => {
     .populate("packageId")
     .lean();
 
-  if (!result) {
-    throw new AppError(status.NOT_FOUND, "Subscription not found!");
+  if (!result || result.length === 0) {
+    throw new AppError(status.NOT_FOUND, "No subscriptions found!");
   }
 
   return result;
