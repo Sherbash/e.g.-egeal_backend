@@ -5,11 +5,12 @@ import sendResponse from "../../utils/sendResponse";
 import status from "http-status";
 
 
+// In packageSubscription.controller.ts
 const createSubscription = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const userId = req.user.id;
-  const { packageId } = req.body;
+  const { packageId, couponCode } = req.body; // Add couponCode
 
-  const result = await SubscriptionServices.createSubscription(userId, packageId);
+  const result = await SubscriptionServices.createSubscription(userId, packageId, couponCode);
 
   sendResponse(res, {
     statusCode: status.CREATED,
