@@ -46,6 +46,18 @@ const getAllUsers = catchAsync(
     });
   }
 );
+const getAllUsersNeedForFrontendDeveloper= catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await UserServices.getAllUsersNeedForFrontendDeveloper();
+
+    sendResponse(res, {
+      statusCode: status.OK,
+      success: true,
+      message: "Users retrieved successfully!",
+      data: result,
+    });
+  }
+);
 
 const getSingleUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -137,4 +149,5 @@ export const UserController = {
   myProfile,
   getMeRoleBasedInfo,
   toggleUserStatus,
+  getAllUsersNeedForFrontendDeveloper
 };

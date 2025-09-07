@@ -35,6 +35,23 @@ const getAllCampaigns = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllMyCampaigns= catchAsync(async (req: Request, res: Response) => {
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
+  const {toolId}=req.params
+  const result = await CampaignServices.getAllMyCampaigns(options,toolId);
+
+  res.status(status.OK).json({
+    success: true,
+    message: "my Campaigns retrieved successfully",
+    data: result
+  });
+});
+
 const getCampaignById = catchAsync(async (req: Request, res: Response) => {
   const campaign = await CampaignServices.getCampaignById(req.params.id);
 
@@ -182,5 +199,7 @@ export const CampaignController = {
   proofRejectRequest,
   getAllProofRejectRequests,
   getSingleProofRejectRequest,
-  updateProofRejectRequest
+  updateProofRejectRequest,
+  getAllMyCampaigns
+
 };

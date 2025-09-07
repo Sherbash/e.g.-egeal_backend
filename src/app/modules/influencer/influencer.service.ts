@@ -36,6 +36,15 @@ const getAllInfluencer = async (
         }),
       },
     },
+    // Populate earnedBadges from User model first
+    {
+      $lookup: {
+        from: "badges",
+        localField: "earnedBadges",
+        foreignField: "_id",
+        as: "earnedBadges",
+      },
+    },
     {
       $lookup: {
         from: "influencers",
