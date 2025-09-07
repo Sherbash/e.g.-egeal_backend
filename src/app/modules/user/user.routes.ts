@@ -44,6 +44,7 @@ router.get(
 );
 
 router.get("/", UserController.getAllUsers);
+router.get("/get-all-users", auth(UserRole.ADMIN), UserController.getAllUsersNeedForFrontendDeveloper);
 
 router.patch(
   "/banned-user/:id",
