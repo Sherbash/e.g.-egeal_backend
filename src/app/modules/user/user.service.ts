@@ -305,7 +305,13 @@ const getAllUsers = async (filters: any) => {
 
 const getAllUsersNeedForFrontendDeveloper = async () => {
 
-  const result=await UserModel.find({})
+  const result=await UserModel.find({}).populate("referralCount")
+    .populate("referralStats")
+    .populate("freePackages", "_id status type createdAt")
+    .populate("earnedBadges") // Changed from currentBadge
+    .select("-password")
+    .lean();
+
   return result
 };
 
