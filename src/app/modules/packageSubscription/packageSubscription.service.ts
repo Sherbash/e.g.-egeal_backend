@@ -26,7 +26,34 @@ const createSubscription = async (userId: string, packageId: string) => {
       throw new AppError(status.NOT_FOUND, "Package not found");
     }
 
-    // 3. Calculate end date based on package type and interval
+    // 3. Check if the package is available for the user's role
+    if (pkg.roles && pkg.roles.length > 0 && !pkg.roles.includes(user.role)) {
+      throw new AppError(status.FORBIDDEN, "This package is not available for your role");
+    }
+
+    // 4. Check for existing subscription for the same package
+    const existingSubscription = await SubscriptionModel.findOne({
+      userId,
+      packageId,
+    }).session(session);
+
+    if (existingSubscription) {
+      if (pkg.packageType === PackageType.LIFETIME) {
+        // Lifetime packages cannot be repurchased
+        throw new AppError(status.BAD_REQUEST, "You have already purchased this lifetime package");
+      } else if (
+        existingSubscription.paymentStatus === PaymentStatus.PENDING ||
+        existingSubscription.paymentStatus === PaymentStatus.COMPLETED
+      ) {
+        // For monthly/yearly packages, check if the subscription is still active
+        if (!existingSubscription.endDate || existingSubscription.endDate >= new Date()) {
+          throw new AppError(status.BAD_REQUEST, "You have already purchased this package and it is still active");
+        }
+      }
+      // Allow repurchasing if the previous subscription has expired
+    }
+
+    // 5. Calculate end date based on package type and interval
     const startDate = new Date();
     let endDate: Date | null = null;
 
@@ -39,44 +66,29 @@ const createSubscription = async (userId: string, packageId: string) => {
       endDate = null; // Lifetime packages have no end date
     }
 
-    // 4. Create payment intent in Stripe
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(pkg.amount * 100),
-      currency: pkg.currency,
-      metadata: {
-        userId: user._id.toString(),
-        packageId: pkg._id.toString(),
-      },
-      automatic_payment_methods: {
-        enabled: true,
-      },
-    });
-
-    // 5. Handle existing subscription
-    const existingSubscription = await SubscriptionModel.findOne({ userId }).session(session);
-
-    let subscription: ISubscription;
-    if (existingSubscription && existingSubscription.paymentStatus === PaymentStatus.PENDING) {
-      const updatedSubscription = await SubscriptionModel.findOneAndUpdate(
-        { userId },
-        {
-          packageId,
-          stripePaymentId: paymentIntent.id,
-          startDate,
-          amount: pkg.amount,
-          endDate: existingSubscription.endDate || endDate,
-          paymentStatus: PaymentStatus.PENDING,
+    // 6. Create payment intent in Stripe
+    let paymentIntent;
+    try {
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(pkg.amount * 100),
+        currency: pkg.currency,
+        metadata: {
+          userId: user._id.toString(),
+          packageId: pkg._id.toString(),
         },
-        { new: true, session }
-      ).lean();
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+    } catch (stripeError: any) {
+      console.error("Stripe payment intent creation failed:", stripeError);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create payment intent: ${stripeError.message}`);
+    }
 
-      if (!updatedSubscription) {
-        throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update existing subscription");
-      }
-      subscription = updatedSubscription as ISubscription;
-    } else {
-      // 6. Create new subscription
-      const newSubscriptions = await SubscriptionModel.create(
+    // 7. Create new subscription
+    let newSubscriptions;
+    try {
+      newSubscriptions = await SubscriptionModel.create(
         [
           {
             userId,
@@ -90,11 +102,26 @@ const createSubscription = async (userId: string, packageId: string) => {
         ],
         { session }
       );
+    } catch (createError: any) {
+      console.error("Subscription creation failed:", createError);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription record: ${createError.message}`);
+    }
 
-      if (!newSubscriptions || newSubscriptions.length === 0) {
-        throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription");
-      }
-      subscription = newSubscriptions[0].toObject() as ISubscription;
+    if (!newSubscriptions || newSubscriptions.length === 0) {
+      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription: No subscription record returned");
+    }
+    const subscription = newSubscriptions[0].toObject() as ISubscription;
+
+    // 8. Update user's subscriptions array
+    try {
+      await UserModel.findByIdAndUpdate(
+        userId,
+        { $addToSet: { subscriptions: subscription._id } },
+        { session }
+      );
+    } catch (updateError: any) {
+      console.error("User update failed:", updateError);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to update user subscriptions: ${updateError.message}`);
     }
 
     await session.commitTransaction();
@@ -103,9 +130,15 @@ const createSubscription = async (userId: string, packageId: string) => {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     };
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
-    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, "Failed to create subscription");
+    console.error("Error in createSubscription:", {
+      error: error.message,
+      stack: error.stack,
+      userId,
+      packageId,
+    });
+    throw error instanceof AppError ? error : new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription: ${error.message}`);
   } finally {
     session.endSession();
   }
@@ -168,7 +201,7 @@ const getMySubscription = async (userId: string) => {
     throw new AppError(status.NOT_FOUND, "User not found");
   }
 
-  const result = await SubscriptionModel.findOne({ userId })
+  const result = await SubscriptionModel.find({ userId })
     .populate({
       path: "userId",
       select: "_id fullName email profilePic role isSubscribed planExpiration",
@@ -176,8 +209,8 @@ const getMySubscription = async (userId: string) => {
     .populate("packageId")
     .lean();
 
-  if (!result) {
-    throw new AppError(status.NOT_FOUND, "Subscription not found!");
+  if (!result || result.length === 0) {
+    throw new AppError(status.NOT_FOUND, "No subscriptions found!");
   }
 
   return result;
@@ -221,9 +254,13 @@ const handleStripeWebhook = async (event: Stripe.Event) => {
     }
 
     return { received: true };
-  } catch (error) {
-    console.error("Error handling Stripe webhook:", error);
-    throw new AppError(status.INTERNAL_SERVER_ERROR, "Webhook handling failed");
+  } catch (error: any) {
+    console.error("Error handling Stripe webhook:", {
+      error: error.message,
+      stack: error.stack,
+      eventType: event.type,
+    });
+    throw new AppError(status.INTERNAL_SERVER_ERROR, `Webhook handling failed: ${error.message}`);
   }
 };
 

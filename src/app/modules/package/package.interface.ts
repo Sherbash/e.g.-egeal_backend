@@ -31,9 +31,9 @@ export interface IPackage extends Document {
   packageName: string;
   amount: number;
   currency: string;
-  packageType: PackageType; // New required field
-  interval?: Interval | null; // Optional for lifetime packages
-  intervalCount?: number | null; // Optional for lifetime packages
+  packageType: PackageType;
+  interval?: Interval | null;
+  intervalCount?: number | null;
   freeTrialDays?: number;
   productId: string;
   priceId: string;

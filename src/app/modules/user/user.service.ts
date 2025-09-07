@@ -306,6 +306,18 @@ const getAllUsers = async (filters: any) => {
   };
 };
 
+const getAllUsersNeedForFrontendDeveloper = async () => {
+
+  const result=await UserModel.find({}).populate("referralCount")
+    .populate("referralStats")
+    .populate("freePackages", "_id status type createdAt")
+    .populate("earnedBadges") // Changed from currentBadge
+    .select("-password")
+    .lean();
+
+  return result
+};
+
 const getSingleUser = async (id: string) => {
   const user = await UserModel.findById(id)
     .populate("referralCount")
@@ -562,4 +574,5 @@ export const UserServices = {
   myProfile,
   getMeRoleBasedInfo,
   toggleUserStatus,
+  getAllUsersNeedForFrontendDeveloper
 };

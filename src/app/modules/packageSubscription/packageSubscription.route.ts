@@ -22,7 +22,7 @@ router.get(
 
 router.get(
   "/all-subscriptions",
-auth(UserRole.ADMIN),
+  auth(UserRole.ADMIN),
   SubscriptionController.getAllSubscription
 );
 
