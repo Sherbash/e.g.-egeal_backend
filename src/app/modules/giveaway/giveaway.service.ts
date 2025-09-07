@@ -296,6 +296,7 @@ import { paginationHelper } from "../../utils/paginationHelpers";
 import { sendEmail } from "../../utils/emailHelper";
 import { defaultRules } from "../giveawayRules/giveawayRule.model";
 import { GiveawayRuleService } from "../giveawayRules/giveawayRule.service";
+import mongoose from "mongoose";
 
 // Generate a random invite code
 const generateInviteCode = () => {
@@ -681,9 +682,9 @@ const cancelGiveaway = async (giveawayId: string, user: IUser) => {
 const getGiveawayStats = async (user: IUser) => {
   let matchStage: any = {};
 
-  console.log("user", user)
+
   if (user?.role === "founder") {
-    matchStage = { authorId: user?.id };
+    matchStage = { authorId: new mongoose.Types.ObjectId(user.id) };
   }
 
   const stats = await Giveaway.aggregate([
