@@ -56,7 +56,7 @@ const getLeaderboard = async () => {
       {
         $match: {
           entityType: "influencer",
-          bestReview: true,
+          isEditorPicked: true,
           status: "approved",
         },
       },
