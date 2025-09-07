@@ -294,7 +294,6 @@ import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { sendEmail } from "../../utils/emailHelper";
-import { defaultRules } from "../giveawayRules/giveawayRule.model";
 import { GiveawayRuleService } from "../giveawayRules/giveawayRule.service";
 import mongoose from "mongoose";
 
