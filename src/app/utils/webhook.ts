@@ -6,8 +6,7 @@ import mongoose from "mongoose";
 import { SubscriptionModel } from "../modules/package/package.model";
 import UserModel from "../modules/user/user.model";
 import { PaymentStatus } from "../modules/packageSubscription/packageSubscription.interface";
-// import { PaymentStatus } from "../modules/payment/payment.interface";
-// Helper function to calculate end date based on package interval
+
 // Helper function to calculate end date based on package interval
 const calculateEndDate = (startDate: Date, interval: Interval, intervalCount: number): Date => {
   const endDate = new Date(startDate);

@@ -37,12 +37,12 @@ const packageSchema = new Schema<IPackage>(
 
 const SubscriptionSchema = new Schema<ISubscription>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true }, // Non-unique index for querying
     packageId: { type: Schema.Types.ObjectId, ref: "Package", required: true },
     startDate: { type: Date, required: true },
     endDate: { type: Date },
     amount: { type: Number, required: true },
-    stripePaymentId: { type: String, required: true },
+    stripePaymentId: { type: String, required: true, unique: true }, // Unique index on stripePaymentId
     paymentStatus: { type: String, enum: Object.values(PaymentStatus), required: true },
   },
   { timestamps: true }
