@@ -191,10 +191,10 @@ const approveProofByCampaignAndTool = catchAsync(
   async (req: Request, res: Response) => {
   
     const campaignId=req.body.campaignId
-  const proofId =req.body. proofId
-  const  toolId =req.body.toolId
+  const proofId =req.body.proofId
+  const  toolId =req?.body?.toolId
   const UpdateStatus= req.body?.status
-    const result = await CampaignServices.approveProofByCampaignAndTool(campaignId,proofId,toolId,UpdateStatus);
+    const result = await CampaignServices.approveProofByCampaignAndTool(campaignId,proofId,UpdateStatus);
 
     res.status(status.OK).json({
       success: true,

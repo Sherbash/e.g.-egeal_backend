@@ -607,7 +607,6 @@ const updateProofRejectRequest = async (
 const approveProofByCampaignAndTool = async (
   campaignId: string,
   proofId: string,
-  toolId: string,
   updateStatus:string
 ) => {
   const session = await mongoose.startSession();
@@ -615,17 +614,18 @@ const approveProofByCampaignAndTool = async (
 
   try {
     // 1. Campaign find by campaignId + toolId
-    const campaign = await Campaign.findOne({ _id: campaignId, toolId }).session(session);
+    const campaign = await Campaign.findOne({ _id: campaignId}).session(session);
     if (!campaign) throw new AppError(status.NOT_FOUND, "Campaign not found");
     console.log(updateStatus)
 
     const result=await ProofModel.findOneAndUpdate({_id:proofId,campaignId:campaignId},{$set:{status:updateStatus}})
+    const result1=await ProofModel.findOne({_id:proofId,campaignId:campaignId})
     
     // 3. Save campaign and commit transaction
     await campaign.save({ session });
     await session.commitTransaction();
 
-    return result // return updated proof
+    return result1 // return updated proof
   } catch (err) {
     if (session.inTransaction()) await session.abortTransaction();
     throw err;
