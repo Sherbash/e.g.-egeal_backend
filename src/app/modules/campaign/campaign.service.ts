@@ -219,7 +219,23 @@ toolId: string
 ) => {
 
 
-  const campaigns = await Campaign.findOne({toolId:toolId})
+  const campaigns = await Campaign.findOne({toolId:toolId}).populate({
+      path: "influencers",
+      populate: [
+        {
+          path: "influencerId",
+          select: "userId",
+          populate: {
+            path: "userId",
+            select: "firstName lastName email",
+          },
+        },
+        {
+          path: "proofs",
+          model: "Proof",
+        },
+      ],
+    })
   return campaigns
    
   }
@@ -592,7 +608,7 @@ const approveProofByCampaignAndTool = async (
   campaignId: string,
   proofId: string,
   toolId: string,
-  Status:string
+  updateStatus:string
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -601,34 +617,15 @@ const approveProofByCampaignAndTool = async (
     // 1. Campaign find by campaignId + toolId
     const campaign = await Campaign.findOne({ _id: campaignId, toolId }).session(session);
     if (!campaign) throw new AppError(status.NOT_FOUND, "Campaign not found");
+    console.log(updateStatus)
 
-    let proofFound = null;
-
-    // 2. Loop through influencers to find the proof
-    for (const influencerEntry  of campaign?.influencers as any) {
-
-      const proof = influencerEntry.proofs.find((p:any) => p._id.toString() === proofId) 
-      if (proof) {
-        // যদি আগে থেকেই approved থাকে, কিছু হবে না
-        if (proof.status === Status) {
-          proofFound = proof;
-          break;
-        }
-
-        // set status to approved
-        proof.status = Status;
-        proofFound = proof;
-        break; // proof found, stop loop
-      }
-    }
-
-    if (!proofFound) throw new AppError(status.NOT_FOUND, "Proof not found in this campaign");
-
+    const result=await ProofModel.findOneAndUpdate({_id:proofId,campaignId:campaignId},{$set:{status:updateStatus}})
+    
     // 3. Save campaign and commit transaction
     await campaign.save({ session });
     await session.commitTransaction();
 
-    return proofFound; // return updated proof
+    return result // return updated proof
   } catch (err) {
     if (session.inTransaction()) await session.abortTransaction();
     throw err;

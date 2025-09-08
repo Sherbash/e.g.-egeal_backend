@@ -34,6 +34,11 @@ router.get(
   auth(UserRole.ADMIN, UserRole.FOUNDER),
   ProofController.getAllProofs
 );
+router.get(
+  "/reject-request",
+  auth(UserRole.ADMIN),
+  ProofController.getAllRejectRequest
+);
 
 
 // ✅ Create Social Proof

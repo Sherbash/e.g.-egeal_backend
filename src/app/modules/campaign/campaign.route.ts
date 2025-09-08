@@ -16,6 +16,7 @@ router.post(
 // Get all campaigns - Public
 router.get("/", auth(UserRole.ADMIN, UserRole.FOUNDER), CampaignController.getAllCampaigns);
 router.get("/get-my-campaigns/:toolId", auth(UserRole.ADMIN, UserRole.FOUNDER), CampaignController.getAllMyCampaigns);
+router.patch("/my-campaigns/verify-proof", CampaignController.approveProofByCampaignAndTool);
 
 // Get single campaign - Public
 router.get("/:id", CampaignController.getCampaignById);
