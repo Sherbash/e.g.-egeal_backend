@@ -12,12 +12,14 @@ import { paginationHelper } from "../../../utils/paginationHelpers";
  * Submit new proof
  */
 const submitProof = async (payload: IProof, userId: string) => {
-  
+  // console.log("payload", payload)
+  // console.log("userId", userId)
   const isAlreadyExists = await ProofModel.findOne({
     proofSubmittedBy: userId,
-    proofType: "post"
-  })
+    proofType: "post",
+  });
 
+  // console.log("isAlreadyExists", isAlreadyExists)
   if (isAlreadyExists) {
     throw new AppError(status.CONFLICT, "You have already submitted a proof");
   }
@@ -43,8 +45,8 @@ const reviewProof = async (
   if (!proof) {
     throw new AppError(status.NOT_FOUND, "Proof not found");
   }
-// console.log(user)
-//   console.log("proof", proof)
+  // console.log(user)
+  //   console.log("proof", proof)
   // 2. Authorization check - only author or admin can update
   // const isAuthor = proof?.proofApprovedBy.toString() === user?.id?.toString();
   // const isAdmin = user.role === "admin";
@@ -90,7 +92,7 @@ const reviewProof = async (
       );
       // }
     }
-  } 
+  }
   await proof.save();
   return proof;
 };
@@ -110,9 +112,11 @@ const getUserProofs = async (userId: string, statusFilter?: string) => {
  * Get all proofs (admin)
  */
 // ProofService
-const getAllProofs = async (options: IPaginationOptions, filters: any, user: IUser) => {
-
-  
+const getAllProofs = async (
+  options: IPaginationOptions,
+  filters: any,
+  user: IUser
+) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
@@ -122,9 +126,26 @@ const getAllProofs = async (options: IPaginationOptions, filters: any, user: IUs
   if (filters?.proofType) queryConditions.proofType = filters.proofType;
   if (filters?.rewardGiven) queryConditions.rewardGiven = filters.rewardGiven;
 
+  // const [proofs, total] = await Promise.all([
+  //   ProofModel.find(queryConditions)
+  //     .populate("proofSubmittedBy", "firstName lastName email")
+  //     .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
+  //     .skip(skip)
+  //     .limit(limit)
+  //     .lean(),
+  //   ProofModel.countDocuments(queryConditions),
+  // ]);
   const [proofs, total] = await Promise.all([
     ProofModel.find(queryConditions)
-      .populate("proofSubmittedBy", "firstName lastName email")
+      .populate("proofSubmittedBy", "firstName lastName email") 
+      .populate({
+        path: "PostId", // Post reference
+        select: "title description authorId",
+        populate: {
+          path: "authorId", 
+          select: "firstName lastName email",
+        },
+      })
       .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
       .skip(skip)
       .limit(limit)
@@ -143,13 +164,10 @@ const getAllProofs = async (options: IPaginationOptions, filters: any, user: IUs
   };
 };
 
-
-
 const socialSubmitProof = async (payload: any, userId: string) => {
-  
   const isAlreadyExists = await socialPostProofModel.findOne({
-    proofSubmittedBy: userId
-  })
+    proofSubmittedBy: userId,
+  });
 
   // if (isAlreadyExists) {
   //   throw new AppError(status.CONFLICT, "You have already submitted a proof");
@@ -162,7 +180,6 @@ const socialSubmitProof = async (payload: any, userId: string) => {
 
   return proof;
 };
-
 
 // Get All Social Proofs
 const socialGetAllProofs = async () => {
@@ -195,7 +212,10 @@ const socialUpdateProof = async (id: string, userId: string, payload: any) => {
     { new: true }
   );
   if (!proof) {
-    throw new AppError(status.NOT_FOUND, "Social proof not found or not authorized");
+    throw new AppError(
+      status.NOT_FOUND,
+      "Social proof not found or not authorized"
+    );
   }
   return proof;
 };
@@ -207,43 +227,47 @@ const socialDeleteProof = async (id: string, userId: string) => {
     proofSubmittedBy: userId,
   });
   if (!proof) {
-    throw new AppError(status.NOT_FOUND, "Social proof not found or not authorized");
+    throw new AppError(
+      status.NOT_FOUND,
+      "Social proof not found or not authorized"
+    );
   }
   return proof;
 };
 
-
-const socialUpdateProofStatus = async (id: string,updateStatus:string) => {
-  if(!id){
+const socialUpdateProofStatus = async (id: string, updateStatus: string) => {
+  if (!id) {
     throw new AppError(status.NOT_FOUND, " id is not found  ");
   }
 
-  if(!updateStatus){
+  if (!updateStatus) {
     throw new AppError(status.NOT_FOUND, " status  is most be  required ");
   }
 
-  
   const proof = await socialPostProofModel.findOneAndUpdate(
-  {_id:id},{
-    $set:{status:updateStatus}
-  }
+    { _id: id },
+    {
+      $set: { status: updateStatus },
+    }
   );
   if (!proof) {
-    throw new AppError(status.NOT_FOUND, "Social proof not found or not authorized");
+    throw new AppError(
+      status.NOT_FOUND,
+      "Social proof not found or not authorized"
+    );
   }
-const updateProof=await socialPostProofModel.findOne({_id:id})
+  const updateProof = await socialPostProofModel.findOne({ _id: id });
 
-if(updateProof?.status==="approved"){
-const updateCoin = await UserModel.findOneAndUpdate(
-  { _id: proof.proofSubmittedBy },
-  { $inc: { points: 1 } }, // points field 1 করে বাড়াবে
-  { new: true } // updated document return করবে
-);
-}
+  if (updateProof?.status === "approved") {
+    const updateCoin = await UserModel.findOneAndUpdate(
+      { _id: proof.proofSubmittedBy },
+      { $inc: { points: 1 } }, // points field 1 করে বাড়াবে
+      { new: true } // updated document return করবে
+    );
+  }
 
   return updateProof;
 };
-
 
 export const ProofService = {
   submitProof,
@@ -256,5 +280,5 @@ export const ProofService = {
   socialGetMyProofs,
   socialUpdateProof,
   socialDeleteProof,
-  socialUpdateProofStatus
+  socialUpdateProofStatus,
 };

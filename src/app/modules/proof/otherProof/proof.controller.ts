@@ -27,7 +27,11 @@ const reviewProof = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const user = req.user;
 
-  const result = await ProofService.reviewProof(proofId, user as IUser,payload);
+  const result = await ProofService.reviewProof(
+    proofId,
+    user as IUser,
+    payload
+  );
 
   sendResponse(res, {
     success: true,
@@ -54,8 +58,7 @@ const getMyProofs = catchAsync(async (req: Request, res: Response) => {
 
 // Admin gets all proofs
 const getAllProofs = catchAsync(async (req: Request, res: Response) => {
-
-   const options = pickOptions(req.query, [
+  const options = pickOptions(req.query, [
     "limit",
     "page",
     "sortBy",
@@ -64,9 +67,13 @@ const getAllProofs = catchAsync(async (req: Request, res: Response) => {
   const filters = pickOptions(req.query, [
     "proofType",
     "status",
-    "rewardGiven"
+    "rewardGiven",
   ]);
-  const result = await ProofService.getAllProofs(options, filters, req.user as IUser);
+  const result = await ProofService.getAllProofs(
+    options,
+    filters,
+    req.user as IUser
+  );
 
   sendResponse(res, {
     success: true,
@@ -76,12 +83,10 @@ const getAllProofs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 // Submit Social Proof
 const socialSubmitProof = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const userId = req.user?.id;
-
 
   const result = await ProofService.socialSubmitProof(payload, userId);
 
@@ -95,6 +100,7 @@ const socialSubmitProof = catchAsync(async (req: Request, res: Response) => {
 
 // Get All Social Proofs
 const socialGetAllProofs = catchAsync(async (req: Request, res: Response) => {
+  console.log("req user", req.user);
   const result = await ProofService.socialGetAllProofs();
 
   sendResponse(res, {
@@ -162,30 +168,34 @@ const socialDeleteProof = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const socialUpdateProofStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const payload = req.body;
 
-const socialUpdateProofStatus = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const payload = req.body;
+    const result = await ProofService.socialUpdateProofStatus(
+      id,
+      payload.status
+    );
 
-  const result = await ProofService.socialUpdateProofStatus(id,payload.status);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: status.OK,
-    message: "Social proof status updated successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Social proof status updated successfully",
+      data: result,
+    });
+  }
+);
 export const ProofController = {
   submitProof,
   reviewProof,
   getMyProofs,
   getAllProofs,
-   socialSubmitProof,
+  socialSubmitProof,
   socialGetAllProofs,
   socialGetProofById,
   socialGetMyProofs,
   socialUpdateProof,
   socialDeleteProof,
-  socialUpdateProofStatus
+  socialUpdateProofStatus,
 };

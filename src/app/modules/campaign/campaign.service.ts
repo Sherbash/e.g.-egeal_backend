@@ -588,6 +588,54 @@ const updateProofRejectRequest = async (
 
   return result;
 };
+const approveProofByCampaignAndTool = async (
+  campaignId: string,
+  proofId: string,
+  toolId: string,
+  Status:string
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Campaign find by campaignId + toolId
+    const campaign = await Campaign.findOne({ _id: campaignId, toolId }).session(session);
+    if (!campaign) throw new AppError(status.NOT_FOUND, "Campaign not found");
+
+    let proofFound = null;
+
+    // 2. Loop through influencers to find the proof
+    for (const influencerEntry  of campaign?.influencers as any) {
+
+      const proof = influencerEntry.proofs.find((p:any) => p._id.toString() === proofId) 
+      if (proof) {
+        // যদি আগে থেকেই approved থাকে, কিছু হবে না
+        if (proof.status === Status) {
+          proofFound = proof;
+          break;
+        }
+
+        // set status to approved
+        proof.status = Status;
+        proofFound = proof;
+        break; // proof found, stop loop
+      }
+    }
+
+    if (!proofFound) throw new AppError(status.NOT_FOUND, "Proof not found in this campaign");
+
+    // 3. Save campaign and commit transaction
+    await campaign.save({ session });
+    await session.commitTransaction();
+
+    return proofFound; // return updated proof
+  } catch (err) {
+    if (session.inTransaction()) await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
+  }
+};
 
 export const CampaignServices = {
   createCampaign,
@@ -602,5 +650,6 @@ export const CampaignServices = {
   getAllProofRejectRequests,
   getSingleProofRejectRequest,
   updateProofRejectRequest,
-  getAllMyCampaigns
+  getAllMyCampaigns,
+  approveProofByCampaignAndTool
 };

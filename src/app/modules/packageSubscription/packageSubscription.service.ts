@@ -148,7 +148,7 @@ const createSubscription = async (userId: string, packageId: string, couponCode?
       newSubscriptions = await SubscriptionModel.create([subscriptionData], { session });
     } catch (createError: any) {
       console.error("Subscription creation failed:", createError);
-      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription record: ${createError.message}`);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to create subscription record: ${createError.message}`); // 
     }
 
     if (!newSubscriptions || newSubscriptions.length === 0) {
@@ -233,6 +233,9 @@ const getAllSubscription = async (query: Record<string, any>) => {
     data: subscriptions,
   };
 };
+
+
+// Failed to create subscription record: E11000 duplicate key error collection: marshal-test.subscriptions index: userId_1 dup key: { userId: ObjectId('68b10043241de8ee9448a716') }
 
 const getSingleSubscription = async (subscriptionId: string) => {
   const result = await SubscriptionModel.findById(subscriptionId)

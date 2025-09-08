@@ -294,7 +294,6 @@ import { IUser } from "../user/user.interface";
 import { IPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../utils/paginationHelpers";
 import { sendEmail } from "../../utils/emailHelper";
-import { defaultRules } from "../giveawayRules/giveawayRule.model";
 import { GiveawayRuleService } from "../giveawayRules/giveawayRule.service";
 import mongoose from "mongoose";
 
@@ -320,7 +319,7 @@ const createGiveaway = async (payload: IGiveaway, user: IUser) => {
     inviteCode: payload.isPrivate === true ? generateInviteCode() : undefined,
   };
 
-  console.log("giveawayPayload", giveawayPayload);
+  // console.log("giveawayPayload", giveawayPayload);
 
   // Validate invite code for private giveaways
   if (giveawayPayload.isPrivate && !giveawayPayload.inviteCode) {

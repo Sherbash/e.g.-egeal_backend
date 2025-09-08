@@ -4,6 +4,7 @@ import { IProof } from "./proof.interface";
 const ProofSchema = new mongoose.Schema<IProof>(
   {
     PostId: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
+    campaignId: { type: mongoose.Schema.Types.ObjectId, ref: "Campaign" },
     // Who submitted this proof?
     proofSubmittedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -14,7 +15,6 @@ const ProofSchema = new mongoose.Schema<IProof>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    campaignId: { type: mongoose.Schema.Types.ObjectId, ref: "Campaign" },
     proofType: {
       type: String,
       required: true,

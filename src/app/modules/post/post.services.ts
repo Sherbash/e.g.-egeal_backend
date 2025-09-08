@@ -17,10 +17,10 @@ const createPost = async (payload: IPost, user: IUser) => {
     ...payload,
     authorId: user?.id,
   };
- await sendEmail(
-user.email,
-  "🎉 Job Created Successfully",
-  `
+  await sendEmail(
+    user.email,
+    "🎉 Job Created Successfully",
+    `
     <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
       <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <div style="background-color: #4CAF50; color: white; padding: 15px 20px; text-align: center;">
@@ -28,7 +28,7 @@ user.email,
         </div>
         <div style="padding: 20px;">
           <p style="font-size: 16px; color: #333;">
-            Hello <strong>${user.firstName|| "User"}</strong>,
+            Hello <strong>${user.firstName || "User"}</strong>,
           </p>
           <p style="font-size: 15px; color: #555;">
             We’re excited to let you know that your job has been successfully created in our system.  
@@ -51,7 +51,7 @@ user.email,
       </div>
     </div>
   `
-);
+  );
   const post = await PostModel.create(updatedPayload);
   return post;
 };
@@ -88,6 +88,15 @@ const submitProofToPost = async (
     throw new AppError(status.NOT_FOUND, "Post not found");
   }
 
+  const isAlreadyExists = await ProofModel.findOne({
+    proofSubmittedBy: userId,
+    proofType: "post",
+  });
+
+  if (isAlreadyExists) {
+    throw new AppError(status.CONFLICT, "You have already submitted a proof");
+  }
+
   // 2. Create new proof document
   const proof = await ProofModel.create({
     PostId: new Types.ObjectId(post?._id),
@@ -98,12 +107,7 @@ const submitProofToPost = async (
     status: "pending",
   });
 
-  console.log("proof", proof)
-
-  const checkProofAlreaySubmitted = post.proofs.includes(proof?._id);
-  if (checkProofAlreaySubmitted) {
-    throw new AppError(status.CONFLICT, "Proof already submitted");
-  }
+  // console.log("proof", proof)
 
   // 3. Assign proof to post
   post.proofs.push(proof?._id);

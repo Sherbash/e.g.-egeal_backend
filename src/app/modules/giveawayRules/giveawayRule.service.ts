@@ -1,20 +1,26 @@
 import { RuleModel } from "./giveawayRule.model";
 
-const createRule = async (ruleData: {
-  ruleTitle: string;
-  imageUrl: string | null;
-}) => {
+const createRule = async (ruleData: { ruleTitle: string }) => {
   const newRule = await RuleModel.create({
     ruleTitle: ruleData.ruleTitle,
-    imageUrl: null,
   });
-  
+
   return newRule;
 };
 
 // GET - Get all rules
- const getAllRules = async () => {
-  const rules = await RuleModel.find().sort({ createdAt: -1 });
+const getAllRules = async () => {
+  let rules = await RuleModel.find().sort({ createdAt: -1 });
+
+  if (rules.length === 0) {
+    const defaultRules = [
+      {
+        ruleTitle: "Extra entries: Follow Egale Hub all social media",
+      },
+    ];
+    rules = await RuleModel.insertMany(defaultRules);
+  }
+
   return rules;
 };
 
