@@ -36,7 +36,7 @@ const ProofSchema = new mongoose.Schema<IProof>(
     // Verification status
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected","rejected-request"],
       default: "pending",
     },
     adminFeedback: { type: String },
