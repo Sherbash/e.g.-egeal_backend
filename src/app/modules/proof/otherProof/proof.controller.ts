@@ -57,7 +57,7 @@ const getMyProofs = catchAsync(async (req: Request, res: Response) => {
 });
 
 // Admin gets all proofs
-const getAllProofs = catchAsync(async (req: Request, res: Response) => {
+const getAllProofsForPost = catchAsync(async (req: Request, res: Response) => {
   const options = pickOptions(req.query, [
     "limit",
     "page",
@@ -69,7 +69,7 @@ const getAllProofs = catchAsync(async (req: Request, res: Response) => {
     "status",
     "rewardGiven",
   ]);
-  const result = await ProofService.getAllProofs(
+  const result = await ProofService.getAllProofsForPost(
     options,
     filters,
     req.user as IUser
@@ -78,10 +78,36 @@ const getAllProofs = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
-    message: "All proofs retrieved",
+    message: "All post proofs retrieved",
     data: result,
   });
 });
+
+// const getAllProofsForCampaign = catchAsync(async (req: Request, res: Response) => {
+//   const options = pickOptions(req.query, [
+//     "limit",
+//     "page",
+//     "sortBy",
+//     "sortOrder",
+//   ]);
+//   const filters = pickOptions(req.query, [
+//     "proofType",
+//     "status",
+//     "rewardGiven",
+//   ]);
+//   const result = await ProofService.getAllProofsForCampaign(
+//     options,
+//     filters,
+//     req.user as IUser
+//   );
+
+//    sendResponse(res, {
+//     success: true,
+//     statusCode: status.OK,
+//     message: "All campaign proofs retrieved",
+//     data: result,
+//   });
+// })
 
 // Submit Social Proof
 const socialSubmitProof = catchAsync(async (req: Request, res: Response) => {
@@ -190,7 +216,8 @@ export const ProofController = {
   submitProof,
   reviewProof,
   getMyProofs,
-  getAllProofs,
+  getAllProofsForPost,
+  // getAllProofsForCampaign,
   socialSubmitProof,
   socialGetAllProofs,
   socialGetProofById,

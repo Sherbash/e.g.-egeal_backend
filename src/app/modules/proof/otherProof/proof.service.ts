@@ -7,6 +7,7 @@ import { FreePackage } from "../../gift/gift.model";
 import { IUser } from "../../user/user.interface";
 import { IPaginationOptions } from "../../../interface/pagination";
 import { paginationHelper } from "../../../utils/paginationHelpers";
+import { PostModel } from "../../post/post.model";
 
 /**
  * Submit new proof
@@ -19,7 +20,7 @@ const submitProof = async (payload: IProof, userId: string) => {
     proofType: "post",
   });
 
-  // console.log("isAlreadyExists", isAlreadyExists)
+  console.log("isAlreadyExists", isAlreadyExists)
   if (isAlreadyExists) {
     throw new AppError(status.CONFLICT, "You have already submitted a proof");
   }
@@ -112,7 +113,69 @@ const getUserProofs = async (userId: string, statusFilter?: string) => {
  * Get all proofs (admin)
  */
 // ProofService
-const getAllProofs = async (
+// const getAllProofsForCampaign = async (
+//   options: IPaginationOptions,
+//   filters: any,
+//   user: IUser
+// ) => {
+//   const { page, limit, skip, sortBy, sortOrder } =
+//     paginationHelper.calculatePagination(options);
+
+//   const queryConditions: Record<string, any> = {
+//     PostId: { $exists: true, $ne: null }
+//   };
+
+//   if (filters?.status) queryConditions.status = filters.status;
+//   if (filters?.rewardGiven) queryConditions.rewardGiven = filters.rewardGiven;
+
+//   // For admin users, don't filter by author
+//   // For regular users, only show proofs from their own campaigns
+//   let campaignMatchCondition: any = {};
+//   if (user.role !== 'admin') {
+//     campaignMatchCondition.authorId = user.id;
+//   }
+
+//   const proofs = await ProofModel.find(queryConditions)
+//     .populate("proofSubmittedBy", "firstName lastName email") 
+//     .populate({
+//       path: "campaignId",
+//       match: campaignMatchCondition, // Apply role-based filtering
+//       populate: {
+//         path: "authorId", 
+//         select: "firstName lastName email",
+//       },
+//     })
+//     .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
+//     .skip(skip)
+//     .limit(limit)
+//     .lean();
+
+//   // Filter out proofs where campaignId is null (due to the match condition)
+//   const filteredProofs = proofs.filter(proof => proof.campaignId !== null);
+
+//   // Count only the proofs that match our criteria
+//   let countQueryConditions = { ...queryConditions };
+  
+//   if (user.role !== 'admin') {
+//     // For regular users, only count proofs from their campaigns
+//     const userCampaignIds = await PostModel.find({ authorId: user.id });
+//     countQueryConditions.campaignId = { $in: userCampaignIds };
+//   }
+
+//   const total = await ProofModel.countDocuments(countQueryConditions);
+
+//   return {
+//     meta: {
+//       page,
+//       limit,
+//       total,
+//       totalPages: Math.ceil(total / limit),
+//     },
+//     data: filteredProofs,
+//   };
+// };
+
+const getAllProofsForPost = async (
   options: IPaginationOptions,
   filters: any,
   user: IUser
@@ -120,38 +183,37 @@ const getAllProofs = async (
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
 
-  const queryConditions: Record<string, any> = {};
+  const queryConditions: Record<string, any> = {
+    PostId: { $exists: true, $ne: null }
+  };
 
   if (filters?.status) queryConditions.status = filters.status;
-  if (filters?.proofType) queryConditions.proofType = filters.proofType;
   if (filters?.rewardGiven) queryConditions.rewardGiven = filters.rewardGiven;
 
-  // const [proofs, total] = await Promise.all([
-  //   ProofModel.find(queryConditions)
-  //     .populate("proofSubmittedBy", "firstName lastName email")
-  //     .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
-  //     .skip(skip)
-  //     .limit(limit)
-  //     .lean(),
-  //   ProofModel.countDocuments(queryConditions),
-  // ]);
-  const [proofs, total] = await Promise.all([
-    ProofModel.find(queryConditions)
-      .populate("proofSubmittedBy", "firstName lastName email") 
-      .populate({
-        path: "PostId", // Post reference
-        select: "title description authorId",
-        populate: {
-          path: "authorId", 
-          select: "firstName lastName email",
-        },
-      })
-      .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    ProofModel.countDocuments(queryConditions),
-  ]);
+  const proofs = await ProofModel.find(queryConditions)
+    .populate("proofSubmittedBy", "firstName lastName email") 
+    .populate({
+      path: "PostId",
+      select: "title description authorId",
+      match: { authorId: user.id }, // Only populate posts where author is current user
+      populate: {
+        path: "authorId", 
+        select: "firstName lastName email",
+      },
+    })
+    .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  // Filter out proofs where PostId is null (due to the match condition)
+  const filteredProofs = proofs.filter(proof => proof.PostId !== null);
+
+  // Count only the proofs that match our criteria
+  const total = await ProofModel.countDocuments({
+    ...queryConditions,
+    PostId: { $in: await PostModel.find({ authorId: user.id }).distinct('_id') }
+  });
 
   return {
     meta: {
@@ -160,7 +222,7 @@ const getAllProofs = async (
       total,
       totalPages: Math.ceil(total / limit),
     },
-    data: proofs,
+    data: filteredProofs,
   };
 };
 
@@ -273,7 +335,8 @@ export const ProofService = {
   submitProof,
   reviewProof,
   getUserProofs,
-  getAllProofs,
+  getAllProofsForPost,
+  // getAllProofsForCampaign,
   socialSubmitProof,
   socialGetAllProofs,
   socialGetProofById,
