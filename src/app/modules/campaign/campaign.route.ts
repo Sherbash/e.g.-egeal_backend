@@ -14,7 +14,7 @@ router.post(
 );
 
 // Get all campaigns - Public
-router.get("/", auth(UserRole.ADMIN, UserRole.FOUNDER), CampaignController.getAllCampaigns);
+router.get("/", auth(UserRole.ADMIN, UserRole.FOUNDER, UserRole.INFLUENCER), CampaignController.getAllCampaigns);
 router.get("/get-my-campaigns/:toolId", auth(UserRole.ADMIN, UserRole.FOUNDER), CampaignController.getAllMyCampaigns);
 
 // Get single campaign - Public
