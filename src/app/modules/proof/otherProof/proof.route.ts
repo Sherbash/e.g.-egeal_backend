@@ -29,10 +29,15 @@ router.patch(
   ProofController.reviewProof
 );
 
+// router.get(
+//   "/campaignProofs",
+//   auth(UserRole.FOUNDER, UserRole.ADMIN),
+//   ProofController.getAllProofsForCampaign
+// );
 router.get(
-  "/",
-  auth(UserRole.ADMIN, UserRole.FOUNDER),
-  ProofController.getAllProofs
+  "/post-proofs",
+  auth(UserRole.FOUNDER),
+  ProofController.getAllProofsForPost
 );
 router.get(
   "/reject-request",
