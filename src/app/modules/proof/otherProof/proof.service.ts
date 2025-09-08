@@ -226,6 +226,52 @@ const getAllProofsForPost = async (
   };
 };
 
+const getAllRejectRequest = async (
+  options: IPaginationOptions,
+  filters: any,
+  user: IUser
+) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+
+  const queryConditions: Record<string, any> = {};
+
+  // সবসময় শুধুমাত্র rejected-request আসবে
+  queryConditions.status = "rejected-request";
+
+  if (filters?.proofType) queryConditions.proofType = filters.proofType;
+  if (filters?.rewardGiven) queryConditions.rewardGiven = filters.rewardGiven;
+
+  const [proofs, total] = await Promise.all([
+    ProofModel.find(queryConditions)
+      .populate("proofSubmittedBy", "firstName lastName email")
+      .populate({
+        path: "PostId",
+        select: "title description authorId",
+        populate: {
+          path: "authorId",
+          select: "firstName lastName email",
+        },
+      })
+      .sort({ [sortBy || "createdAt"]: sortOrder || -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    ProofModel.countDocuments(queryConditions),
+  ]);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: proofs,
+  };
+};
+
+
 const socialSubmitProof = async (payload: any, userId: string) => {
   const isAlreadyExists = await socialPostProofModel.findOne({
     proofSubmittedBy: userId,
@@ -344,4 +390,5 @@ export const ProofService = {
   socialUpdateProof,
   socialDeleteProof,
   socialUpdateProofStatus,
+  getAllRejectRequest
 };

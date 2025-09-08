@@ -219,7 +219,23 @@ toolId: string
 ) => {
 
 
-  const campaigns = await Campaign.findOne({toolId:toolId})
+  const campaigns = await Campaign.findOne({toolId:toolId}).populate({
+      path: "influencers",
+      populate: [
+        {
+          path: "influencerId",
+          select: "userId",
+          populate: {
+            path: "userId",
+            select: "firstName lastName email",
+          },
+        },
+        {
+          path: "proofs",
+          model: "Proof",
+        },
+      ],
+    })
   return campaigns
    
   }
@@ -588,6 +604,35 @@ const updateProofRejectRequest = async (
 
   return result;
 };
+const approveProofByCampaignAndTool = async (
+  campaignId: string,
+  proofId: string,
+  toolId: string,
+  updateStatus:string
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Campaign find by campaignId + toolId
+    const campaign = await Campaign.findOne({ _id: campaignId, toolId }).session(session);
+    if (!campaign) throw new AppError(status.NOT_FOUND, "Campaign not found");
+    console.log(updateStatus)
+
+    const result=await ProofModel.findOneAndUpdate({_id:proofId,campaignId:campaignId},{$set:{status:updateStatus}})
+    
+    // 3. Save campaign and commit transaction
+    await campaign.save({ session });
+    await session.commitTransaction();
+
+    return result // return updated proof
+  } catch (err) {
+    if (session.inTransaction()) await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
+  }
+};
 
 export const CampaignServices = {
   createCampaign,
@@ -602,5 +647,6 @@ export const CampaignServices = {
   getAllProofRejectRequests,
   getSingleProofRejectRequest,
   updateProofRejectRequest,
-  getAllMyCampaigns
+  getAllMyCampaigns,
+  approveProofByCampaignAndTool
 };

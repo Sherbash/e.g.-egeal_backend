@@ -26,6 +26,7 @@ const getAllCampaigns = catchAsync(async (req: Request, res: Response) => {
     "sortOrder",
   ]);
   const result = await CampaignServices.getAllCampaigns(options, req.user as IUser);
+  
 
   res.status(status.OK).json({
     success: true,
@@ -186,6 +187,22 @@ const updateProofRejectRequest = catchAsync(
     });
   }
 );
+const approveProofByCampaignAndTool = catchAsync(
+  async (req: Request, res: Response) => {
+  
+    const campaignId=req.body.campaignId
+  const proofId =req.body. proofId
+  const  toolId =req.body.toolId
+  const UpdateStatus= req.body?.status
+    const result = await CampaignServices.approveProofByCampaignAndTool(campaignId,proofId,toolId,UpdateStatus);
+
+    res.status(status.OK).json({
+      success: true,
+      message: "approved campaign proof  successfully",
+      data: result,
+    });
+  }
+);
 
 export const CampaignController = {
   createCampaign,
@@ -200,6 +217,7 @@ export const CampaignController = {
   getAllProofRejectRequests,
   getSingleProofRejectRequest,
   updateProofRejectRequest,
-  getAllMyCampaigns
+  getAllMyCampaigns,
+  approveProofByCampaignAndTool
 
 };

@@ -82,6 +82,32 @@ const getAllProofsForPost = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+// Admin gets all proofs
+const getAllRejectRequest = catchAsync(async (req: Request, res: Response) => {
+  const options = pickOptions(req.query, [
+    "limit",
+    "page",
+    "sortBy",
+    "sortOrder",
+  ]);
+  const filters = pickOptions(req.query, [
+    "proofType",
+    "status",
+    "rewardGiven",
+  ]);
+  const result = await ProofService.getAllRejectRequest(
+    options,
+    filters,
+    req.user as IUser
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "All proofs retrieved",
+    data: result,
+  });
+});
 
 // const getAllProofsForCampaign = catchAsync(async (req: Request, res: Response) => {
 //   const options = pickOptions(req.query, [
@@ -225,4 +251,5 @@ export const ProofController = {
   socialUpdateProof,
   socialDeleteProof,
   socialUpdateProofStatus,
+  getAllRejectRequest
 };
