@@ -7,7 +7,7 @@ const createCouponSchema = z.object({
     discountType: z.enum(["PERCENTAGE", "FIXED"]),
     discountValue: z.number().positive(),
     toolId: z.string().optional(),
-    maxUsage: z.number().int().positive().optional(), 
+    maxUsage: z.number().int().positive().optional(),
     expiresAt: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be in YYYY-MM-DD format")
@@ -32,7 +32,15 @@ const applyCouponSchema = z.object({
   }),
 });
 
+const getPackageCouponSchema = z.object({
+  body: z.object({
+    code: z.string().min(3).max(20),
+    packagePrice: z.number().positive(),
+  }),
+});
+
 export const CouponValidations = {
   createCouponSchema,
   applyCouponSchema,
+  getPackageCouponSchema,
 };

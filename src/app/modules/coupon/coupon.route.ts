@@ -45,6 +45,14 @@ router.patch(
 );
 
 
+router.post(
+  "/get-package-coupon",
+  // auth(UserRole.USER, UserRole.INFLUENCER, UserRole.FOUNDER),
+  validateRequest(CouponValidations.getPackageCouponSchema),
+  CouponControllers.getPackageCouponByCode
+);
+
+
 router.get(
   "/:id",
   auth(UserRole.ADMIN, UserRole.FOUNDER),

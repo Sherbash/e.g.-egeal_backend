@@ -5,7 +5,7 @@
 // import AppError from "../../errors/appError";
 // import { CouponModel } from "./coupon.model";
 
-// // coupon.service.ts 
+// // coupon.service.ts
 // const createCouponIntoDB = async (payload: ICoupon) => {
 //   // Now TypeScript knows payload.code definitely exists
 //   const code = payload.code.toUpperCase();
@@ -135,7 +135,6 @@
 // //   };
 // // };
 
-
 // const getMyCouponsFromDB = async (id: string) => {
 //   const coupons = await CouponModel.find({ createdBy: id })
 //     .populate("createdBy", "name email")
@@ -145,7 +144,6 @@
 //   }
 //   return coupons;
 // };
-
 
 // // coupon.service.ts
 // const applyCoupon = async (
@@ -226,9 +224,6 @@
 //   };
 // };
 
-
-
-
 // export const CouponServices = {
 //   createCouponIntoDB,
 //   getAllCouponsFromDB,
@@ -239,7 +234,6 @@
 //   getMyCouponsFromDB
 // };
 
-
 //! Version - 2
 
 import status from "http-status";
@@ -249,7 +243,7 @@ import { ICoupon, ICouponUpdate } from "./coupon.interface";
 import AppError from "../../errors/appError";
 import { CouponModel } from "./coupon.model";
 
-// coupon.service.ts 
+// coupon.service.ts
 const createCouponIntoDB = async (payload: ICoupon) => {
   // Now TypeScript knows payload.code definitely exists
   const code = payload.code.toUpperCase();
@@ -298,7 +292,10 @@ const getAllCouponsByUserIdFromDB = async (
     .lean();
 };
 
-const getSingleCouponByIdWithUserIdFromDB = async (id: string, userId: string) => {
+const getSingleCouponByIdWithUserIdFromDB = async (
+  id: string,
+  userId: string
+) => {
   const coupon = await CouponModel.findOne({ _id: id, createdBy: userId })
     .populate("createdBy", "name email")
     .lean();
@@ -441,7 +438,10 @@ const applyCoupon = async (
   ).lean();
 
   if (!updatedCoupon) {
-    throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update coupon usage");
+    throw new AppError(
+      status.INTERNAL_SERVER_ERROR,
+      "Failed to update coupon usage"
+    );
   }
 
   return {
@@ -469,7 +469,7 @@ const applyCouponForAdmin = async (
   if (!coupon) throw new AppError(status.BAD_REQUEST, "Invalid coupon code");
 
   //! Checked active status
-  if(!coupon.isActive || coupon.isDeleted){
+  if (!coupon.isActive || coupon.isDeleted) {
     throw new AppError(status.BAD_REQUEST, "Coupon is inactive");
   }
 
@@ -485,18 +485,21 @@ const applyCouponForAdmin = async (
 
   //! Check for specific package
   if (coupon.packageId) {
-  if (!packageId) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "This coupon is valid only for a specific package"
-    );
-  }
+    if (!packageId) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        "This coupon is valid only for a specific package"
+      );
+    }
 
-  // FIX: convert or use .equals()
-  if (!coupon.packageId.equals(packageId)) {
-    throw new AppError(status.BAD_REQUEST, "Coupon not valid for this package");
+    // FIX: convert or use .equals()
+    if (!coupon.packageId.equals(packageId)) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        "Coupon not valid for this package"
+      );
+    }
   }
-}
 
   // Check usage
   if (coupon.usedBy.includes(usedBy)) {
@@ -558,13 +561,60 @@ const applyCouponForAdmin = async (
   };
 };
 
+const getPackageCouponByCode = async (code: string, packagePrice: number) => {
+  if (!code) throw new AppError(status.BAD_REQUEST, "Coupon code is required");
+
+  const coupon = await CouponModel.findOne({
+    code: code.toUpperCase(),
+    isActive: true,
+    isDeleted: false,
+    validatedFor: "PACKAGE",
+  })
+    .populate("createdBy", "name email")
+    .populate("packageId", "name description")
+    .lean();
+
+  if (!coupon) {
+    throw new AppError(
+      status.NOT_FOUND,
+      "Coupon not found or not valid for packages"
+    );
+  }
+
+  if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+    throw new AppError(status.BAD_REQUEST, "Coupon has expired");
+  }
+
+  if (
+    typeof coupon.maxUsage === "number" &&
+    coupon.usageCount >= coupon.maxUsage
+  ) {
+    throw new AppError(status.BAD_REQUEST, "Coupon usage limit reached");
+  }
+
+  let discountAmount = 0;
+  if (coupon.discountType === "PERCENTAGE") {
+    discountAmount = (packagePrice * coupon.discountValue) / 100;
+  } else {
+    discountAmount = coupon.discountValue;
+  }
+
+  const finalPrice = Math.max(packagePrice - discountAmount, 0);
+
+  return {
+    coupon,
+    discountAmount,
+    finalPrice,
+  };
+};
+
 export const CouponServices = {
   createCouponIntoDB,
   getAllCouponsByUserIdFromDB,
   getSingleCouponByIdWithUserIdFromDB,
   updateSingleCouponByIdWithUserIdIntoDB,
   softDeleteSingleCouponByIdWithUserIdIntoDB,
-
+  getPackageCouponByCode,
   deleteCouponIntoDB,
   applyCoupon,
   applyCouponForAdmin,
