@@ -75,7 +75,7 @@ const createCampaign = async (payload: ICampaign, user: IUser) => {
             You can now manage and track its performance directly from your dashboard.
           </p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="http://172.252.13.69:3002/dashboard/campaigns" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="http://206.162.244.131:6001/dashboard/campaigns" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Campaigns
             </a>
           </div>

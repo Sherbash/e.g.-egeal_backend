@@ -241,13 +241,13 @@ const applyCouponForAdmin = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getPackageCouponByCode = catchAsync(async (req: Request, res: Response) => {
-  const { code, packagePrice } = req.body;
+  const { code, packagePrice, packageId } = req.body;
 
-  if (!code || packagePrice == null) {
-    throw new AppError(status.BAD_REQUEST, "code and packagePrice are required");
+  if (!code || packagePrice == null || !packageId) {
+    throw new AppError(status.BAD_REQUEST, "code, packagePrice, and packageId are required");
   }
 
-  const result = await CouponServices.getPackageCouponByCode(code, Number(packagePrice));
+  const result = await CouponServices.getPackageCouponByCode(code, Number(packagePrice), packageId);
 
   sendResponse(res, {
     success: true,

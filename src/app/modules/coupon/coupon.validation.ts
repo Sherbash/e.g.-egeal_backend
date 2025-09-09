@@ -36,6 +36,10 @@ const getPackageCouponSchema = z.object({
   body: z.object({
     code: z.string().min(3).max(20),
     packagePrice: z.number().positive(),
+    packageId: z.string().refine(
+      (val) => /^[0-9a-fA-F]{24}$/.test(val),
+      { message: "Invalid package ID" }
+    ),
   }),
 });
 

@@ -561,8 +561,11 @@ const applyCouponForAdmin = async (
   };
 };
 
-const getPackageCouponByCode = async (code: string, packagePrice: number) => {
+const getPackageCouponByCode = async (code: string, packagePrice: number, packageId: string) => {
   if (!code) throw new AppError(status.BAD_REQUEST, "Coupon code is required");
+  if (!mongoose.Types.ObjectId.isValid(packageId)) {
+    throw new AppError(status.BAD_REQUEST, "Invalid package ID");
+  }
 
   const coupon = await CouponModel.findOne({
     code: code.toUpperCase(),
@@ -575,10 +578,7 @@ const getPackageCouponByCode = async (code: string, packagePrice: number) => {
     .lean();
 
   if (!coupon) {
-    throw new AppError(
-      status.NOT_FOUND,
-      "Coupon not found or not valid for packages"
-    );
+    throw new AppError(status.NOT_FOUND, "Coupon not found or not valid for packages");
   }
 
   if (coupon.expiresAt && coupon.expiresAt < new Date()) {
@@ -590,6 +590,11 @@ const getPackageCouponByCode = async (code: string, packagePrice: number) => {
     coupon.usageCount >= coupon.maxUsage
   ) {
     throw new AppError(status.BAD_REQUEST, "Coupon usage limit reached");
+  }
+
+  // Check if coupon is tied to a specific package
+  if (coupon.packageId && coupon.packageId._id.toString() !== packageId) {
+    throw new AppError(status.BAD_REQUEST, "Coupon not valid for this package");
   }
 
   let discountAmount = 0;
