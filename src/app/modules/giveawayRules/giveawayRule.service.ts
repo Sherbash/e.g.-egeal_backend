@@ -15,7 +15,7 @@ const getAllRules = async () => {
   if (rules.length === 0) {
     const defaultRules = [
       {
-        ruleTitle: "Extra entries: Follow Egale Hub all social media",
+        ruleTitle: "Extra 5x entries for following Eagle social media",
       },
     ];
     rules = await RuleModel.insertMany(defaultRules);
