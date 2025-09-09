@@ -24,17 +24,21 @@ const createTool = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllTools = catchAsync(async (req: Request, res: Response) => {
+  // Extract pagination & sorting options
   const options = pickOptions(req.query, [
     "limit",
     "page",
     "sortBy",
     "sortOrder",
   ]);
+
+  // Extract filters
   const filters = pickOptions(req.query, [
     "searchTerm",
     "isActive",
     "launched",
   ]);
+
   const result = await ToolServices.getAllToolsFromDB(options, filters);
 
   sendResponse(res, {

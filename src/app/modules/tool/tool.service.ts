@@ -118,10 +118,9 @@ const getAllToolsFromDB = async (
   const { limit, page, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(paginationOptions);
 
-  // Base query for active tools
   const query: any = {};
 
-  // Search functionality
+  // 🔎 Search filter
   if (filters.searchTerm) {
     query.$or = [
       { name: { $regex: filters.searchTerm, $options: "i" } },
@@ -130,33 +129,35 @@ const getAllToolsFromDB = async (
     ];
   }
 
-  // Price filter
-  if (filters.isActive) {
+  // ✅ Boolean filters (must check !== undefined)
+  if (filters.isActive !== undefined) {
     query.isActive = filters.isActive;
   }
 
-  // Price filter
-  if (filters.launched) {
+  if (filters.launched !== undefined) {
     query.launched = filters.launched;
   }
 
-  const tools = await ToolModel.find(query)
-    .lean()
-    .sort({ [sortBy]: sortOrder })
-    .skip(skip)
-    .limit(limit);
+  // ✅ Safe sorting defaults
+  const sortField = sortBy || "createdAt";   // default field
+  const sortDirection = sortOrder === "asc" ? 1 : -1; // default "desc"
 
-  const total = await ToolModel.countDocuments(query);
+  // Run query + count in parallel
+  const [tools, total] = await Promise.all([
+    ToolModel.find(query)
+      .lean()
+      .sort({ [sortField]: sortDirection })
+      .skip(skip)
+      .limit(limit),
+    ToolModel.countDocuments(query),
+  ]);
 
   return {
-    meta: {
-      page,
-      limit,
-      total,
-    },
+    meta: { page, limit, total },
     data: tools,
   };
 };
+
 
 const getAllToolsByFounderId = async (
   founderId: string,
