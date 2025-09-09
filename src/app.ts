@@ -19,6 +19,7 @@ app.use(
       "https://egealaihub.vercel.app",
       "http://172.252.13.69:3002",
       "http://206.162.244.131:6001",
+      "http://206.162.244.131:6002",
     ],
     credentials: true,
   })
